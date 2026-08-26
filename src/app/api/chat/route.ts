@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hasApiKey } from "@/lib/llm";
+import { hasApiKey, dialogueModelFor, type Tier } from "@/lib/llm";
 import {
   DEFAULT_GRADE_PROFILE,
   GRADE_PROFILES,
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     sessionId?: string;
     topicId?: string;
     gradeBand?: string;
+    tier?: string;
   };
   try {
     body = await req.json();
@@ -56,6 +57,10 @@ export async function POST(req: NextRequest) {
   const band = body.gradeBand as GradeBand | undefined;
   const profile =
     band && band in GRADE_PROFILES ? getProfile(band) : DEFAULT_GRADE_PROFILE;
+
+  // ティア: 既定は無料（安いモデル）。premium は課金ユーザー向けの上位モデル。
+  const tier: Tier = body.tier === "premium" ? "premium" : "free";
+  const dialogueModel = dialogueModelFor(tier);
 
   // セッションはメッセージ単位で使い回す（無ければ作成）
   let sessionId = body.sessionId;
@@ -91,7 +96,7 @@ export async function POST(req: NextRequest) {
   const turns: DialogueTurn[] = [...history, { role: "child", text: message }];
   let rawReply: string;
   try {
-    rawReply = await generateReply(turns, profile, topic.title);
+    rawReply = await generateReply(turns, profile, topic.title, dialogueModel);
   } catch (err) {
     console.error("[generate] failed:", err);
     return NextResponse.json(
@@ -117,6 +122,9 @@ export async function POST(req: NextRequest) {
     reply: output.text,
     sessionId,
     apiKeyConfigured: hasApiKey(),
+    tier,
+    // 使用モデル名は公開してよい方針（透明性）。練習モード時は "practice"。
+    model: hasApiKey() ? dialogueModel : "practice",
     moderation: {
       input: input.reason || "ok",
       output: output.reason || "ok",

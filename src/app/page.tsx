@@ -1,4 +1,4 @@
-import { hasApiKey } from "@/lib/llm";
+import { hasApiKey, MODELS } from "@/lib/llm";
 import { GRADE_BANDS } from "@/lib/grade/gradeProfiles";
 import { TOPICS } from "@/lib/topics";
 import { Chat } from "@/components/Chat";
@@ -36,7 +36,19 @@ export default function Home() {
         gradeBands={GRADE_BANDS}
       />
 
-      <footer className="mt-4 rounded-md bg-slate-100 px-3 py-2 text-center text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-xs text-slate-500">
+        <span>
+          モデル：<span className="font-mono font-semibold text-slate-600">{MODELS.dialogue}</span>
+          <span className="text-slate-400">（無料）</span>
+        </span>
+        <span className="text-slate-300">/</span>
+        <span>
+          じっくりモード：<span className="font-mono font-semibold text-slate-600">{MODELS.premiumDialogue}</span>
+          <span className="text-slate-400">（課金・準備中）</span>
+        </span>
+      </div>
+
+      <footer className="mt-2 rounded-md bg-slate-100 px-3 py-2 text-center text-xs text-slate-500">
         これは <span className="font-semibold">Phase 1</span> です（探究テーマの複数化・
         学年プロファイルの切替・ソクラテス型対話の強化）。安全パイプライン（入力モデ→対話→
         出力モデ→ログ）を全テーマ・全学年で通します。

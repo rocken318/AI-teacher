@@ -1,15 +1,24 @@
 import OpenAI from "openai";
 
 /**
- * モデルの出し分け（全体像 3章の方針）
- * - moderation : 入出力モデレーション・分類・軽い判定（安く速く）
- * - dialogue   : 通常の探究対話（主力）
- * 環境変数で上書き可能。未設定時は既定値を使う。
+ * モデルの出し分け（コスト方針: 基本は安いモデル、上位は課金ティア）
+ * - moderation      : 入出力モデレーション・分類（常に安く速く）
+ * - dialogue        : 無料ティアの探究対話（安いモデルが既定）
+ * - premiumDialogue : 課金ティアの探究対話（上位モデル）
+ * すべて環境変数で上書き可能。未設定時は既定値を使う。
  */
 export const MODELS = {
   moderation: process.env.OPENAI_MODERATION_MODEL ?? "gpt-4o-mini",
-  dialogue: process.env.OPENAI_MODEL ?? "gpt-4o",
+  dialogue: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  premiumDialogue: process.env.OPENAI_PREMIUM_MODEL ?? "gpt-4o",
 } as const;
+
+export type Tier = "free" | "premium";
+
+/** ティアに応じた対話モデル名を返す（既定は無料＝安いモデル）。 */
+export function dialogueModelFor(tier: Tier = "free"): string {
+  return tier === "premium" ? MODELS.premiumDialogue : MODELS.dialogue;
+}
 
 /** APIキーが設定されているか（サーバー側だけで判定） */
 export function hasApiKey(): boolean {

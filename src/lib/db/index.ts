@@ -57,7 +57,9 @@ class PostgresStore implements Store {
   private async init(databaseUrl: string): Promise<void> {
     const mod = await import("postgres");
     const postgres = (mod as any).default ?? mod;
-    this.sql = postgres(databaseUrl);
+    // Vercel(サーバーレス) × Supabase の Transaction Pooler(pgbouncer, :6543) で確実に動くよう、
+    // prepared statements を無効化し、関数インスタンスあたりの接続数を絞る。
+    this.sql = postgres(databaseUrl, { prepare: false, max: 1, idle_timeout: 20 });
 
     // テーブル作成は初期化時に一度だけ（IF NOT EXISTS）。
     await this.sql`

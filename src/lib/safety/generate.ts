@@ -17,12 +17,14 @@ export async function generateReply(
   history: DialogueTurn[],
   profile: GradeProfile,
   topicTitle?: string,
+  /** 使用する対話モデル（省略時は無料ティアの既定モデル）。 */
+  model: string = MODELS.dialogue,
 ): Promise<string> {
   // キー未設定でもクラッシュせず、練習モードの問い返しを返す
   if (!hasApiKey()) return PRACTICE_MODE_REPLY;
 
   return chatText({
-    model: MODELS.dialogue,
+    model,
     maxTokens: 300,
     system: buildSocraticSystemPrompt(profile, topicTitle),
     messages: history.map((turn) => ({
