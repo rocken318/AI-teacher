@@ -60,3 +60,11 @@ export const GRADE_PROFILES: Record<GradeBand, GradeProfile> = {
 
 /** Phase 0 で使う固定プロファイル */
 export const DEFAULT_GRADE_PROFILE: GradeProfile = GRADE_PROFILES["小1-3"];
+
+/** 学年帯の一覧（UIのセレクタ順など） */
+export const GRADE_BANDS: GradeBand[] = ["小1-3", "小4-6", "中", "高"];
+
+/** 学年帯からプロファイルを取得する */
+export function getProfile(band: GradeBand): GradeProfile {
+  return GRADE_PROFILES[band];
+}

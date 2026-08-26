@@ -1,4 +1,4 @@
-import { getAnthropic, MODELS, textFromMessage } from "@/lib/anthropic";
+import { hasApiKey, MODELS, chatText } from "@/lib/llm";
 import { buildRewriteToQuestionPrompt } from "@/lib/prompts";
 import type { GradeProfile } from "@/lib/grade/gradeProfiles";
 
@@ -23,8 +23,7 @@ export async function moderateOutput(
   aiText: string,
   profile: GradeProfile,
 ): Promise<OutputModerationResult> {
-  const anthropic = getAnthropic();
-  if (!anthropic) return { verdict: "ok", text: aiText, reason: "no-api-key: skipped" };
+  if (!hasApiKey()) return { verdict: "ok", text: aiText, reason: "no-api-key: skipped" };
 
   const system = [
     "あなたは子ども向け学習アプリの出力モデレーターです。",
@@ -39,13 +38,13 @@ export async function moderateOutput(
   let flagged = false;
   let reason = "";
   try {
-    const res = await anthropic.messages.create({
+    const text = await chatText({
       model: MODELS.moderation,
-      max_tokens: 200,
+      maxTokens: 200,
       system,
       messages: [{ role: "user", content: aiText }],
     });
-    const parsed = parseOutputVerdict(textFromMessage(res));
+    const parsed = parseOutputVerdict(text);
     flagged = parsed.directAnswer || parsed.inappropriate;
     reason = parsed.reason;
   } catch {
@@ -57,15 +56,15 @@ export async function moderateOutput(
 
   // 直答/不適切 → 問い返しに変換
   try {
-    const rewrite = await anthropic.messages.create({
+    const rewrite = await chatText({
       model: MODELS.moderation,
-      max_tokens: 300,
+      maxTokens: 300,
       system: buildRewriteToQuestionPrompt(profile),
       messages: [{ role: "user", content: aiText }],
     });
     return {
       verdict: "flagged",
-      text: textFromMessage(rewrite),
+      text: rewrite,
       reason: reason || "直答/不適切を検知し問い返しに変換",
     };
   } catch {

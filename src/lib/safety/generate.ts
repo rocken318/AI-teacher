@@ -1,9 +1,9 @@
-import { getAnthropic, MODELS, textFromMessage } from "@/lib/anthropic";
-import { buildSocraticSystemPrompt, NO_API_KEY_REPLY } from "@/lib/prompts";
+import { hasApiKey, MODELS, chatText } from "@/lib/llm";
+import { buildSocraticSystemPrompt, PRACTICE_MODE_REPLY } from "@/lib/prompts";
 import type { GradeProfile } from "@/lib/grade/gradeProfiles";
 
 /**
- * [対話生成] 安全パイプライン第2段（sonnet）。
+ * [対話生成] 安全パイプライン第2段（dialogue モデル）。
  * ソクラテス型システムプロンプトに沿って応答を生成する。
  * 学年プロファイルを注入するだけで、学年ごとの分岐はエンジンに持たせない。
  */
@@ -16,20 +16,18 @@ export interface DialogueTurn {
 export async function generateReply(
   history: DialogueTurn[],
   profile: GradeProfile,
+  topicTitle?: string,
 ): Promise<string> {
-  const anthropic = getAnthropic();
   // キー未設定でもクラッシュせず、練習モードの問い返しを返す
-  if (!anthropic) return NO_API_KEY_REPLY;
+  if (!hasApiKey()) return PRACTICE_MODE_REPLY;
 
-  const res = await anthropic.messages.create({
+  return chatText({
     model: MODELS.dialogue,
-    max_tokens: 300,
-    system: buildSocraticSystemPrompt(profile),
+    maxTokens: 300,
+    system: buildSocraticSystemPrompt(profile, topicTitle),
     messages: history.map((turn) => ({
       role: turn.role === "child" ? ("user" as const) : ("assistant" as const),
       content: turn.text,
     })),
   });
-
-  return textFromMessage(res);
 }

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hasApiKey } from "@/lib/anthropic";
-import { DEFAULT_GRADE_PROFILE } from "@/lib/grade/gradeProfiles";
+import { hasApiKey } from "@/lib/llm";
+import {
+  DEFAULT_GRADE_PROFILE,
+  GRADE_PROFILES,
+  getProfile,
+  type GradeBand,
+} from "@/lib/grade/gradeProfiles";
+import { TOPICS, getTopic } from "@/lib/topics";
 import { GENTLE_REDIRECT } from "@/lib/prompts";
 import { moderateInput } from "@/lib/safety/moderateInput";
 import { generateReply, type DialogueTurn } from "@/lib/safety/generate";
@@ -9,20 +15,28 @@ import { createSession, logMessage, logModeration } from "@/lib/db/log";
 
 export const runtime = "nodejs";
 
-const TOPIC = "なぜ空は青いの？";
-
 /**
  * 安全パイプラインのオーケストレーション。
  * 1回の対話が必ず次を通る:
- *   [入力モデ haiku] → [対話生成 sonnet] → [出力モデ haiku] → [ログ保存]
+ *   [入力モデ] → [対話生成] → [出力モデ] → [ログ保存]
  *
- * リクエスト: { message: string, history: DialogueTurn[], sessionId?: string }
+ * リクエスト: {
+ *   message: string,
+ *   history: DialogueTurn[],
+ *   sessionId?: string,
+ *   topicId?: string,
+ *   gradeBand?: GradeBand,
+ * }
  * レスポンス: { reply, sessionId, apiKeyConfigured, moderation: {...} }
  */
 export async function POST(req: NextRequest) {
-  const profile = DEFAULT_GRADE_PROFILE; // Phase 0 は「小1-3」固定
-
-  let body: { message?: string; history?: DialogueTurn[]; sessionId?: string };
+  let body: {
+    message?: string;
+    history?: DialogueTurn[];
+    sessionId?: string;
+    topicId?: string;
+    gradeBand?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -35,16 +49,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
   }
 
+  // テーマ: 無効/未指定なら先頭テーマにフォールバック
+  const topic = getTopic(body.topicId ?? "") ?? TOPICS[0];
+
+  // 学年プロファイル: 無効/未指定なら既定プロファイル
+  const band = body.gradeBand as GradeBand | undefined;
+  const profile =
+    band && band in GRADE_PROFILES ? getProfile(band) : DEFAULT_GRADE_PROFILE;
+
   // セッションはメッセージ単位で使い回す（無ければ作成）
   let sessionId = body.sessionId;
   if (!sessionId) {
-    sessionId = createSession(TOPIC, profile.gradeBand);
+    sessionId = createSession(topic.title, profile.gradeBand, topic.id);
   }
 
   // 子どもの発話を保存
   const childMsgId = logMessage(sessionId, "child", message);
 
-  // --- [1] 入力モデレーション（haiku） ---
+  // --- [1] 入力モデレーション ---
   const input = await moderateInput(message, profile);
   logModeration({
     sessionId,
@@ -65,11 +87,11 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // --- [2] 対話生成（sonnet, ソクラテス型） ---
+  // --- [2] 対話生成（ソクラテス型, テーマ注入） ---
   const turns: DialogueTurn[] = [...history, { role: "child", text: message }];
   let rawReply: string;
   try {
-    rawReply = await generateReply(turns, profile);
+    rawReply = await generateReply(turns, profile, topic.title);
   } catch (err) {
     console.error("[generate] failed:", err);
     return NextResponse.json(
@@ -78,7 +100,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // --- [3] 出力モデレーション（haiku, 直答なら問い返しに変換） ---
+  // --- [3] 出力モデレーション（直答なら問い返しに変換） ---
   const output = await moderateOutput(rawReply, profile);
 
   // --- [4] ログ保存（最終応答＋出力モデ結果） ---

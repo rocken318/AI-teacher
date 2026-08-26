@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小学生向けAI学習 競合調査レポート | AI塾 事業検討</title>
+<meta name="description" content="日本の小学生向けAI学習塾・AI教育アプリの競合調査。Qubena・atama+・すらら・RISU算数・進研ゼミ・スマイルゼミほか。機能・AI技術・料金・差別化余地を整理。">
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --line:#2a3340;
+    --ink:#e8edf3; --muted:#9aa7b5; --faint:#6b7885;
+    --accent:#4f8cff; --accent2:#22c7a9; --warn:#ffb454; --bad:#ff6b6b;
+    --good:#3ddc97;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",system-ui,-apple-system,"Segoe UI",sans-serif;
+    line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px}
+
+  /* Hero */
+  header.hero{
+    background:
+      radial-gradient(1200px 400px at 15% -10%, rgba(79,140,255,.22), transparent 60%),
+      radial-gradient(900px 380px at 95% 0%, rgba(34,199,169,.16), transparent 55%),
+      linear-gradient(180deg,#0e1116,#11161d);
+    border-bottom:1px solid var(--line);
+    padding:64px 0 40px;
+  }
+  .eyebrow{
+    display:inline-block; font-size:12.5px; letter-spacing:.18em; font-weight:700;
+    color:var(--accent2); text-transform:uppercase; margin-bottom:14px;
+    border:1px solid var(--line); padding:5px 12px; border-radius:999px; background:rgba(34,199,169,.06);
+  }
+  h1{font-size:clamp(26px,4.5vw,42px); line-height:1.25; margin:.1em 0 .35em; letter-spacing:.01em}
+  .sub{color:var(--muted); font-size:16px; max-width:760px}
+  .meta{margin-top:22px; display:flex; gap:10px 26px; flex-wrap:wrap; color:var(--faint); font-size:13px}
+  .meta b{color:var(--muted); font-weight:600}
+
+  /* TOC */
+  nav.toc{
+    position:sticky; top:0; z-index:20; background:rgba(14,17,22,.82);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  }
+  nav.toc .wrap{display:flex; gap:6px; flex-wrap:wrap; padding:11px 20px}
+  nav.toc a{
+    font-size:13px; color:var(--muted); padding:6px 11px; border-radius:8px;
+  }
+  nav.toc a:hover{background:var(--panel2); color:var(--ink); text-decoration:none}
+
+  section{padding:44px 0 8px}
+  h2{
+    font-size:clamp(20px,3vw,27px); margin:0 0 6px; letter-spacing:.01em;
+    display:flex; align-items:baseline; gap:12px;
+  }
+  h2 .n{color:var(--accent); font-size:15px; font-weight:800; font-variant-numeric:tabular-nums}
+  h2 + .lead{color:var(--muted); margin:0 0 22px; font-size:15px}
+  h3{font-size:18px; margin:30px 0 10px}
+
+  /* segment cards */
+  .grid{display:grid; gap:16px}
+  .grid.seg{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line); border-radius:14px; padding:18px 18px 16px;
+  }
+  .card h4{margin:0 0 4px; font-size:15px; letter-spacing:.05em; color:var(--accent2)}
+  .card .who{font-size:20px; font-weight:700; margin:2px 0 6px}
+  .card p{margin:0; color:var(--muted); font-size:13.5px}
+
+  /* table */
+  .tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:14px; margin:8px 0 6px}
+  table{border-collapse:collapse; width:100%; min-width:760px; font-size:13.5px}
+  th,td{padding:12px 14px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+  thead th{
+    background:var(--panel2); color:var(--ink); font-weight:700; font-size:12.5px;
+    letter-spacing:.04em; position:sticky; top:0; white-space:nowrap;
+  }
+  tbody tr:hover{background:rgba(79,140,255,.05)}
+  td .svc{font-weight:700; color:var(--ink)}
+  .tag{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap}
+  .t-b2g{background:rgba(79,140,255,.16); color:#9cc0ff}
+  .t-b2b{background:rgba(255,180,84,.16); color:#ffcf94}
+  .t-b2c{background:rgba(61,220,151,.15); color:#8ff0c4}
+  .t-hyb{background:rgba(180,140,255,.16); color:#cbb4ff}
+  .yes{color:var(--good); font-weight:700}
+  .no{color:var(--faint)}
+  .maybe{color:var(--warn); font-weight:600}
+  .conf{font-size:11px; color:var(--faint)}
+
+  .note{
+    border-left:3px solid var(--accent); background:var(--panel);
+    padding:12px 16px; border-radius:0 10px 10px 0; color:var(--muted); font-size:13.5px; margin:14px 0;
+  }
+  .note.warn{border-left-color:var(--warn)}
+  .note b{color:var(--ink)}
+
+  /* insight blocks */
+  .insight{
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin:14px 0;
+  }
+  .insight h3{margin:0 0 8px; display:flex; gap:10px; align-items:center; font-size:17px}
+  .insight .badge{font-size:11px; font-weight:800; padding:3px 9px; border-radius:6px; letter-spacing:.05em}
+  .b-hot{background:rgba(255,107,107,.16); color:#ff9d9d}
+  .b-gap{background:rgba(61,220,151,.16); color:#8ff0c4}
+  .b-lever{background:rgba(79,140,255,.16); color:#9cc0ff}
+  .insight ul{margin:6px 0 0; padding-left:20px; color:var(--muted); font-size:14px}
+  .insight li{margin:5px 0}
+  .insight li b{color:var(--ink)}
+
+  ul.plain{color:var(--muted); font-size:14px; padding-left:20px}
+  ul.plain li{margin:6px 0}
+  ul.plain b{color:var(--ink)}
+
+  details{border:1px solid var(--line); border-radius:12px; padding:4px 16px; margin:10px 0; background:var(--panel)}
+  summary{cursor:pointer; padding:12px 0; font-weight:600; color:var(--ink)}
+  summary::marker{color:var(--accent)}
+  details p, details ul{color:var(--muted); font-size:13.5px}
+
+  footer{border-top:1px solid var(--line); margin-top:50px; padding:26px 0 60px; color:var(--faint); font-size:12.5px}
+  footer .wrap{display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap}
+
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--faint); margin:10px 2px}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  @media (max-width:640px){ body{font-size:15px} section{padding:34px 0 4px} }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Competitive Research · 2026-08</span>
+    <h1>小学生向け AI学習 競合調査レポート</h1>
+    <p class="sub">日本国内・小学生（小1〜小6）を対象とした AI学習塾／AI教育アプリの競合マップ。各サービスの<b>機能・AI技術・料金・提供形態</b>を整理し、新規参入で<b>競合優位を築ける空白領域</b>を検討する。</p>
+    <div class="meta">
+      <span><b>対象市場</b> 日本国内</span>
+      <span><b>対象学年</b> 小学生中心</span>
+      <span><b>観点</b> 機能・AI技術／差別化余地</span>
+      <span><b>手法</b> 多ソース横断＋敵対的ファクトチェック（一次情報優先）</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#map">① 競合マップ</a>
+    <a href="#table">② サービス比較表</a>
+    <a href="#detail">③ 主要サービス詳細</a>
+    <a href="#unverified">④ 参考（未確証）</a>
+    <a href="#strategy">⑤ 差別化の余地</a>
+    <a href="#method">⑥ 調査手法・注意</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section id="map">
+    <h2><span class="n">01</span> 市場は4セグメントに分かれる</h2>
+    <p class="lead">「誰が課金するか」で市場構造が明確に分かれる。参入時にどのセグメントを狙うかが最初の分岐点。</p>
+    <div class="grid seg">
+      <div class="card">
+        <h4>B2G ／ 学校・自治体</h4>
+        <div class="who">Qubena</div>
+        <p>自治体が一括導入。GIGAスクール端末で使用。塾・家庭には非提供。</p>
+      </div>
+      <div class="card">
+        <h4>B2B ／ 塾・予備校</h4>
+        <div class="who">atama+ ・ Monoxer</div>
+        <p>塾がAI教材を採用し、講師がコーチング。教室網を通じて拡大。</p>
+      </div>
+      <div class="card">
+        <h4>B2C ／ 家庭・タブレット</h4>
+        <div class="who">すらら・進研ゼミ<br>スマイルゼミ・RISU・天神</div>
+        <p>保護者が月額課金。タブレット教材が主戦場で最も競争が激しい。</p>
+      </div>
+      <div class="card">
+        <h4>B2C ハイブリッド</h4>
+        <div class="who">atama+ オンライン塾</div>
+        <p>AI教材＋人間トレーナー。家庭学習と塾指導の中間ポジション。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="table">
+    <h2><span class="n">02</span> サービス比較表</h2>
+    <p class="lead">一次情報（公式サイト・プレスリリース）で裏付けが取れた6サービス。料金は2025〜2026年時点の税込表記で、改定・校舎差あり。</p>
+    <div class="legend">
+      <span><span class="dot" style="background:#9cc0ff"></span>B2G</span>
+      <span><span class="dot" style="background:#ffcf94"></span>B2B</span>
+      <span><span class="dot" style="background:#8ff0c4"></span>B2C</span>
+      <span><span class="dot" style="background:#cbb4ff"></span>Hybrid</span>
+    </div>
+    <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>サービス</th><th>形態</th><th>対象</th><th>AI技術の中身</th><th>生成AI<br>(LLM)</th><th>料金（税込・月）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="svc">Qubena</span><br><span class="conf">COMPASS</span></td>
+          <td><span class="tag t-b2g">B2G 学校</span></td>
+          <td>小・中</td>
+          <td>アダプティブ出題／誤答原因分析。170+自治体・2,300校超・100万人超。</td>
+          <td class="no">なし</td>
+          <td>自治体契約</td>
+        </tr>
+        <tr>
+          <td><span class="svc">atama+</span><br><span class="conf">アタマプラス</span></td>
+          <td><span class="tag t-b2b">B2B 塾</span> <span class="tag t-hyb">+B2C</span></td>
+          <td>小4〜高</td>
+          <td>解答内容＋所要時間をリアルタイム分析し、つまずきの<b>根本原因を過去学年まで遡及</b>。4,500教室超に供給。駿台が出資。</td>
+          <td class="no">なし</td>
+          <td>塾:小4-6 3科 11,000円<br><span class="conf">入会金22,000円・校舎差あり</span></td>
+        </tr>
+        <tr>
+          <td><span class="svc">すらら</span><br><span class="conf">すららネット</span></td>
+          <td><span class="tag t-b2c">B2C</span> <span class="tag t-b2b">+B2B</span></td>
+          <td>小〜高<br>無学年</td>
+          <td><b>特許取得のつまずき分析AI</b>で誤答原因を特定→補習誘導。発達障害・不登校対応、<b>出席扱い制度</b>（累計2,000件超）。</td>
+          <td class="no">なし</td>
+          <td>4教科 8,800円<br><span class="conf">(継続割8,228円) 入会金7,700〜11,000円</span></td>
+        </tr>
+        <tr>
+          <td><span class="svc">RISU算数</span><br><span class="conf">RISU Japan</span></td>
+          <td><span class="tag t-b2c">B2C</span></td>
+          <td>年中〜小6<br>+中学数学</td>
+          <td>約30億件データで<b>アダプティブ出題＋忘却曲線復習</b>。つまずき即時検知→東大生らの解説動画を自動配信。<span class="conf">※ルールベース</span></td>
+          <td class="no">なし</td>
+          <td>基本2,948円＋従量<br><span class="conf">最大11,726円（進度連動）</span></td>
+        </tr>
+        <tr>
+          <td><span class="svc">スマイルゼミ Coachez</span><br><span class="conf">ジャストシステム</span></td>
+          <td><span class="tag t-b2c">B2C</span></td>
+          <td>小</td>
+          <td><b>対話型教材（2025/4新登場）</b>。答えを教えず対話で導く。12年分の学習データでつまずきポイントを予測。</td>
+          <td class="maybe">明示なし</td>
+          <td>ゼミ受講費内</td>
+        </tr>
+        <tr>
+          <td><span class="svc">進研ゼミ AI学習コーチ</span><br><span class="conf">ベネッセ</span></td>
+          <td><span class="tag t-b2c">B2C</span></td>
+          <td>小4〜6</td>
+          <td><b>ChatGPT活用の対話型AIチューター</b>。自ら答えに辿り着けるよう誘導し、解決不能時は<b>人間の教科アドバイザーへエスカレーション</b>。e-Learning大賞受賞。</td>
+          <td class="yes">あり ○</td>
+          <td><b>追加費用0円</b><br><span class="conf">（既存会員向け）</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="note"><b>読み解き:</b> 大半の「AI教材」はルールベースのアダプティブ出題であり、真の生成AI（LLM）を小学生向け対話に投入しているのは現時点で<b>ベネッセ進研ゼミが突出</b>。スマイルゼミも対話型で追随しているが生成AIの明示はない。</div>
+  </section>
+
+  <section id="detail">
+    <h2><span class="n">03</span> 主要サービス詳細</h2>
+    <p class="lead">確証済み6サービスの要点。クリックで展開。</p>
+
+    <details open>
+      <summary>Qubena（キュビナ）— B2G学校専業の最大手</summary>
+      <ul>
+        <li><b>顧客:</b> 学校・自治体<b>専業</b>。塾・個人には提供しない（公式明記）。</li>
+        <li><b>規模:</b> 170以上の自治体・2,300校以上・100万人超が利用。</li>
+        <li><b>AI:</b> 使うほど各児童に最適化されるアダプティブ型。誤答原因を分析し個別最適出題。</li>
+        <li><b>備考:</b> 過去の家庭/塾向け（Qubena Academy等）は撤退済み。家庭B2C市場では現在競合しない。</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>atama+（アタマプラス）— 塾AIのデファクト＋オンライン塾</summary>
+      <ul>
+        <li><b>形態:</b> 全国4,500教室超にAI教材を供給（城南コベッツ等）。駿台が35.5%出資、B2Cオンライン塾も運営。</li>
+        <li><b>AI:</b> 解答内容＋所要時間を分析し、つまずきの根本原因を過去学年（小学範囲）まで遡って特定→解説動画・演習を提示。「中学生の55%が小学単元でつまずく」自社データが設計思想。</li>
+        <li><b>対象:</b> 小学生（算・国・英）を含む。<b>2026年3月に理科・社会を追加予定</b>。</li>
+        <li><b>仕組み:</b> 講師は専用アプリで「どの問題に何分かけたか」まで把握。AI＋人間のハイブリッド。</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>すらら — 多様な学習者×家庭B2Cの独自ポジション</summary>
+      <ul>
+        <li><b>形態:</b> 家庭向けB2Cが中心。塾向け・学校向け・放課後デイも別ラインで展開。</li>
+        <li><b>AI:</b> 特許取得のつまずき分析AIが誤答の根本原因を特定→補習単元へ自動誘導。無学年制。</li>
+        <li><b>独自性:</b> 発達障害・不登校・学習の遅れを持つ層を主対象。<b>不登校児の出席扱い制度に対応（累計2,000件超）</b>、専門家監修。</li>
+        <li><b>料金:</b> 小学4教科 月8,800円（4ヵ月継続割で8,228円）、5教科10,428円、入会金7,700〜11,000円。</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>RISU算数 — 算数特化・従量課金のデータ型</summary>
+      <ul>
+        <li><b>形態:</b> B2C家庭向けタブレット。対象は年中後半〜小6、2025年春に中学数学コース追加。</li>
+        <li><b>AI:</b> 約30億件の学習データで回答速度・間違え方を分析しアダプティブ出題。忘却曲線に合わせた復習。つまずき検知で東大生らの解説動画を自動配信（動画は人間作成、配信は自動）。<b>生成AIではなくルールベース。</b></li>
+        <li><b>料金:</b> 基本料 月換算2,948円（年35,376円一括）＋進度連動の従量利用料0〜8,778円 ＝ 月額最大11,726円。使うほど高くなる設計。</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>スマイルゼミ Coachez（コーチーズ）— 2025年新投入の対話型</summary>
+      <ul>
+        <li><b>投入:</b> 2025年4月1日に小学生コースへ新登場（正式名称は「Coachez」）。</li>
+        <li><b>AI:</b> AI技術＋12年分の学習データで開発。答えを直接教えず、対話で疑問・考えを引き出し、つまずきポイントを予測して段階的に導く。</li>
+        <li><b>留意:</b> 公式に生成AI／LLMの明示はない（「AI技術」とのみ表記）。</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>進研ゼミ「チャレンジ AI学習コーチ」— 生成AIの先行者</summary>
+      <ul>
+        <li><b>投入:</b> 小4〜6向けに2024年3月提供開始。進研ゼミ55年の指導データ＋<b>生成AI（ChatGPT活用）</b>。</li>
+        <li><b>AI:</b> 答えを直接教えず対話で自ら答えに辿り着かせる。いつでも質問でき即時解決。<b>AIで解決できない場合は人間の教科アドバイザーへエスカレーション。</b></li>
+        <li><b>対象/料金:</b> 小4〜6（国・算・英・学習方法）、既存会員限定、<b>追加費用0円</b>。第21回日本e-Learning大賞 生成AI特別部門賞を受賞。</li>
+      </ul>
+    </details>
+  </section>
+
+  <section id="unverified">
+    <h2><span class="n">04</span> 参考：未確証サービス</h2>
+    <p class="lead">調査で言及は得たが、3票制の敵対的検証を通過する独立裏付けが取れなかったもの。<b>「誤り」ではなく「確証不足」</b>。事業判断前に追加確認を推奨。</p>
+    <ul class="plain">
+      <li><b>Monoxer（モノグサ）:</b> B2B塾・学校向け。記憶度／忘却曲線ベースのアダプティブ出題（小学校導入事例あり）。記憶定着に強み。</li>
+      <li><b>天神:</b> タブレット買い切り型のB2C。買い切りゆえ月額課金モデルと性格が異なる。</li>
+      <li><b>スタディサプリ小学講座:</b> リクルート。映像授業主体。AI機能・料金の詳細は未確証。</li>
+      <li><b>そろタッチ:</b> そろばん式暗算アプリ。「AIではなく構造化ステージ＋ゲーミフィケーション」の可能性。</li>
+      <li><b>AIしまじろう:</b> ベネッセ×SBロボティクスの幼児向け生成AI会話。モニター実施の情報あり（＝大手が幼児×生成AIも狙っている）。</li>
+    </ul>
+  </section>
+
+  <section id="strategy">
+    <h2><span class="n">05</span> 差別化の余地 ─ どこで勝てるか</h2>
+    <p class="lead">「AI×塾」で新規参入する場合の、競合優位を築けそうな仮説。設問(5)への現時点の回答。</p>
+
+    <div class="insight">
+      <h3><span class="badge b-hot">警戒</span>「生成AIチューター」の空白は急速に埋まりつつある</h3>
+      <ul>
+        <li>ベネッセが小4〜6で既に<b>ChatGPT型の対話AIコーチを無料提供</b>し、e-Learning大賞まで受賞。スマイルゼミも対話型で追随。</li>
+        <li>「生成AIで対話できる学習アプリ」という切り口<b>単体では、大手の後追いになり差別化が弱い</b>。</li>
+      </ul>
+    </div>
+
+    <div class="insight">
+      <h3><span class="badge b-gap">空白</span>まだ空いている領域</h3>
+      <ul>
+        <li><b>低学年（小1〜3）× 生成AI対話:</b> 大手の生成AIコーチは小4以上が中心。低学年に安全に届ける設計は手薄。</li>
+        <li><b>塾併用 × 家庭AIの統合:</b> 「教室に通いつつ家庭でAI学習、講師がデータで介入」の一気通貫はatama+以外が弱い。</li>
+        <li><b>単体プロダクトとして買える形:</b> 大手のAIコーチは<b>既存会員限定で単体販売なし</b>。独立した「AI塾」プロダクトの余地。</li>
+        <li><b>教科横断・探究/思考力:</b> 既存は主要教科のドリル最適化が中心。思考力・記述・探究をAI対話で伸ばす領域は開拓余地。</li>
+      </ul>
+    </div>
+
+    <div class="insight">
+      <h3><span class="badge b-lever">武器</span>「安全性・規制対応」を差別化の軸にできる</h3>
+      <ul>
+        <li>子ども向け生成AIは<b>ハルシネーション（誤情報）・年齢制限・保護者同意</b>など未成熟な課題が残る。専門家からは慎重論も。</li>
+        <li>文科省ガイドラインに準拠した<b>「安心して子どもに使わせられる生成AI塾」</b>という信頼設計は、保護者訴求として強力な差別化になり得る。</li>
+        <li>すららの「出席扱い制度対応」のように、<b>制度・社会課題との接続</b>（不登校・発達支援・格差是正）は大手が薄い勝ち筋。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="method">
+    <h2><span class="n">06</span> 調査手法と注意事項</h2>
+    <ul class="plain">
+      <li><b>手法:</b> 複数の検索アングルに分解 → 並列Web検索 → 上位ソース取得・主張抽出 → 各主張を3票の敵対的検証（2/3で棄却）→ 信頼度順に統合。一次情報（公式サイト・プレスリリース）を優先。</li>
+      <li><b>確証の濃淡:</b> 比較表の6サービスは一次情報で裏付け済み。第4章は確証不足のため事業判断前に追加確認を推奨。</li>
+      <li><b>時点:</b> 料金・機能は2025〜2026年時点の公式表記。改定・校舎差あり。RISUは基本料に複数プランが存在する可能性。</li>
+      <li><b>効果の注意:</b> 各社のAI効果記述はベンダーのマーケティング／自己申告が主で、独立した効果検証ではない。RISUの「約30億件」等も未監査。</li>
+      <li><b>今後の課題:</b> 天神・Monoxer・スタディサプリの料金/AI詳細、小学生向け生成AIチューター新興勢の有無と安全性対応の一次情報確認。</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>小学生向けAI学習 競合調査レポート · 事業検討用ドラフト</span>
+    <span>Generated with Claude Code · 2026-08-25</span>
+  </div>
+</footer>
+
+</body>
+</html>

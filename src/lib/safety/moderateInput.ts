@@ -1,4 +1,4 @@
-import { getAnthropic, MODELS, textFromMessage } from "@/lib/anthropic";
+import { hasApiKey, MODELS, chatText } from "@/lib/llm";
 import type { GradeProfile } from "@/lib/grade/gradeProfiles";
 
 /**
@@ -18,9 +18,8 @@ export async function moderateInput(
   userText: string,
   profile: GradeProfile,
 ): Promise<ModerationResult> {
-  const anthropic = getAnthropic();
   // キー未設定時は安全側に倒しつつ通す（walking skeleton としてクラッシュさせない）
-  if (!anthropic) return { ok: true, reason: "no-api-key: skipped" };
+  if (!hasApiKey()) return { ok: true, reason: "no-api-key: skipped" };
 
   const system = [
     "あなたは子ども向け学習アプリの入力モデレーターです。",
@@ -36,13 +35,13 @@ export async function moderateInput(
   ].join("\n");
 
   try {
-    const res = await anthropic.messages.create({
+    const text = await chatText({
       model: MODELS.moderation,
-      max_tokens: 200,
+      maxTokens: 200,
       system,
       messages: [{ role: "user", content: userText }],
     });
-    return parseModeration(textFromMessage(res));
+    return parseModeration(text);
   } catch {
     // 失敗時は安全側（進ませない）に倒す
     return { ok: false, reason: "moderation-error" };
