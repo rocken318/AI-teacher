@@ -18,6 +18,35 @@ import path from "node:path";
 
 export type DbBackend = "postgres" | "sqlite" | "none";
 
+/** 見守りダッシュボード向け: セッション一覧の1件分。 */
+export interface SessionSummary {
+  id: string;
+  topic: string;
+  gradeBand: string;
+  topicId: string | null;
+  startedAt: string;
+  messageCount: number;
+}
+
+/** 見守りダッシュボード向け: セッション詳細（会話ログ＋モデレーション記録）。 */
+export interface SessionDetail {
+  session: SessionSummary;
+  messages: {
+    id: string;
+    sender: string;
+    text: string;
+    createdAt: string;
+  }[];
+  moderations: {
+    id: string;
+    messageId: string | null;
+    stage: string;
+    verdict: string;
+    reason: string | null;
+    createdAt: string;
+  }[];
+}
+
 export interface Store {
   createSession(
     id: string,
@@ -39,6 +68,10 @@ export interface Store {
     verdict: "ok" | "flagged",
     reason: string | null,
   ): Promise<void>;
+
+  /* --- 読み取り（見守りダッシュボード用） --- */
+  listSessions(limit: number): Promise<SessionSummary[]>;
+  getSessionDetail(id: string): Promise<SessionDetail | null>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -132,6 +165,86 @@ class PostgresStore implements Store {
       INSERT INTO moderations (id, session_id, message_id, stage, verdict, reason)
       VALUES (${id}, ${sessionId}, ${messageId}, ${stage}, ${verdict}, ${reason})
     `;
+  }
+
+  async listSessions(limit: number): Promise<SessionSummary[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT
+        s.id AS id,
+        s.topic AS topic,
+        s.grade_band AS grade_band,
+        s.topic_id AS topic_id,
+        s.started_at AS started_at,
+        (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+      FROM sessions s
+      ORDER BY s.started_at DESC
+      LIMIT ${limit}
+    `;
+    return (rows as any[]).map((r) => ({
+      id: String(r.id),
+      topic: String(r.topic),
+      gradeBand: String(r.grade_band),
+      topicId: r.topic_id == null ? null : String(r.topic_id),
+      startedAt: r.started_at == null ? "" : String(r.started_at),
+      messageCount: Number(r.message_count ?? 0),
+    }));
+  }
+
+  async getSessionDetail(id: string): Promise<SessionDetail | null> {
+    await this.ready;
+    const sessionRows = await this.sql`
+      SELECT
+        s.id AS id,
+        s.topic AS topic,
+        s.grade_band AS grade_band,
+        s.topic_id AS topic_id,
+        s.started_at AS started_at,
+        (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+      FROM sessions s
+      WHERE s.id = ${id}
+      LIMIT 1
+    `;
+    const s = (sessionRows as any[])[0];
+    if (!s) return null;
+
+    const messageRows = await this.sql`
+      SELECT id, sender, text, created_at
+      FROM messages
+      WHERE session_id = ${id}
+      ORDER BY created_at ASC
+    `;
+    const moderationRows = await this.sql`
+      SELECT id, message_id, stage, verdict, reason, created_at
+      FROM moderations
+      WHERE session_id = ${id}
+      ORDER BY created_at ASC
+    `;
+
+    return {
+      session: {
+        id: String(s.id),
+        topic: String(s.topic),
+        gradeBand: String(s.grade_band),
+        topicId: s.topic_id == null ? null : String(s.topic_id),
+        startedAt: s.started_at == null ? "" : String(s.started_at),
+        messageCount: Number(s.message_count ?? 0),
+      },
+      messages: (messageRows as any[]).map((r) => ({
+        id: String(r.id),
+        sender: String(r.sender),
+        text: String(r.text),
+        createdAt: r.created_at == null ? "" : String(r.created_at),
+      })),
+      moderations: (moderationRows as any[]).map((r) => ({
+        id: String(r.id),
+        messageId: r.message_id == null ? null : String(r.message_id),
+        stage: String(r.stage),
+        verdict: String(r.verdict),
+        reason: r.reason == null ? null : String(r.reason),
+        createdAt: r.created_at == null ? "" : String(r.created_at),
+      })),
+    };
   }
 }
 
@@ -231,6 +344,93 @@ class SqliteStore implements Store {
       )
       .run(id, sessionId, messageId, stage, verdict, reason);
   }
+
+  async listSessions(limit: number): Promise<SessionSummary[]> {
+    await this.ready;
+    const rows = this.db
+      .prepare(
+        `SELECT
+           s.id AS id,
+           s.topic AS topic,
+           s.grade_band AS grade_band,
+           s.topic_id AS topic_id,
+           s.started_at AS started_at,
+           (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+         FROM sessions s
+         ORDER BY s.started_at DESC
+         LIMIT ?`,
+      )
+      .all(limit) as any[];
+    return rows.map((r) => ({
+      id: String(r.id),
+      topic: String(r.topic),
+      gradeBand: String(r.grade_band),
+      topicId: r.topic_id == null ? null : String(r.topic_id),
+      startedAt: r.started_at == null ? "" : String(r.started_at),
+      messageCount: Number(r.message_count ?? 0),
+    }));
+  }
+
+  async getSessionDetail(id: string): Promise<SessionDetail | null> {
+    await this.ready;
+    const s = this.db
+      .prepare(
+        `SELECT
+           s.id AS id,
+           s.topic AS topic,
+           s.grade_band AS grade_band,
+           s.topic_id AS topic_id,
+           s.started_at AS started_at,
+           (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+         FROM sessions s
+         WHERE s.id = ?
+         LIMIT 1`,
+      )
+      .get(id) as any;
+    if (!s) return null;
+
+    const messageRows = this.db
+      .prepare(
+        `SELECT id, sender, text, created_at
+         FROM messages
+         WHERE session_id = ?
+         ORDER BY created_at ASC`,
+      )
+      .all(id) as any[];
+    const moderationRows = this.db
+      .prepare(
+        `SELECT id, message_id, stage, verdict, reason, created_at
+         FROM moderations
+         WHERE session_id = ?
+         ORDER BY created_at ASC`,
+      )
+      .all(id) as any[];
+
+    return {
+      session: {
+        id: String(s.id),
+        topic: String(s.topic),
+        gradeBand: String(s.grade_band),
+        topicId: s.topic_id == null ? null : String(s.topic_id),
+        startedAt: s.started_at == null ? "" : String(s.started_at),
+        messageCount: Number(s.message_count ?? 0),
+      },
+      messages: messageRows.map((r) => ({
+        id: String(r.id),
+        sender: String(r.sender),
+        text: String(r.text),
+        createdAt: r.created_at == null ? "" : String(r.created_at),
+      })),
+      moderations: moderationRows.map((r) => ({
+        id: String(r.id),
+        messageId: r.message_id == null ? null : String(r.message_id),
+        stage: String(r.stage),
+        verdict: String(r.verdict),
+        reason: r.reason == null ? null : String(r.reason),
+        createdAt: r.created_at == null ? "" : String(r.created_at),
+      })),
+    };
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -272,6 +472,14 @@ class NoopStore implements Store {
       verdict,
       reason,
     });
+  }
+
+  async listSessions(_limit: number): Promise<SessionSummary[]> {
+    return [];
+  }
+
+  async getSessionDetail(_id: string): Promise<SessionDetail | null> {
+    return null;
   }
 }
 
