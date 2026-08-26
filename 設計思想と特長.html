@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI先生 — なぜこの作りなのか / 設計思想と特長</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1c2e;          /* blueprint navy */
+    --bg2:#132437;
+    --grid:rgba(120,170,220,.10);
+    --ink:#e8f0fa;
+    --soft:#a9bdd4;
+    --faint:#6d84a0;
+    --line:#274563;
+    --cyan:#43c9e0;
+    --amber:#ffb648;
+    --lime:#8fe388;
+    --rose:#ff7a8a;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; color:var(--ink);
+    background:
+      linear-gradient(var(--grid) 1px,transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/28px 28px,
+      radial-gradient(1200px 600px at 12% -8%, rgba(67,201,224,.10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(255,182,72,.08), transparent 55%),
+      var(--bg);
+    font-family:"Zen Kaku Gothic New",system-ui,sans-serif; line-height:1.8; font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 24px}
+  h1,h2,h3,.serif{font-family:"Shippori Mincho",serif}
+  .mono{font-family:"JetBrains Mono",monospace}
+  a{color:var(--cyan)}
+
+  /* header */
+  header{padding:60px 0 30px; border-bottom:1px solid var(--line)}
+  .stamp{display:inline-flex; gap:9px; align-items:center; font-family:"JetBrains Mono",monospace;
+    font-size:11.5px; letter-spacing:.18em; color:var(--cyan); text-transform:uppercase;
+    border:1px solid var(--line); border-radius:6px; padding:5px 11px; margin-bottom:22px}
+  .stamp b{color:var(--amber)}
+  header h1{font-size:clamp(30px,5.5vw,52px); line-height:1.12; margin:0 0 12px; font-weight:800}
+  header .sub{color:var(--soft); max-width:720px; font-size:16.5px}
+  header .note{margin-top:18px; font-size:13px; color:var(--faint); font-family:"JetBrains Mono",monospace}
+
+  section{padding:52px 0; border-bottom:1px solid var(--line)}
+  .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; letter-spacing:.16em; color:var(--amber);
+    text-transform:uppercase; margin-bottom:12px}
+  h2{font-size:clamp(23px,3.6vw,34px); margin:0 0 8px; font-weight:800; line-height:1.2}
+  .lead{color:var(--soft); max-width:760px; margin:0 0 8px; font-size:15.5px}
+
+  .panel{background:linear-gradient(180deg,var(--bg2),rgba(19,36,55,.4));
+    border:1px solid var(--line); border-radius:14px; padding:22px}
+
+  /* --- WHY CHAIN --- */
+  .chain{display:grid; grid-template-columns:1fr; gap:14px; margin-top:26px}
+  .clink{display:grid; grid-template-columns:190px 40px 1fr; align-items:center; gap:0}
+  @media(max-width:720px){.clink{grid-template-columns:1fr; gap:6px}.clink .arr{display:none}}
+  .clink .from{background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--cyan);
+    border-radius:10px; padding:12px 14px}
+  .clink .from .k{font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--faint)}
+  .clink .from .v{font-family:"Shippori Mincho",serif; font-weight:700; font-size:15px}
+  .clink .arr{text-align:center; color:var(--cyan); font-size:20px; font-family:"JetBrains Mono",monospace}
+  .clink .to{color:var(--soft); font-size:14.5px; padding:6px 4px}
+  .clink .to b{color:var(--ink)}
+  .clink .to .pick{display:inline-block; font-family:"JetBrains Mono",monospace; font-size:12px;
+    color:var(--bg); background:var(--cyan); padding:1px 8px; border-radius:5px; font-weight:700; margin-right:6px}
+
+  /* --- POSITIONING MAP --- */
+  .map{position:relative; margin-top:28px; height:420px; border:1px solid var(--line); border-radius:14px;
+    background:var(--bg2); overflow:hidden}
+  @media(max-width:620px){.map{height:360px}}
+  .map .axis{position:absolute; background:var(--line)}
+  .map .axis.x{left:8%; right:6%; top:50%; height:1px}
+  .map .axis.y{top:8%; bottom:12%; left:50%; width:1px}
+  .map .axl{position:absolute; font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--faint)}
+  .map .axl.right{right:10px; top:calc(50% - 20px)}
+  .map .axl.left{left:10px; top:calc(50% + 8px)}
+  .map .axl.top{left:calc(50% + 10px); top:10px}
+  .map .axl.bottom{left:calc(50% + 10px); bottom:8px}
+  .map .quad{position:absolute; font-family:"JetBrains Mono",monospace; font-size:10.5px; color:var(--faint); opacity:.7}
+  .dotc{position:absolute; transform:translate(-50%,-50%); text-align:center}
+  .dotc .d{width:12px; height:12px; border-radius:50%; margin:0 auto 5px; box-shadow:0 0 0 4px rgba(255,255,255,.04)}
+  .dotc .t{font-size:11.5px; color:var(--soft); white-space:nowrap; font-weight:500}
+  .dotc.us .d{width:20px; height:20px; background:var(--amber); box-shadow:0 0 0 6px rgba(255,182,72,.18), 0 0 20px rgba(255,182,72,.5); animation:pulse 2.4s ease-in-out infinite}
+  .dotc.us .t{color:var(--amber); font-weight:800; font-family:"Shippori Mincho",serif; font-size:14px}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 6px rgba(255,182,72,.18),0 0 20px rgba(255,182,72,.4)}50%{box-shadow:0 0 0 10px rgba(255,182,72,.06),0 0 30px rgba(255,182,72,.6)}}
+  .comp .d{background:var(--faint)}
+  .legend{margin-top:14px; font-size:12.5px; color:var(--faint)}
+  .legend b{color:var(--amber)}
+
+  /* --- PIPELINE --- */
+  .flow{display:flex; align-items:stretch; gap:0; margin-top:26px; flex-wrap:wrap}
+  .fstep{flex:1; min-width:170px; background:var(--bg2); border:1px solid var(--line); border-radius:12px;
+    padding:16px 15px; position:relative; margin-right:26px; margin-bottom:14px}
+  .fstep:last-child{margin-right:0}
+  .fstep::after{content:"▶"; position:absolute; right:-19px; top:calc(50% - 8px); color:var(--cyan); font-size:12px}
+  .fstep:last-child::after{display:none}
+  @media(max-width:760px){.fstep{margin-right:0; min-width:44%}.fstep::after{content:"▼"; right:calc(50% - 6px); top:auto; bottom:-18px}}
+  .fstep .mdl{font-family:"JetBrains Mono",monospace; font-size:10.5px; color:var(--bg); font-weight:700;
+    padding:1px 7px; border-radius:4px; display:inline-block; margin-bottom:8px}
+  .m-haiku{background:var(--lime)}.m-sonnet{background:var(--cyan)}.m-db{background:var(--amber)}
+  .fstep h4{font-family:"Shippori Mincho",serif; font-size:15.5px; margin:0 0 5px}
+  .fstep p{margin:0; font-size:12.5px; color:var(--soft); line-height:1.6}
+  .gate{margin-top:16px; font-size:13px; color:var(--faint)}
+  .gate b{color:var(--rose)}
+
+  /* --- ENGINE / PROFILE --- */
+  .eng{display:grid; grid-template-columns:1fr 1.15fr; gap:22px; margin-top:26px; align-items:center}
+  @media(max-width:800px){.eng{grid-template-columns:1fr}}
+  .core{background:radial-gradient(circle at 50% 40%,rgba(67,201,224,.16),transparent 70%),var(--bg2);
+    border:1px solid var(--line); border-radius:14px; padding:34px 20px; text-align:center}
+  .core .chip{display:inline-block; width:88px; height:88px; border-radius:50%;
+    background:conic-gradient(var(--cyan),var(--amber),var(--lime),var(--cyan));
+    padding:3px; margin-bottom:14px; animation:spin 14s linear infinite}
+  .core .chip i{display:grid; place-items:center; width:100%; height:100%; border-radius:50%;
+    background:var(--bg); font-family:"Shippori Mincho",serif; font-style:normal; font-weight:800; font-size:26px; color:var(--ink)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .core h4{margin:0; font-family:"Shippori Mincho",serif; font-size:17px}
+  .core p{margin:4px 0 0; font-size:12.5px; color:var(--faint); font-family:"JetBrains Mono",monospace}
+  .profs{display:flex; flex-direction:column; gap:10px}
+  .prof{display:grid; grid-template-columns:78px 1fr; gap:12px; align-items:center;
+    background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 14px}
+  .prof .g{font-family:"Shippori Mincho",serif; font-weight:800; color:var(--cyan); font-size:16px}
+  .prof .bars{display:flex; gap:5px; flex-wrap:wrap; font-size:11px; color:var(--soft)}
+  .prof .bars span{background:rgba(67,201,224,.1); border:1px solid var(--line); border-radius:5px; padding:1px 7px; font-family:"JetBrains Mono",monospace}
+  .engnote{margin-top:16px; font-size:13px; color:var(--faint)}
+  .engnote b{color:var(--ink)}
+
+  /* --- FEATURES --- */
+  .feats{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:26px}
+  @media(max-width:720px){.feats{grid-template-columns:1fr}}
+  .feat{background:var(--bg2); border:1px solid var(--line); border-radius:13px; padding:20px 20px;
+    border-top:3px solid var(--cyan)}
+  .feat:nth-child(2){border-top-color:var(--amber)}
+  .feat:nth-child(3){border-top-color:var(--lime)}
+  .feat:nth-child(4){border-top-color:var(--rose)}
+  .feat .n{font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--faint)}
+  .feat h4{font-family:"Shippori Mincho",serif; font-size:18px; margin:6px 0 8px}
+  .feat p{margin:0; font-size:14px; color:var(--soft); line-height:1.7}
+
+  /* --- moat / summary --- */
+  .moat{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:24px}
+  @media(max-width:720px){.moat{grid-template-columns:1fr}}
+  .mcard{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:18px}
+  .mcard .h{font-family:"Shippori Mincho",serif; font-weight:800; font-size:16px; color:var(--amber); margin-bottom:6px}
+  .mcard p{margin:0; font-size:13.5px; color:var(--soft)}
+
+  .cofooter{padding:40px 0 70px; color:var(--faint); font-size:12.5px; font-family:"JetBrains Mono",monospace}
+  .cofooter b{color:var(--soft)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="stamp">Blueprint · 設計思想 <b>v1</b> · 2026-08-26</span>
+    <h1>なぜ、この作りなのか。</h1>
+    <p class="sub">共同経営者へ ── AI先生の設計は「思いつき」ではなく、<b style="color:#fff">目的からの逆算</b>で1つずつ決めています。この一枚で、なぜこの構造なのか／このアプリの特長は何か、を図で共有します。</p>
+    <p class="note">// 関連ドキュメント：全体像.md（設計の一枚岩） / 一発目のプロンプト.md（着手指示） / LP.html（顧客向け）</p>
+  </div>
+</header>
+
+<!-- 1. WHY CHAIN -->
+<section>
+  <div class="wrap">
+    <div class="lbl">01 — 意思決定の連鎖</div>
+    <h2>すべては「目的」が決めている</h2>
+    <p class="lead">技術から入っていません。<b style="color:#fff">誰に何を届けたいか</b>が、要求を生み、要求が構造を決めています。だから各選択に「なぜ」が必ずある。</p>
+
+    <div class="chain">
+      <div class="clink">
+        <div class="from"><div class="k">目的</div><div class="v">子どもの安全</div></div>
+        <div class="arr">→</div>
+        <div class="to">個人情報・危険な話題を通せない → <b>会話を検閲する層</b>が必須 → <span class="pick">採用</span>入出力モデレーション＋全会話ログ</div>
+      </div>
+      <div class="clink">
+        <div class="from"><div class="k">目的</div><div class="v">保護者が見守る</div></div>
+        <div class="arr">→</div>
+        <div class="to">「本人と親だけ」が会話を見られる必要 → <span class="pick">採用</span>Supabase の <b>行レベルセキュリティ(RLS)</b></div>
+      </div>
+      <div class="clink">
+        <div class="from"><div class="k">目的</div><div class="v">小1〜高3をカバー</div></div>
+        <div class="arr">→</div>
+        <div class="to">学年ごとに作り直すのは破綻する → <span class="pick">採用</span><b>1エンジン＋学年プロファイル</b>のパラメータ設計</div>
+      </div>
+      <div class="clink">
+        <div class="from"><div class="k">目的</div><div class="v">答えを教えない対話</div></div>
+        <div class="arr">→</div>
+        <div class="to">本物の生成AIが要る → <span class="pick">採用</span><b>Claude</b>（子ども向けの安全挙動が最強・用途別に3モデル）</div>
+      </div>
+      <div class="clink">
+        <div class="from"><div class="k">目的</div><div class="v">速く作り、速く伸ばす</div></div>
+        <div class="arr">→</div>
+        <div class="to">フロント〜APIを1言語で → <span class="pick">採用</span><b>TypeScript + Next.js</b>（反復最速・Claude Codeと好相性）</div>
+      </div>
+    </div>
+    <p class="engnote" style="margin-top:20px">※ APIキーは必ずサーバー側。子どもの端末には絶対に出さない。これも「安全」という目的からの帰結です。</p>
+  </div>
+</section>
+
+<!-- 2. POSITIONING -->
+<section>
+  <div class="wrap">
+    <div class="lbl">02 — なぜ勝てるか</div>
+    <h2>大手が空けている「右上」を取る</h2>
+    <p class="lead">競合調査（index.html）の結論を1枚に。横軸＝<b style="color:#fff">本物の生成AI対話か</b>、縦軸＝<b style="color:#fff">低学年に安全に届くか</b>。右上が空いている。</p>
+
+    <div class="map">
+      <div class="axis x"></div>
+      <div class="axis y"></div>
+      <div class="axl left">ルールベース出題</div>
+      <div class="axl right">本物の生成AI対話</div>
+      <div class="axl top">低学年OK・安全</div>
+      <div class="axl bottom">高学年中心</div>
+      <div class="quad" style="right:16px; top:16px; color:var(--amber)">▲ 空白地帯</div>
+
+      <!-- competitors -->
+      <div class="dotc comp" style="left:22%; top:66%"><div class="d"></div><div class="t">Qubena</div></div>
+      <div class="dotc comp" style="left:30%; top:44%"><div class="d"></div><div class="t">atama+</div></div>
+      <div class="dotc comp" style="left:26%; top:30%"><div class="d"></div><div class="t">すらら</div></div>
+      <div class="dotc comp" style="left:34%; top:74%"><div class="d"></div><div class="t">RISU</div></div>
+      <div class="dotc comp" style="left:58%; top:40%"><div class="d"></div><div class="t">スマイルゼミ Coachez</div></div>
+      <div class="dotc comp" style="left:66%; top:60%"><div class="d"></div><div class="t">進研ゼミ AIコーチ</div></div>
+      <!-- us -->
+      <div class="dotc us" style="left:82%; top:20%"><div class="d"></div><div class="t">AI先生</div></div>
+    </div>
+    <p class="legend"><b>読み：</b>大手の生成AIコーチ（進研ゼミ・スマイルゼミ）は小4以上が中心。多くの「AI教材」はルールベース出題で左側。<b>右上（本物の対話×低学年から安全）</b>はまだ埋まっていない ── ここが我々の陣地。</p>
+  </div>
+</section>
+
+<!-- 3. SAFETY PIPELINE -->
+<section>
+  <div class="wrap">
+    <div class="lbl">03 — アプリの心臓：安全パイプライン</div>
+    <h2>すべての言葉が4つの関門を通る</h2>
+    <p class="lead">「子どもに生成AIを使わせる」最大の壁は安全。だから対話の<b style="color:#fff">入口と出口の両方</b>を検問する構造にしました。ここが他社と差がつく核心です。</p>
+
+    <div class="flow">
+      <div class="fstep"><span class="mdl m-haiku">haiku</span><h4>① 入口チェック</h4><p>危険・不適切・個人情報を検知。NGなら対話に進ませない。</p></div>
+      <div class="fstep"><span class="mdl m-sonnet">sonnet</span><h4>② 対話生成</h4><p>学年プロファイルを注入し、答えず問い返す応答を作る。</p></div>
+      <div class="fstep"><span class="mdl m-haiku">haiku</span><h4>③ 出口チェック</h4><p>「答えを直答していないか」を判定。していたら問い返しに変換。</p></div>
+      <div class="fstep"><span class="mdl m-db">RLS</span><h4>④ 記録・見守り</h4><p>会話を保存。本人と保護者だけが閲覧可能。</p></div>
+    </div>
+    <p class="gate">安いモデル(haiku)で門番、主力(sonnet)で対話、難所は(opus)。<b>安全とコストを同時に最適化</b>する設計です。</p>
+  </div>
+</section>
+
+<!-- 4. ENGINE -->
+<section>
+  <div class="wrap">
+    <div class="lbl">04 — 拡張の仕組み</div>
+    <h2>1つのエンジンが、6歳にも18歳にもなる</h2>
+    <p class="lead">学年ごとに別アプリを作らない。エンジンは1つで、<b style="color:#fff">学年プロファイル（設定データ）</b>を差し替えるだけ。だから小1〜高3まで無理なく伸ばせる。</p>
+
+    <div class="eng">
+      <div class="core">
+        <span class="chip"><i>問</i></span>
+        <h4>ソクラテス対話エンジン</h4>
+        <p>answer-withholding core</p>
+      </div>
+      <div class="profs">
+        <div class="prof"><div class="g">小1–3</div><div class="bars"><span>ひらがな</span><span>短文</span><span>音声補助</span><span>安全 高</span></div></div>
+        <div class="prof"><div class="g">小4–6</div><div class="bars"><span>教科横断</span><span>足場 中</span><span>安全 中</span></div></div>
+        <div class="prof"><div class="g">中1–3</div><div class="bars"><span>論理・記述</span><span>抽象語OK</span><span>足場 少</span></div></div>
+        <div class="prof"><div class="g">高1–3</div><div class="bars"><span>探究本格</span><span>opus寄り</span><span>足場 最少</span></div></div>
+      </div>
+    </div>
+    <p class="engnote">新学年の追加＝<b>プロファイルを1枚足すだけ</b>。エンジンのコードは触らない。これが「小1〜高3」を現実的にする鍵。</p>
+  </div>
+</section>
+
+<!-- 5. FEATURES -->
+<section>
+  <div class="wrap">
+    <div class="lbl">05 — このアプリの特長</div>
+    <h2>4つの、忘れられない特長</h2>
+    <div class="feats">
+      <div class="feat"><div class="n">FEATURE 01</div><h4>答えを教えない</h4><p>直答せず問い返す。子どもが「自分でわかった！」に到達する体験を設計の中心に置く。ドリル速解きの真逆。</p></div>
+      <div class="feat"><div class="n">FEATURE 02</div><h4>低学年から、安全に</h4><p>入出力二段の検問＋全会話ログ＋RLS。大手が小4以上な領域に、小1から安心して踏み込む。</p></div>
+      <div class="feat"><div class="n">FEATURE 03</div><h4>小1〜高3を1エンジンで</h4><p>学年プロファイルで語彙・題材・厳しさ・安全レベルを切替。成長にずっと寄り添える。</p></div>
+      <div class="feat"><div class="n">FEATURE 04</div><h4>探究・思考力が看板</h4><p>教科の枠を越え「なぜ？」を深める。生成AIの一番の強みを、一番伸ばしたい力にぶつける。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. MOAT -->
+<section>
+  <div class="wrap">
+    <div class="lbl">06 — 我々の堀（Moat）</div>
+    <h2>後追いされにくい理由</h2>
+    <div class="moat">
+      <div class="mcard"><div class="h">安全設計の資産</div><p>会話ログ・モデレーション基準・保護者導線は、積むほど信頼と改善データになる。一朝一夕に真似できない。</p></div>
+      <div class="mcard"><div class="h">独立プロダクト</div><p>大手のAIコーチは会員限定。我々は「誰でも今すぐ使える」単体プロダクトとして立てる余地を取る。</p></div>
+      <div class="mcard"><div class="h">制度・社会課題接続</div><p>不登校の出席扱い・発達支援・格差是正など、大手が薄い勝ち筋に将来つなげられる構造。</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="cofooter">
+  <div class="wrap">// AI先生 設計思想 v1 — <b>目的 → 要求 → 構造</b> の順で決める。次アクション：一発目のプロンプトで Phase 0 を起動。</div>
+</div>
+
+</body>
+</html>

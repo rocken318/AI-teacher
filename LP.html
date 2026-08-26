@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI先生 — 答えを、教えない。</title>
+<meta name="description" content="小1〜高3。答えを教えず、問い返しで子ども自身に考えさせる。安心して使わせられる、探究のための生成AI先生。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f7f1e6;
+    --paper2:#efe6d4;
+    --ink:#20201c;
+    --ink-soft:#585349;
+    --faint:#8a8474;
+    --sky:#2f6fb0;      /* なぜ空は青いの？ */
+    --sky-soft:#e3edf6;
+    --terra:#c9622f;
+    --line:#ddd2bd;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Zen Kaku Gothic New",system-ui,sans-serif;
+    line-height:1.85; font-size:16px; -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* paper grain */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:1; opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    mix-blend-mode:multiply;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 24px; position:relative; z-index:2}
+  h1,h2,h3,.serif{font-family:"Shippori Mincho",serif}
+  a{color:var(--sky); text-decoration:none}
+
+  /* ---------- reveal ---------- */
+  .reveal{opacity:0; transform:translateY(22px); animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1; transform:none}}
+
+  /* ---------- top bar ---------- */
+  .bar{position:sticky; top:0; z-index:30; backdrop-filter:blur(8px);
+    background:rgba(247,241,230,.72); border-bottom:1px solid var(--line)}
+  .bar .wrap{display:flex; align-items:center; justify-content:space-between; padding:14px 24px}
+  .brand{font-family:"Shippori Mincho",serif; font-weight:800; font-size:19px; letter-spacing:.06em}
+  .brand .dot{color:var(--terra)}
+  .bar nav{display:flex; gap:22px; font-size:13.5px; color:var(--ink-soft)}
+  .bar nav a{color:var(--ink-soft)}
+  .bar nav a:hover{color:var(--ink)}
+  @media(max-width:680px){.bar nav{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative; padding:96px 0 72px}
+  .hero .kicker{display:inline-block; font-size:12.5px; letter-spacing:.24em; font-weight:700;
+    color:var(--terra); text-transform:uppercase; margin-bottom:26px;
+    animation-delay:.05s}
+  .hero h1{
+    font-size:clamp(44px,9vw,104px); line-height:.98; margin:0 0 8px; font-weight:800;
+    letter-spacing:.01em;
+  }
+  .hero h1 .l1{animation-delay:.12s}
+  .hero h1 .l2{animation-delay:.24s; color:var(--sky)}
+  .hero h1 .strike{position:relative; display:inline-block}
+  .hero h1 .strike::after{content:""; position:absolute; left:-2%; right:-2%; top:52%; height:6px;
+    background:var(--terra); transform:scaleX(0); transform-origin:left; border-radius:4px;
+    animation:wipe .7s cubic-bezier(.6,0,.2,1) .95s forwards}
+  @keyframes wipe{to{transform:scaleX(1)}}
+  .hero .lede{max-width:600px; font-size:clamp(16px,2.3vw,19px); color:var(--ink-soft);
+    margin:30px 0 34px; animation-delay:.4s}
+  .hero .lede b{color:var(--ink); font-weight:700}
+  .cta{display:flex; gap:14px; flex-wrap:wrap; animation-delay:.5s}
+  .btn{display:inline-flex; align-items:center; gap:9px; padding:13px 24px; border-radius:999px;
+    font-weight:700; font-size:14.5px; border:1.5px solid var(--ink); transition:.22s}
+  .btn.primary{background:var(--ink); color:var(--paper)}
+  .btn.primary:hover{background:var(--sky); border-color:var(--sky); transform:translateY(-2px)}
+  .btn.ghost{color:var(--ink)}
+  .btn.ghost:hover{background:var(--ink); color:var(--paper)}
+
+  .hero .orbit{position:absolute; right:-60px; top:40px; width:340px; height:340px; z-index:1;
+    pointer-events:none; opacity:.9; animation:spin 60s linear infinite}
+  .hero .orbit svg{width:100%; height:100%}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:820px){.hero .orbit{display:none}}
+
+  /* ---------- section frame ---------- */
+  section.blk{padding:70px 0; border-top:1px solid var(--line); position:relative}
+  .eyebrow{font-size:12px; letter-spacing:.22em; font-weight:700; color:var(--terra);
+    text-transform:uppercase; margin-bottom:14px}
+  h2.big{font-size:clamp(28px,5vw,46px); line-height:1.12; margin:0 0 14px; font-weight:800}
+  .sub{color:var(--ink-soft); max-width:620px; font-size:16px}
+
+  /* ---------- dialogue mock ---------- */
+  .demo{display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center}
+  @media(max-width:860px){.demo{grid-template-columns:1fr; gap:34px}}
+  .phone{
+    background:linear-gradient(180deg,#fffdf8,#f3ead8);
+    border:1px solid var(--line); border-radius:26px; padding:22px 20px 24px;
+    box-shadow:0 30px 60px -30px rgba(40,32,20,.5), 0 2px 0 #fff inset;
+  }
+  .phone .top{display:flex; align-items:center; gap:9px; padding-bottom:16px; margin-bottom:6px;
+    border-bottom:1px dashed var(--line)}
+  .phone .avatar{width:34px; height:34px; border-radius:50%; background:radial-gradient(circle at 35% 30%,var(--sky),#173e63);
+    display:grid; place-items:center; color:#fff; font-weight:800; font-family:"Shippori Mincho",serif; font-size:15px}
+  .phone .who{font-weight:700; font-size:14px}
+  .phone .who small{display:block; color:var(--faint); font-weight:500; font-size:11.5px; letter-spacing:.04em}
+  .bubble{max-width:82%; padding:11px 15px; border-radius:16px; margin:12px 0; font-size:14.5px;
+    line-height:1.65; opacity:0; transform:translateY(10px); animation:pop .5s ease forwards}
+  .bubble.child{margin-left:auto; background:var(--sky); color:#fff; border-bottom-right-radius:5px}
+  .bubble.ai{background:var(--paper2); color:var(--ink); border:1px solid var(--line);
+    border-bottom-left-radius:5px}
+  .bubble.ai b{color:var(--terra)}
+  @keyframes pop{to{opacity:1; transform:none}}
+  .b1{animation-delay:.2s}.b2{animation-delay:1.0s}.b3{animation-delay:1.9s}.b4{animation-delay:2.8s}
+  .caption{font-size:13px; color:var(--faint); margin-top:12px; text-align:center; font-style:italic}
+
+  .demo .points h3{font-size:21px; margin:0 0 6px}
+  .demo .points p{color:var(--ink-soft); font-size:15px; margin:0 0 22px}
+  .demo .points .row{display:flex; gap:14px; margin:16px 0}
+  .demo .points .num{font-family:"Shippori Mincho",serif; font-weight:800; color:var(--sky);
+    font-size:22px; line-height:1.2; min-width:30px}
+
+  /* ---------- pipeline ---------- */
+  .pipe{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:34px}
+  @media(max-width:760px){.pipe{grid-template-columns:1fr 1fr}}
+  .step{background:#fffdf8; border:1px solid var(--line); border-radius:16px; padding:20px 18px;
+    position:relative; overflow:hidden}
+  .step .no{font-family:"Shippori Mincho",serif; font-size:13px; color:var(--terra); font-weight:800; letter-spacing:.1em}
+  .step h4{margin:8px 0 6px; font-size:16.5px; font-family:"Shippori Mincho",serif}
+  .step p{margin:0; font-size:13px; color:var(--ink-soft); line-height:1.6}
+  .step .tag{position:absolute; right:12px; top:14px; font-size:10.5px; font-weight:700;
+    color:var(--faint); border:1px solid var(--line); border-radius:6px; padding:2px 7px}
+  .step .arrow{position:absolute; right:-10px; top:50%; transform:translateY(-50%); color:var(--line);
+    font-size:22px; z-index:3}
+  @media(max-width:760px){.step .arrow{display:none}}
+
+  /* ---------- grades ---------- */
+  .grades{display:flex; align-items:stretch; gap:0; margin-top:32px;
+    border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#fffdf8}
+  .grades .g{flex:1; padding:22px 16px; text-align:center; border-right:1px solid var(--line);
+    transition:.25s; position:relative}
+  .grades .g:last-child{border-right:none}
+  .grades .g:hover{background:var(--sky-soft)}
+  .grades .g .yr{font-family:"Shippori Mincho",serif; font-weight:800; font-size:19px}
+  .grades .g .ds{font-size:11.5px; color:var(--faint); margin-top:3px}
+  .grades .g .bar{height:5px; border-radius:3px; margin-top:12px; background:var(--sky); opacity:.28}
+  .grades .g:nth-child(1) .bar{opacity:.35}.grades .g:nth-child(2) .bar{opacity:.5}
+  .grades .g:nth-child(3) .bar{opacity:.68}.grades .g:nth-child(4) .bar{opacity:.85; background:var(--terra)}
+  @media(max-width:680px){.grades{flex-wrap:wrap}.grades .g{flex:1 0 44%; border-right:none; border-bottom:1px solid var(--line)}}
+  .oneengine{text-align:center; margin-top:18px; font-size:14px; color:var(--ink-soft)}
+  .oneengine b{color:var(--ink)}
+
+  /* ---------- why cards ---------- */
+  .why{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:30px}
+  @media(max-width:820px){.why{grid-template-columns:1fr}}
+  .wc{background:#fffdf8; border:1px solid var(--line); border-radius:16px; padding:24px 22px}
+  .wc .ic{font-family:"Shippori Mincho",serif; font-size:26px; color:var(--sky)}
+  .wc h4{font-family:"Shippori Mincho",serif; font-size:18px; margin:12px 0 8px}
+  .wc p{margin:0; font-size:14px; color:var(--ink-soft); line-height:1.7}
+  .wc .vs{font-size:12px; color:var(--faint); margin-top:12px; padding-top:10px; border-top:1px dashed var(--line)}
+
+  /* ---------- roadmap ---------- */
+  .road{margin-top:30px; border-left:2px solid var(--line); padding-left:26px}
+  .road .ph{position:relative; padding:0 0 26px}
+  .road .ph::before{content:""; position:absolute; left:-33px; top:4px; width:13px; height:13px;
+    border-radius:50%; background:var(--paper); border:2px solid var(--sky)}
+  .road .ph.now::before{background:var(--terra); border-color:var(--terra); box-shadow:0 0 0 5px rgba(201,98,47,.16)}
+  .road .ph .p{font-family:"Shippori Mincho",serif; font-weight:700; font-size:12px; color:var(--terra); letter-spacing:.12em}
+  .road .ph h4{margin:3px 0 4px; font-size:17px}
+  .road .ph p.d{margin:0; color:var(--ink-soft); font-size:14px}
+  .road .ph .badge{display:inline-block; font-size:10.5px; font-weight:700; color:#fff; background:var(--terra);
+    padding:2px 9px; border-radius:999px; margin-left:8px; vertical-align:middle}
+
+  /* ---------- closing ---------- */
+  .close{background:var(--ink); color:var(--paper); border-radius:26px; padding:56px 40px; text-align:center; margin:20px 0 0}
+  .close h2{font-family:"Shippori Mincho",serif; font-size:clamp(26px,5vw,42px); margin:0 0 14px; color:#fff}
+  .close p{color:#cdc6b6; max-width:520px; margin:0 auto 26px; font-size:15.5px}
+  .close .btn.primary{background:var(--paper); color:var(--ink); border-color:var(--paper)}
+  .close .btn.primary:hover{background:var(--sky); color:#fff; border-color:var(--sky)}
+
+  footer{padding:40px 0 70px; color:var(--faint); font-size:12.5px; text-align:center}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="wrap">
+    <span class="brand">AI先生<span class="dot">.</span></span>
+    <nav>
+      <a href="#how">教え方</a>
+      <a href="#safe">安全設計</a>
+      <a href="#grade">対象学年</a>
+      <a href="#why">なぜ違う</a>
+      <a href="#road">これから</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="orbit" aria-hidden="true">
+      <svg viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="78" fill="none" stroke="#2f6fb0" stroke-opacity=".25" stroke-dasharray="2 7"/>
+        <circle cx="100" cy="100" r="52" fill="none" stroke="#c9622f" stroke-opacity=".25" stroke-dasharray="2 6"/>
+        <circle cx="100" cy="22" r="6" fill="#2f6fb0"/>
+        <circle cx="152" cy="100" r="4.5" fill="#c9622f"/>
+        <circle cx="100" cy="100" r="15" fill="none" stroke="#20201c" stroke-opacity=".3"/>
+        <text x="100" y="106" text-anchor="middle" font-size="13" fill="#20201c" font-family="Shippori Mincho">？</text>
+      </svg>
+    </div>
+
+    <span class="kicker reveal">小1 → 高3 ・ 探究する生成AI</span>
+    <h1>
+      <span class="l1 reveal serif">答えを、</span><br>
+      <span class="l2 reveal serif"><span class="strike">教えない。</span></span>
+    </h1>
+    <p class="lede reveal">
+      「なぜ空は青いの？」— その問いに、AIは答えません。<br>
+      代わりに<b>問い返して</b>、子ども自身が答えにたどり着くのを待つ。
+      ドリルを速く解かせるのではなく、<b>考える力そのもの</b>を育てる先生です。
+    </p>
+    <div class="cta reveal">
+      <a href="#how" class="btn primary">教え方を見る →</a>
+      <a href="#safe" class="btn ghost">安全設計を知る</a>
+    </div>
+  </div>
+</header>
+
+<!-- HOW -->
+<section class="blk" id="how">
+  <div class="wrap">
+    <div class="eyebrow">HOW IT TEACHES</div>
+    <h2 class="big serif">教えないから、伸びる。</h2>
+    <p class="sub">ソクラテスがそうしたように。AI先生は答えを渡さず、小さな問いを1つずつ手渡します。</p>
+
+    <div class="demo" style="margin-top:38px">
+      <div class="phone">
+        <div class="top">
+          <div class="avatar">先</div>
+          <div class="who">AI先生 <small>そくらてす・もーど / 小1-3</small></div>
+        </div>
+        <div class="bubble child b1">ねえ、なんで空は青いの？</div>
+        <div class="bubble ai b2">いいしつもんだね。きみは、そらのほかに<b>青いもの</b>を見たことある？</div>
+        <div class="bubble child b3">うみ！ うみも青いよ</div>
+        <div class="bubble ai b4">おお、うみも空も青い。じゃあ…<b>2つに、にているところ</b>はなんだろう？</div>
+        <div class="caption">※ 答えは一度も言っていません</div>
+      </div>
+
+      <div class="points">
+        <h3 class="serif">直答しない。問い返す。</h3>
+        <p>答えを言うのは一番かんたん。でも、それでは考える筋肉は育ちません。</p>
+        <div class="row"><span class="num">01</span><div><b>受け止める</b><br><span style="color:var(--ink-soft);font-size:14px">子どもの発言をまず肯定してから返す。否定しない。</span></div></div>
+        <div class="row"><span class="num">02</span><div><b>問いを1つだけ返す</b><br><span style="color:var(--ink-soft);font-size:14px">気づきの階段を、一段ずつ。低学年はやさしい言葉で。</span></div></div>
+        <div class="row"><span class="num">03</span><div><b>自分でたどり着かせる</b><br><span style="color:var(--ink-soft);font-size:14px">「わかった！」の瞬間を子ども自身のものにする。</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAFE -->
+<section class="blk" id="safe">
+  <div class="wrap">
+    <div class="eyebrow">SAFETY BY DESIGN</div>
+    <h2 class="big serif">すべての言葉が、4つの関門を通る。</h2>
+    <p class="sub">子ども向けの生成AIで一番むずかしいのは「安全」。AI先生は、対話のたびに入口と出口の両方でチェックします。</p>
+
+    <div class="pipe">
+      <div class="step">
+        <span class="tag">haiku</span>
+        <div class="no">STEP 01</div>
+        <h4>入口チェック</h4>
+        <p>危険・不適切・個人情報を検知。ダメなら、そっと学びへ戻す。</p>
+        <span class="arrow">→</span>
+      </div>
+      <div class="step">
+        <span class="tag">sonnet</span>
+        <div class="no">STEP 02</div>
+        <h4>対話生成</h4>
+        <p>学年プロファイルを注入し、答えず問い返す応答をつくる。</p>
+        <span class="arrow">→</span>
+      </div>
+      <div class="step">
+        <span class="tag">haiku</span>
+        <div class="no">STEP 03</div>
+        <h4>出口チェック</h4>
+        <p>「答えを直答していないか」を判定。していたら問い返しに変換。</p>
+        <span class="arrow">→</span>
+      </div>
+      <div class="step">
+        <span class="tag">RLS</span>
+        <div class="no">STEP 04</div>
+        <h4>記録・見守り</h4>
+        <p>会話を安全に保存。<b style="color:var(--terra)">本人と保護者だけ</b>が見られる。</p>
+      </div>
+    </div>
+    <p style="margin-top:22px;font-size:13.5px;color:var(--faint)">
+      文科省ガイドラインに準拠した設計思想。ハルシネーション・年齢制限・保護者同意という未成熟な課題を、正面から設計に組み込みます。
+    </p>
+  </div>
+</section>
+
+<!-- GRADE -->
+<section class="blk" id="grade">
+  <div class="wrap">
+    <div class="eyebrow">ONE ENGINE, EVERY GRADE</div>
+    <h2 class="big serif">小1から高3まで、ひとつの先生。</h2>
+    <p class="sub">対話エンジンは1つ。学年ごとの違いは「語彙・題材・厳しさ・安全レベル」を切り替えるだけ。だから、子どもの成長にずっと寄り添えます。</p>
+
+    <div class="grades">
+      <div class="g"><div class="yr">小1–3</div><div class="ds">ひらがな・音声・短い問い</div><div class="bar"></div></div>
+      <div class="g"><div class="yr">小4–6</div><div class="ds">教科横断の探究</div><div class="bar"></div></div>
+      <div class="g"><div class="yr">中1–3</div><div class="ds">論理と記述を深める</div><div class="bar"></div></div>
+      <div class="g"><div class="yr">高1–3</div><div class="ds">抽象・探究の本格化</div><div class="bar"></div></div>
+    </div>
+    <p class="oneengine">同じ「答えを教えない先生」が、<b>学年プロファイル</b>を替えるだけで6歳にも18歳にも寄り添う。</p>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="blk" id="why">
+  <div class="wrap">
+    <div class="eyebrow">WHY IT'S DIFFERENT</div>
+    <h2 class="big serif">大手が、まだやっていないこと。</h2>
+    <div class="why">
+      <div class="wc">
+        <div class="ic">✎</div>
+        <h4>本物の生成AI対話</h4>
+        <p>多くの「AI教材」は、実はルールベースの出題最適化。AI先生は生成AIとの対話そのものが主役。</p>
+        <div class="vs">競合の多くは自動出題エンジン</div>
+      </div>
+      <div class="wc">
+        <div class="ic">☺</div>
+        <h4>低学年から安全に</h4>
+        <p>大手の生成AIコーチは小4以上が中心。AI先生は小1から、安全設計を前提に届ける。</p>
+        <div class="vs">生成AIコーチ＝小4〜が主流</div>
+      </div>
+      <div class="wc">
+        <div class="ic">◇</div>
+        <h4>探究・思考力が看板</h4>
+        <p>ドリルの速解きではなく、「なぜ？」を深める力を育てる。教科の枠を越えて。</p>
+        <div class="vs">既存は教科ドリル最適化が中心</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="blk" id="road">
+  <div class="wrap">
+    <div class="eyebrow">ROADMAP</div>
+    <h2 class="big serif">最終形から逆算して、積む。</h2>
+    <div class="road">
+      <div class="ph now">
+        <div class="p">PHASE 0<span class="badge">いまここ</span></div>
+        <h4 class="serif">安全に動く土台</h4>
+        <p class="d">最適スタックで骨格を立ち上げ、1つの探究対話を安全パイプライン込みで端から端まで通す。</p>
+      </div>
+      <div class="ph">
+        <div class="p">PHASE 1</div>
+        <h4 class="serif">ソクラテス対話エンジン</h4>
+        <p class="d">「答えず問い返す」中核を、学年プロファイルで出し分け可能に作り込む。</p>
+      </div>
+      <div class="ph">
+        <div class="p">PHASE 2</div>
+        <h4 class="serif">小1〜6へ展開</h4>
+        <p class="d">低学年（やさしい語彙・音声補助）〜高学年をカバー。</p>
+      </div>
+      <div class="ph">
+        <div class="p">PHASE 3</div>
+        <h4 class="serif">保護者の見守り</h4>
+        <p class="d">会話・探究の軌跡・つまずきをダッシュボードで。RLSで安全に。</p>
+      </div>
+      <div class="ph">
+        <div class="p">PHASE 4</div>
+        <h4 class="serif">中学・高校へ（小1〜高3）</h4>
+        <p class="d">学年プロファイルを高3まで拡張。難度と探究を深化。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="blk" style="border:none">
+  <div class="wrap">
+    <div class="close">
+      <h2>「わかった！」を、<br>子ども自身のものに。</h2>
+      <p>答えを教えないAI先生。小1から高3まで、考える力に寄り添いつづける。</p>
+      <a href="#how" class="btn primary">もう一度、教え方を見る ↑</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">AI先生 · 探究のための生成AIチューター · コンセプトLP — 2026</div>
+</footer>
+
+</body>
+</html>
