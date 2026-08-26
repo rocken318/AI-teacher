@@ -1,0 +1,643 @@
+// 小学校 英語（小4〜6）の問題バンク。
+// すべて人手で作問した選択式問題を固定。採点はエンジン側（answerIndex）で行う。
+// 生成AIは作問・採点に使わず、スペル・意味・正解の位置をコードで確定させる。
+
+import type { QuizUnit } from "@/lib/quiz/types";
+
+export const ENGLISH_UNITS: QuizUnit[] = [
+  // ==========================================================
+  // 小4
+  // ==========================================================
+  {
+    id: "eng-4-alphabet",
+    subject: "english",
+    grade: "小4",
+    title: "アルファベット",
+    lesson:
+      "英語の文字は全部で26個あります。大文字（A・B・C）と小文字（a・b・c）があります。声に出して読みながらおぼえましょう。",
+    items: [
+      {
+        id: "eng-4-alphabet-1",
+        question: "アルファベットは全部でいくつありますか？",
+        choices: ["24", "25", "26", "28"],
+        answerIndex: 2,
+        explanation: "英語のアルファベットは A から Z まで、全部で26文字です。",
+      },
+      {
+        id: "eng-4-alphabet-2",
+        question: "アルファベットのいちばん最初の文字はどれ？",
+        choices: ["A", "B", "Z", "M"],
+        answerIndex: 0,
+        explanation: "アルファベットは A（エー）で始まり、Z（ゼット）で終わります。",
+      },
+      {
+        id: "eng-4-alphabet-3",
+        question: "大文字「B」の小文字はどれ？",
+        choices: ["d", "b", "p", "q"],
+        answerIndex: 1,
+        explanation: "大文字 B の小文字は b です。形がにている d や p とまちがえないようにしましょう。",
+      },
+      {
+        id: "eng-4-alphabet-4",
+        question: "アルファベットのいちばん最後の文字はどれ？",
+        choices: ["X", "Y", "Z", "W"],
+        answerIndex: 2,
+        explanation: "最後の文字は Z です。イギリスでは「ゼッド」、アメリカでは「ズィー」と読みます。",
+      },
+      {
+        id: "eng-4-alphabet-5",
+        question: "大文字「A」の小文字はどれ？",
+        choices: ["a", "e", "o", "n"],
+        answerIndex: 0,
+        explanation: "大文字 A の小文字は a です。",
+      },
+      {
+        id: "eng-4-alphabet-6",
+        question: "次のうち、母音（ぼいん）の文字はどれ？",
+        choices: ["B", "E", "K", "T"],
+        answerIndex: 1,
+        explanation: "母音は a, e, i, o, u の5つです。E はそのうちの一つです。",
+      },
+    ],
+  },
+  {
+    id: "eng-4-greetings",
+    subject: "english",
+    grade: "小4",
+    title: "あいさつ",
+    lesson:
+      "あいさつは会話のはじまりです。「Hello（こんにちは）」や「How are you?（元気ですか）」を使ってみましょう。えがおで言うと気もちが伝わります。",
+    items: [
+      {
+        id: "eng-4-greetings-1",
+        question: "「こんにちは」を英語で言うと？",
+        choices: ["Hello", "Goodbye", "Thank you", "Sorry"],
+        answerIndex: 0,
+        explanation: "「Hello（ハロー）」は「こんにちは」というあいさつです。",
+      },
+      {
+        id: "eng-4-greetings-2",
+        question: "「How are you?」の意味はどれ？",
+        choices: ["名前は何ですか", "元気ですか", "何さいですか", "どこですか"],
+        answerIndex: 1,
+        explanation: "「How are you?（ハウ アー ユー）」は「元気ですか？」とたずねる言い方です。",
+      },
+      {
+        id: "eng-4-greetings-3",
+        question: "「ありがとう」を英語で言うと？",
+        choices: ["Sorry", "Hello", "Thank you", "Please"],
+        answerIndex: 2,
+        explanation: "「Thank you（サンキュー）」は「ありがとう」というお礼の言葉です。",
+      },
+      {
+        id: "eng-4-greetings-4",
+        question: "「さようなら」を英語で言うと？",
+        choices: ["Goodbye", "Good morning", "Hello", "Thank you"],
+        answerIndex: 0,
+        explanation: "「Goodbye（グッバイ）」は「さようなら」という別れのあいさつです。",
+      },
+      {
+        id: "eng-4-greetings-5",
+        question: "朝のあいさつ「おはよう」を英語で言うと？",
+        choices: ["Good night", "Good morning", "Good afternoon", "Good evening"],
+        answerIndex: 1,
+        explanation: "「Good morning（グッド モーニング）」は朝のあいさつ「おはよう」です。",
+      },
+      {
+        id: "eng-4-greetings-6",
+        question: "「How are you?」と聞かれたときの返事にぴったりなのはどれ？",
+        choices: ["I'm fine.", "Goodbye.", "Thank you.", "Sorry."],
+        answerIndex: 0,
+        explanation: "「I'm fine.（アイム ファイン）」は「元気です」という返事です。",
+      },
+    ],
+  },
+  {
+    id: "eng-4-numbers",
+    subject: "english",
+    grade: "小4",
+    title: "数（1〜20）",
+    lesson:
+      "英語で数を言ってみましょう。1は one、2は two、3は three です。10までおぼえたら、20まで数えてみましょう。",
+    items: [
+      {
+        id: "eng-4-numbers-1",
+        question: "「3」を英語で言うと？",
+        choices: ["two", "three", "four", "five"],
+        answerIndex: 1,
+        explanation: "「three（スリー）」は3のことです。",
+      },
+      {
+        id: "eng-4-numbers-2",
+        question: "「seven」はいくつ？",
+        choices: ["6", "7", "8", "9"],
+        answerIndex: 1,
+        explanation: "「seven（セブン）」は7のことです。",
+      },
+      {
+        id: "eng-4-numbers-3",
+        question: "「10」を英語で言うと？",
+        choices: ["ten", "nine", "eleven", "twelve"],
+        answerIndex: 0,
+        explanation: "「ten（テン）」は10のことです。",
+      },
+      {
+        id: "eng-4-numbers-4",
+        question: "「twelve」はいくつ？",
+        choices: ["11", "12", "13", "20"],
+        answerIndex: 1,
+        explanation: "「twelve（トゥエルブ）」は12のことです。11は eleven です。",
+      },
+      {
+        id: "eng-4-numbers-5",
+        question: "「20」を英語で言うと？",
+        choices: ["twelve", "twenty", "thirteen", "thirty"],
+        answerIndex: 1,
+        explanation: "「twenty（トゥエンティ）」は20のことです。twelve（12）とにているので注意しましょう。",
+      },
+      {
+        id: "eng-4-numbers-6",
+        question: "「five」はいくつ？",
+        choices: ["4", "5", "6", "15"],
+        answerIndex: 1,
+        explanation: "「five（ファイブ）」は5のことです。",
+      },
+    ],
+  },
+  {
+    id: "eng-4-colors",
+    subject: "english",
+    grade: "小4",
+    title: "色（colors）",
+    lesson:
+      "身のまわりにはいろいろな色があります。赤は red、青は blue、黄色は yellow です。すきな色を英語で言ってみましょう。",
+    items: [
+      {
+        id: "eng-4-colors-1",
+        question: "「赤」を英語で言うと？",
+        choices: ["blue", "red", "green", "yellow"],
+        answerIndex: 1,
+        explanation: "「red（レッド）」は赤色のことです。",
+      },
+      {
+        id: "eng-4-colors-2",
+        question: "「blue」は何色？",
+        choices: ["緑", "黄色", "青", "黒"],
+        answerIndex: 2,
+        explanation: "「blue（ブルー）」は青色のことです。",
+      },
+      {
+        id: "eng-4-colors-3",
+        question: "「黄色」を英語で言うと？",
+        choices: ["yellow", "white", "brown", "pink"],
+        answerIndex: 0,
+        explanation: "「yellow（イエロー）」は黄色のことです。",
+      },
+      {
+        id: "eng-4-colors-4",
+        question: "「green」は何色？",
+        choices: ["赤", "緑", "むらさき", "オレンジ"],
+        answerIndex: 1,
+        explanation: "「green（グリーン）」は緑色のことです。",
+      },
+      {
+        id: "eng-4-colors-5",
+        question: "「白」を英語で言うと？",
+        choices: ["black", "white", "gray", "gold"],
+        answerIndex: 1,
+        explanation: "「white（ホワイト）」は白色のことです。black（ブラック）は黒色です。",
+      },
+      {
+        id: "eng-4-colors-6",
+        question: "「black」は何色？",
+        choices: ["白", "青", "黒", "茶色"],
+        answerIndex: 2,
+        explanation: "「black（ブラック）」は黒色のことです。",
+      },
+    ],
+  },
+
+  // ==========================================================
+  // 小5
+  // ==========================================================
+  {
+    id: "eng-5-days",
+    subject: "english",
+    grade: "小5",
+    title: "曜日（days）",
+    lesson:
+      "一週間の曜日を英語で言ってみましょう。日曜日は Sunday、月曜日は Monday です。曜日の名前は大文字で書きはじめます。",
+    items: [
+      {
+        id: "eng-5-days-1",
+        question: "「月曜日」を英語で言うと？",
+        choices: ["Sunday", "Monday", "Tuesday", "Friday"],
+        answerIndex: 1,
+        explanation: "「Monday（マンデイ）」は月曜日のことです。",
+      },
+      {
+        id: "eng-5-days-2",
+        question: "「Sunday」は何曜日？",
+        choices: ["土曜日", "日曜日", "水曜日", "金曜日"],
+        answerIndex: 1,
+        explanation: "「Sunday（サンデイ）」は日曜日のことです。",
+      },
+      {
+        id: "eng-5-days-3",
+        question: "「金曜日」を英語で言うと？",
+        choices: ["Friday", "Thursday", "Wednesday", "Saturday"],
+        answerIndex: 0,
+        explanation: "「Friday（フライデイ）」は金曜日のことです。",
+      },
+      {
+        id: "eng-5-days-4",
+        question: "「Saturday」は何曜日？",
+        choices: ["木曜日", "金曜日", "土曜日", "日曜日"],
+        answerIndex: 2,
+        explanation: "「Saturday（サタデイ）」は土曜日のことです。",
+      },
+      {
+        id: "eng-5-days-5",
+        question: "「水曜日」を英語で言うと？",
+        choices: ["Tuesday", "Wednesday", "Thursday", "Monday"],
+        answerIndex: 1,
+        explanation: "「Wednesday（ウェンズデイ）」は水曜日です。d を書きわすれないよう注意しましょう。",
+      },
+      {
+        id: "eng-5-days-6",
+        question: "「What day is it today?」の意味はどれ？",
+        choices: ["今日は何曜日ですか", "今日は何日ですか", "今何時ですか", "今日はいい天気ですか"],
+        answerIndex: 0,
+        explanation: "「What day is it today?」は「今日は何曜日ですか？」とたずねる言い方です。",
+      },
+    ],
+  },
+  {
+    id: "eng-5-months",
+    subject: "english",
+    grade: "小5",
+    title: "月（months）",
+    lesson:
+      "一年には12の月があります。1月は January、4月は April です。月の名前も大文字で書きはじめます。",
+    items: [
+      {
+        id: "eng-5-months-1",
+        question: "「1月」を英語で言うと？",
+        choices: ["January", "June", "July", "March"],
+        answerIndex: 0,
+        explanation: "「January（ジャニュアリー）」は1月のことです。",
+      },
+      {
+        id: "eng-5-months-2",
+        question: "「December」は何月？",
+        choices: ["10月", "11月", "12月", "9月"],
+        answerIndex: 2,
+        explanation: "「December（ディセンバー）」は12月のことです。一年の最後の月です。",
+      },
+      {
+        id: "eng-5-months-3",
+        question: "「5月」を英語で言うと？",
+        choices: ["March", "May", "April", "August"],
+        answerIndex: 1,
+        explanation: "「May（メイ）」は5月のことです。みじかくておぼえやすい月です。",
+      },
+      {
+        id: "eng-5-months-4",
+        question: "「August」は何月？",
+        choices: ["7月", "8月", "9月", "10月"],
+        answerIndex: 1,
+        explanation: "「August（オーガスト）」は8月のことです。",
+      },
+      {
+        id: "eng-5-months-5",
+        question: "一年で最初の月はどれ？",
+        choices: ["January", "February", "December", "October"],
+        answerIndex: 0,
+        explanation: "一年の最初の月は January（1月）です。次は February（2月）です。",
+      },
+      {
+        id: "eng-5-months-6",
+        question: "「July」は何月？",
+        choices: ["6月", "7月", "8月", "1月"],
+        answerIndex: 1,
+        explanation: "「July（ジュライ）」は7月のことです。June（ジューン）は6月です。",
+      },
+    ],
+  },
+  {
+    id: "eng-5-words",
+    subject: "english",
+    grade: "小5",
+    title: "身のまわりの単語（食べ物・動物）",
+    lesson:
+      "食べ物や動物を英語で言ってみましょう。りんごは apple、犬は dog です。絵を思いうかべながらおぼえましょう。",
+    items: [
+      {
+        id: "eng-5-words-1",
+        question: "「apple」の意味はどれ？",
+        choices: ["りんご", "みかん", "ぶどう", "もも"],
+        answerIndex: 0,
+        explanation: "「apple（アップル）」はりんごのことです。",
+      },
+      {
+        id: "eng-5-words-2",
+        question: "「犬」を英語で言うと？",
+        choices: ["cat", "dog", "bird", "fish"],
+        answerIndex: 1,
+        explanation: "「dog（ドッグ）」は犬のことです。cat（キャット）はねこです。",
+      },
+      {
+        id: "eng-5-words-3",
+        question: "「cat」の意味はどれ？",
+        choices: ["うさぎ", "ねずみ", "ねこ", "きつね"],
+        answerIndex: 2,
+        explanation: "「cat（キャット）」はねこのことです。",
+      },
+      {
+        id: "eng-5-words-4",
+        question: "「たまご」を英語で言うと？",
+        choices: ["milk", "egg", "bread", "rice"],
+        answerIndex: 1,
+        explanation: "「egg（エッグ）」はたまごのことです。",
+      },
+      {
+        id: "eng-5-words-5",
+        question: "「fish」の意味はどれ？",
+        choices: ["鳥", "馬", "魚", "牛"],
+        answerIndex: 2,
+        explanation: "「fish（フィッシュ）」は魚のことです。",
+      },
+      {
+        id: "eng-5-words-6",
+        question: "「牛乳（ぎゅうにゅう）」を英語で言うと？",
+        choices: ["water", "juice", "milk", "tea"],
+        answerIndex: 2,
+        explanation: "「milk（ミルク）」は牛乳のことです。water（ウォーター）は水です。",
+      },
+    ],
+  },
+  {
+    id: "eng-5-i-like",
+    subject: "english",
+    grade: "小5",
+    title: "基本表現（I like ~ / Do you like ~?）",
+    lesson:
+      "すきなものを伝える言い方をおぼえましょう。「I like ~.」は「わたしは~がすきです」、「Do you like ~?」は「~がすきですか？」という意味です。",
+    items: [
+      {
+        id: "eng-5-i-like-1",
+        question: "「I like dogs.」の意味はどれ？",
+        choices: ["わたしは犬がすきです", "わたしは犬がきらいです", "犬がいます", "犬を見ました"],
+        answerIndex: 0,
+        explanation: "「I like ~.」は「わたしは~がすきです」という意味です。",
+      },
+      {
+        id: "eng-5-i-like-2",
+        question: "「~がすきですか？」とたずねるときの言い方はどれ？",
+        choices: ["I like ~.", "Do you like ~?", "This is ~.", "I have ~."],
+        answerIndex: 1,
+        explanation: "「Do you like ~?」は「あなたは~がすきですか？」とたずねる言い方です。",
+      },
+      {
+        id: "eng-5-i-like-3",
+        question: "「Do you like apples?」に「はい」と答えるならどれ？",
+        choices: ["Yes, I do.", "No, I don't.", "Thank you.", "Goodbye."],
+        answerIndex: 0,
+        explanation: "「Yes, I do.」は「はい、すきです」という返事です。",
+      },
+      {
+        id: "eng-5-i-like-4",
+        question: "「Do you like cats?」に「いいえ」と答えるならどれ？",
+        choices: ["Yes, I do.", "No, I don't.", "I'm fine.", "See you."],
+        answerIndex: 1,
+        explanation: "「No, I don't.」は「いいえ、すきではありません」という返事です。",
+      },
+      {
+        id: "eng-5-i-like-5",
+        question: "「わたしは音楽がすきです」を英語で言うと？",
+        choices: ["I like music.", "Do you like music?", "I don't like music.", "You like music."],
+        answerIndex: 0,
+        explanation: "「I like music.」で「わたしは音楽がすきです」となります。music（ミュージック）は音楽です。",
+      },
+      {
+        id: "eng-5-i-like-6",
+        question: "「I don't like ~.」の意味はどれ？",
+        choices: ["~がすきです", "~がすきではありません", "~がほしいです", "~を持っています"],
+        answerIndex: 1,
+        explanation: "「I don't like ~.」は「わたしは~がすきではありません」という意味です。",
+      },
+    ],
+  },
+
+  // ==========================================================
+  // 小6
+  // ==========================================================
+  {
+    id: "eng-6-self-intro",
+    subject: "english",
+    grade: "小6",
+    title: "自己紹介表現（I am ~ / I can ~）",
+    lesson:
+      "自分のことを英語で紹介してみましょう。「I am ~.」は「わたしは~です」、「I can ~.」は「わたしは~できます」という意味です。",
+    items: [
+      {
+        id: "eng-6-self-intro-1",
+        question: "「I am Ken.」の意味はどれ？",
+        choices: ["わたしはケンです", "わたしはケンがすきです", "ケンはどこですか", "ケンさようなら"],
+        answerIndex: 0,
+        explanation: "「I am ~.」は「わたしは~です」と名前などを言うときの表現です。",
+      },
+      {
+        id: "eng-6-self-intro-2",
+        question: "「I can swim.」の意味はどれ？",
+        choices: ["わたしは泳ぎます", "わたしは泳げます", "わたしは泳ぎたいです", "わたしは泳ぎません"],
+        answerIndex: 1,
+        explanation: "「I can ~.」は「わたしは~できます」という意味です。swim（スイム）は泳ぐことです。",
+      },
+      {
+        id: "eng-6-self-intro-3",
+        question: "「わたしはサッカーができます」を英語で言うと？",
+        choices: ["I like soccer.", "I can play soccer.", "I am soccer.", "Do you play soccer?"],
+        answerIndex: 1,
+        explanation: "「I can play soccer.」で「わたしはサッカーができます」となります。",
+      },
+      {
+        id: "eng-6-self-intro-4",
+        question: "「What's your name?」の意味はどれ？",
+        choices: ["何さいですか", "お名前は何ですか", "元気ですか", "どこ出身ですか"],
+        answerIndex: 1,
+        explanation: "「What's your name?」は「あなたの名前は何ですか？」とたずねる言い方です。",
+      },
+      {
+        id: "eng-6-self-intro-5",
+        question: "「I can't ~.」の意味はどれ？",
+        choices: ["~できます", "~できません", "~がすきです", "~したいです"],
+        answerIndex: 1,
+        explanation: "「I can't ~.」は「わたしは~できません」という意味です。can't は cannot を短くした形です。",
+      },
+      {
+        id: "eng-6-self-intro-6",
+        question: "「Nice to meet you.」の意味はどれ？",
+        choices: ["はじめまして", "さようなら", "おやすみなさい", "ごめんなさい"],
+        answerIndex: 0,
+        explanation: "「Nice to meet you.」は初めて会った人に言う「はじめまして」というあいさつです。",
+      },
+    ],
+  },
+  {
+    id: "eng-6-places-directions",
+    subject: "english",
+    grade: "小6",
+    title: "場所・道案内の語",
+    lesson:
+      "町のなかの場所や道案内の言葉をおぼえましょう。学校は school、病院は hospital です。「right（右）」「left（左）」もよく使います。",
+    items: [
+      {
+        id: "eng-6-places-directions-1",
+        question: "「school」の意味はどれ？",
+        choices: ["学校", "病院", "公園", "駅"],
+        answerIndex: 0,
+        explanation: "「school（スクール）」は学校のことです。",
+      },
+      {
+        id: "eng-6-places-directions-2",
+        question: "「病院」を英語で言うと？",
+        choices: ["station", "hospital", "library", "park"],
+        answerIndex: 1,
+        explanation: "「hospital（ホスピタル）」は病院のことです。",
+      },
+      {
+        id: "eng-6-places-directions-3",
+        question: "「right」の意味はどれ？",
+        choices: ["左", "右", "まっすぐ", "うしろ"],
+        answerIndex: 1,
+        explanation: "「right（ライト）」は右のことです。left（レフト）は左です。",
+      },
+      {
+        id: "eng-6-places-directions-4",
+        question: "「まっすぐ進んでください」に使う言葉はどれ？",
+        choices: ["Turn left.", "Turn right.", "Go straight.", "Stop here."],
+        answerIndex: 2,
+        explanation: "「Go straight.」は「まっすぐ進んでください」という道案内の言い方です。",
+      },
+      {
+        id: "eng-6-places-directions-5",
+        question: "「Turn left.」の意味はどれ？",
+        choices: ["右に曲がってください", "左に曲がってください", "まっすぐ行ってください", "止まってください"],
+        answerIndex: 1,
+        explanation: "「Turn left.」は「左に曲がってください」という意味です。turn は曲がることです。",
+      },
+      {
+        id: "eng-6-places-directions-6",
+        question: "「park」の意味はどれ？",
+        choices: ["公園", "本屋", "図書館", "工場"],
+        answerIndex: 0,
+        explanation: "「park（パーク）」は公園のことです。",
+      },
+    ],
+  },
+  {
+    id: "eng-6-daily-routine",
+    subject: "english",
+    grade: "小6",
+    title: "頻度・日課の語",
+    lesson:
+      "毎日の生活を英語で言ってみましょう。「get up（起きる）」「go to school（学校へ行く）」などの言い方や、「always（いつも）」「sometimes（ときどき）」といった言葉をおぼえましょう。",
+    items: [
+      {
+        id: "eng-6-daily-routine-1",
+        question: "「get up」の意味はどれ？",
+        choices: ["起きる", "ねる", "食べる", "走る"],
+        answerIndex: 0,
+        explanation: "「get up（ゲット アップ）」は「起きる」という意味です。",
+      },
+      {
+        id: "eng-6-daily-routine-2",
+        question: "「always」の意味はどれ？",
+        choices: ["ときどき", "いつも", "けっして~ない", "たまに"],
+        answerIndex: 1,
+        explanation: "「always（オールウェイズ）」は「いつも」という意味です。",
+      },
+      {
+        id: "eng-6-daily-routine-3",
+        question: "「ときどき」を英語で言うと？",
+        choices: ["always", "never", "sometimes", "usually"],
+        answerIndex: 2,
+        explanation: "「sometimes（サムタイムズ）」は「ときどき」という意味です。",
+      },
+      {
+        id: "eng-6-daily-routine-4",
+        question: "「go to bed」の意味はどれ？",
+        choices: ["学校へ行く", "ねる（ふとんに入る）", "家に帰る", "外で遊ぶ"],
+        answerIndex: 1,
+        explanation: "「go to bed（ゴー トゥ ベッド）」は「ねる（ふとんに入る）」という意味です。",
+      },
+      {
+        id: "eng-6-daily-routine-5",
+        question: "「朝ごはんを食べる」を英語で言うと？",
+        choices: ["eat breakfast", "eat lunch", "eat dinner", "take a bath"],
+        answerIndex: 0,
+        explanation: "「eat breakfast」は「朝ごはんを食べる」という意味です。breakfast（ブレックファスト）は朝食です。",
+      },
+      {
+        id: "eng-6-daily-routine-6",
+        question: "「never」の意味はどれ？",
+        choices: ["いつも", "たいてい", "けっして~ない", "ときどき"],
+        answerIndex: 2,
+        explanation: "「never（ネバー）」は「けっして~ない（一度もしない）」という意味です。",
+      },
+    ],
+  },
+  {
+    id: "eng-6-questions",
+    subject: "english",
+    grade: "小6",
+    title: "基本の質問と答え（What ~? / When ~?）",
+    lesson:
+      "たずねる言葉をおぼえましょう。「What ~?」は「何」、「When ~?」は「いつ」をたずねます。答え方もいっしょにおぼえましょう。",
+    items: [
+      {
+        id: "eng-6-questions-1",
+        question: "「What」の意味はどれ？",
+        choices: ["何", "いつ", "どこ", "だれ"],
+        answerIndex: 0,
+        explanation: "「What（ホワット）」は「何」をたずねる言葉です。",
+      },
+      {
+        id: "eng-6-questions-2",
+        question: "「When」の意味はどれ？",
+        choices: ["どこ", "いつ", "なぜ", "どうやって"],
+        answerIndex: 1,
+        explanation: "「When（ホエン）」は「いつ」をたずねる言葉です。",
+      },
+      {
+        id: "eng-6-questions-3",
+        question: "「What time is it?」の意味はどれ？",
+        choices: ["何曜日ですか", "何時ですか", "いくらですか", "どこですか"],
+        answerIndex: 1,
+        explanation: "「What time is it?」は「何時ですか？」と時こくをたずねる言い方です。",
+      },
+      {
+        id: "eng-6-questions-4",
+        question: "「Where」の意味はどれ？",
+        choices: ["どこ", "何", "いつ", "だれ"],
+        answerIndex: 0,
+        explanation: "「Where（ホエア）」は「どこ」をたずねる言葉です。",
+      },
+      {
+        id: "eng-6-questions-5",
+        question: "「When is your birthday?」の意味はどれ？",
+        choices: ["あなたの名前は何ですか", "あなたの誕生日はいつですか", "あなたは何さいですか", "あなたはどこにいますか"],
+        answerIndex: 1,
+        explanation: "「When is your birthday?」は「あなたの誕生日はいつですか？」とたずねる言い方です。birthday は誕生日です。",
+      },
+      {
+        id: "eng-6-questions-6",
+        question: "「Who」の意味はどれ？",
+        choices: ["だれ", "どこ", "何", "いつ"],
+        answerIndex: 0,
+        explanation: "「Who（フー）」は「だれ」をたずねる言葉です。",
+      },
+    ],
+  },
+];

@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { AnswerType, Grade } from "@/lib/math";
+import { recordAttempt } from "@/lib/progress";
 
 /** クライアントに渡す単元情報（answer は含まない）。 */
 type UnitInfo = {
@@ -142,6 +143,12 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
       setResult(data);
       setPhase("graded");
       setAttemptCount((n) => n + 1);
+      // 進捗を記録（localStorage・失敗しても落とさない）
+      try {
+        recordAttempt("math", selectedUnit.id, data.correct);
+      } catch {
+        /* noop */
+      }
       if (data.correct) {
         setCorrectCount((n) => n + 1);
       } else {
