@@ -18,6 +18,12 @@ export default function Home() {
             <span className="text-lg font-extrabold text-terra">.</span>
           </a>
           <nav className="flex items-center gap-4 text-[13px] text-ink-soft sm:gap-6">
+            <a
+              href="/math"
+              className="font-semibold text-sky hover:text-sky-700"
+            >
+              算数をまなぶ
+            </a>
             <a href="/lp.html" className="hover:text-ink">
               使い方
             </a>
