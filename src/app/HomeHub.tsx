@@ -14,7 +14,8 @@ import {
   setStage,
   getStageMeta,
 } from "@/lib/stage";
-import { Sensei, type SenseiMood } from "@/components/Sensei";
+// マスコット（Sensei）は一旦オフ。復活できるようコンポーネントは残置。
+// import { Sensei } from "@/components/Sensei";
 
 /** 教科メタ（@/lib/quiz の SUBJECTS の要素。別チーム提供）。 */
 export type SubjectMeta = {
@@ -274,9 +275,8 @@ export default function HomeHub({ subjects }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
-  // せんせいの ひとこと＆きぶん（うごき）
+  // ひとこと（やさしく入れ替わる“動き”）
   const [msgIdx, setMsgIdx] = useState(0);
-  const [senseiMood, setSenseiMood] = useState<SenseiMood>("greet");
 
   useEffect(() => {
     setMounted(true);
@@ -288,8 +288,7 @@ export default function HomeHub({ subjects }: Props) {
   useEffect(() => {
     const id = setInterval(() => {
       setMsgIdx((i) => (i + 1) % GREETINGS.length);
-      setSenseiMood((m) => (m === "happy" ? "greet" : "happy"));
-    }, 4200);
+    }, 4600);
     return () => clearInterval(id);
   }, []);
 
@@ -346,10 +345,13 @@ export default function HomeHub({ subjects }: Props) {
         <StageToggle stage={stage} onChange={pickStage} />
       </div>
 
-      {/* ===== せんせい（あいさつ・うごき） ===== */}
-      <div className="flex flex-col items-center py-2">
-        <Sensei mood={senseiMood} size={104} message={GREETINGS[msgIdx]} />
-      </div>
+      {/* ===== ひとこと（やさしく入れ替わる） ===== */}
+      <p
+        key={msgIdx}
+        className="anim-msg text-center text-[14px] font-medium text-ink-soft"
+      >
+        {GREETINGS[msgIdx]}
+      </p>
 
       {/* ===== 総合の進捗 ===== */}
       <section className="rounded-[1.5rem] border border-line bg-white/70 p-5 shadow-card sm:p-6">
@@ -397,7 +399,7 @@ export default function HomeHub({ subjects }: Props) {
         <h2 className="mb-3 font-serif text-lg font-extrabold text-ink">
           コースをえらぶ
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="stagger grid gap-3 sm:grid-cols-2">
           {/* 算数（別枠） */}
           <CourseCard
             href="/math"

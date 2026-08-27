@@ -118,6 +118,40 @@ a {
   transition: color 0.2s ease, opacity 0.2s ease;
 }
 
+/* --- 上品なマイクロアニメ（キャラの代わりの“動き”） --- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.anim-in {
+  animation: fadeUp 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.7); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.anim-pop {
+  animation: popIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+.anim-msg {
+  animation: msgIn 0.5s ease both;
+}
+/* 子要素を少しずつ出す（コースカード等の入場） */
+.stagger > * {
+  animation: fadeUp 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.13s; }
+.stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.stagger > *:nth-child(5) { animation-delay: 0.23s; }
+.stagger > *:nth-child(6) { animation-delay: 0.28s; }
+
 /* モーション配慮 */
 @media (prefers-reduced-motion: reduce) {
   * {
