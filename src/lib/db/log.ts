@@ -1,14 +1,18 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { getStore, getDbBackend } from "./index";
 
 /**
  * ログ保存ヘルパー（安全パイプラインの [ログ保存] 段）。
  * セッション・メッセージ・モデレーション結果を DB に残す。
  *
- * 公開関数は同期シグネチャを維持する。id は同期的に生成して即返し、
- * 実際の DB 書き込みは fire-and-forget（Promise を投げっぱなし + .catch）で行う。
- * 安全ログはベストエフォートであり、DB 書き込み失敗はアプリを止めない。
+ * 公開関数は同期シグネチャを維持する（id は同期生成して即返す）。
+ * 実際の DB 書き込みは Next.js の after() でレスポンス後に実行する。
+ * after はサーバーレスでも書き込み完了まで関数を生かすため、Vercel で
+ * 「応答後に関数が凍結され書き込みが切られる」問題を避けられる。
+ * リクエスト外（after 不可）の呼び出しには fire-and-forget でフォールバック。
+ * 安全ログはベストエフォートであり、書き込み失敗はアプリを止めない。
  */
 
 /** バックエンド名の getter を再 export（画面表示 / README 用） */
@@ -17,13 +21,20 @@ export { getDbBackend };
 /** どのバックエンドで動いているか（後方互換のためのエイリアス） */
 export type { DbBackend } from "./index";
 
-function fireAndForget(op: () => Promise<void>): void {
-  try {
-    void op().catch(() => {
+function runAfterResponse(op: () => Promise<void>): void {
+  const guarded = async () => {
+    try {
+      await op();
+    } catch {
       /* ベストエフォート: 書き込み失敗は握りつぶす */
-    });
+    }
+  };
+  try {
+    // レスポンス後に実行（完了まで関数を生かす）。
+    after(guarded);
   } catch {
-    /* Store 生成時の同期例外も握りつぶす */
+    // リクエストスコープ外など after が使えない場合は投げっぱなし。
+    void guarded();
   }
 }
 
@@ -33,7 +44,7 @@ export function createSession(
   topicId?: string,
 ): string {
   const id = randomUUID();
-  fireAndForget(() => getStore().createSession(id, topic, gradeBand, topicId));
+  runAfterResponse(() => getStore().createSession(id, topic, gradeBand, topicId));
   return id;
 }
 
@@ -43,7 +54,7 @@ export function logMessage(
   text: string,
 ): string {
   const id = randomUUID();
-  fireAndForget(() => getStore().logMessage(id, sessionId, sender, text));
+  runAfterResponse(() => getStore().logMessage(id, sessionId, sender, text));
   return id;
 }
 
@@ -55,7 +66,7 @@ export function logModeration(params: {
   reason?: string;
 }): void {
   const id = randomUUID();
-  fireAndForget(() =>
+  runAfterResponse(() =>
     getStore().logModeration(
       id,
       params.sessionId,
