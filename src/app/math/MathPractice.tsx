@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { AnswerType, Grade } from "@/lib/math";
-import { recordAttempt } from "@/lib/progress";
+import { recordAttempt, getChildId } from "@/lib/progress";
 
 /** クライアントに渡す単元情報（answer は含まない）。 */
 type UnitInfo = {
@@ -148,6 +148,7 @@ export function MathPractice({ grades }: Props) {
           answerToken,
           userInput,
           prompt: problem.prompt,
+          childId: getChildId(),
         }),
       });
       if (!res.ok) throw new Error(`grade ${res.status}`);

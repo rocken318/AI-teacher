@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { gradeQuiz } from "@/lib/quiz";
+import { gradeQuiz, getQuizUnit } from "@/lib/quiz";
 import { decodeQuizToken } from "@/lib/quiz/token";
+import { logAttempt } from "@/lib/db/log";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,7 @@ export const runtime = "nodejs";
  * 解説は gradeQuiz が返すバンクの authored 文言（AIは使わない）。
  */
 export async function POST(req: NextRequest) {
-  let body: { token?: string; choiceIndex?: number };
+  let body: { token?: string; choiceIndex?: number; childId?: string };
   try {
     body = await req.json();
   } catch {
@@ -42,6 +43,13 @@ export async function POST(req: NextRequest) {
   if (!result) {
     // トークンは正しいが単元/問題が見つからない（バンク更新でズレた等）→ 400。
     return NextResponse.json({ error: "invalid token" }, { status: 400 });
+  }
+
+  // 学習履歴を保存（childId があれば。教科は単元から取得）。
+  const childId = (body.childId ?? "").trim();
+  if (childId) {
+    const subject = getQuizUnit(payload.unitId)?.subject ?? "quiz";
+    logAttempt(childId, subject, payload.unitId, result.correct);
   }
 
   return NextResponse.json({

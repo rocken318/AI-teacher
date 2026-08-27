@@ -25,6 +25,7 @@ export type Progress = {
 
 const PROGRESS_KEY = "ai-sensei-progress-v1";
 const PARENT_MSG_KEY = "ai-sensei-parent-message-v1";
+const CHILD_ID_KEY = "ai-sensei-child-id-v1";
 
 /** 保護者の一言が未設定のときの、あたたかい既定メッセージ。 */
 export const DEFAULT_PARENT_MESSAGE =
@@ -106,6 +107,29 @@ export function getProgress(): Progress {
     totalCorrect += v.correct;
   }
   return { bySubject, totalAttempts, totalCorrect };
+}
+
+/**
+ * この端末の学習者ID（childId）。初回に生成して localStorage に保存する。
+ * サーバーの進捗保存・見守りでの集計キーに使う（同一端末で本人と保護者が使う前提）。
+ * SSR では "" を返す。
+ */
+export function getChildId(): string {
+  const s = storage();
+  if (!s) return "";
+  try {
+    let id = s.getItem(CHILD_ID_KEY);
+    if (!id) {
+      id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `c-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      s.setItem(CHILD_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
 }
 
 /** 保護者の一言を取得する。未設定なら既定の応援文を返す。 */

@@ -58,6 +58,19 @@ export function logMessage(
   return id;
 }
 
+/** 学習履歴（1回の解答）を保存する。進捗集計・見守り用。 */
+export function logAttempt(
+  childId: string,
+  subject: string,
+  unitId: string,
+  correct: boolean,
+): void {
+  const id = randomUUID();
+  runAfterResponse(() =>
+    getStore().recordAttempt(id, childId, subject, unitId, correct),
+  );
+}
+
 export function logModeration(params: {
   sessionId: string;
   messageId?: string;

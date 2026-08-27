@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { Subject, QuizGrade, QuizUnit } from "@/lib/quiz";
-import { recordAttempt } from "@/lib/progress";
+import { recordAttempt, getChildId } from "@/lib/progress";
 
 /** question API のレスポンス（answerIndex は含まない）。 */
 type QuestionDTO = {
@@ -99,7 +99,11 @@ export function QuizPractice({ subject, units, grades }: Props) {
         const res = await fetch("/api/quiz/grade", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: question.token, choiceIndex }),
+          body: JSON.stringify({
+            token: question.token,
+            choiceIndex,
+            childId: getChildId(),
+          }),
         });
         if (!res.ok) throw new Error(`grade ${res.status}`);
         const data = (await res.json()) as GradeDTO;

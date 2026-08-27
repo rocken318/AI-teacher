@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getChildId } from "@/lib/progress";
 
 /**
  * 見守りダッシュボードの閲覧 UI（client component）。
@@ -52,6 +53,28 @@ type DetailResponse = {
   insights: Insights;
 };
 
+type ProgressSummary = {
+  total: number;
+  correct: number;
+  bySubject: Record<string, { attempts: number; correct: number }>;
+};
+
+/** 教科キー → 日本語表示名。未知キーはそのまま出す。 */
+const SUBJECT_LABEL: Record<string, string> = {
+  math: "算数・数学",
+  science: "理科・科学",
+  social: "社会",
+  history: "歴史",
+  geography: "地理",
+  japanese: "国語",
+  english: "英語",
+  quiz: "クイズ",
+};
+
+function subjectLabel(key: string): string {
+  return SUBJECT_LABEL[key] ?? key;
+}
+
 function formatDate(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -76,6 +99,30 @@ export function GuardianView({
   const [data, setData] = useState<DetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ProgressSummary | null>(null);
+
+  // この端末の学習者IDで、サーバーに保存された学習の進捗を読み込む。
+  useEffect(() => {
+    const childId = getChildId();
+    if (!childId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/guardian?childId=${encodeURIComponent(childId)}`,
+          { headers: authCode ? { "x-guardian-code": authCode } : undefined },
+        );
+        if (!res.ok) return;
+        const json = (await res.json()) as { progress?: ProgressSummary };
+        if (!cancelled && json.progress) setProgress(json.progress);
+      } catch {
+        /* 進捗は補助表示。失敗しても本体は動く。 */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authCode]);
 
   async function openSession(id: string) {
     setSelectedId(id);
@@ -104,16 +151,45 @@ export function GuardianView({
     }
   }
 
-  if (sessions.length === 0) {
-    return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-        まだ保存された対話がありません。
-        <br />
-        お子さんが探究対話を始めると、ここに記録が並びます。
-      </div>
-    );
-  }
+  return (
+    <div className="flex flex-col gap-6">
+      <ProgressPanel progress={progress} />
 
+      {sessions.length === 0 ? (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+          まだ保存された対話がありません。
+          <br />
+          お子さんが探究対話を始めると、ここに記録が並びます。
+        </div>
+      ) : (
+        <SessionBrowser
+          sessions={sessions}
+          selectedId={selectedId}
+          openSession={openSession}
+          loading={loading}
+          error={error}
+          data={data}
+        />
+      )}
+    </div>
+  );
+}
+
+function SessionBrowser({
+  sessions,
+  selectedId,
+  openSession,
+  loading,
+  error,
+  data,
+}: {
+  sessions: SessionSummary[];
+  selectedId: string | null;
+  openSession: (id: string) => void;
+  loading: boolean;
+  error: string | null;
+  data: DetailResponse | null;
+}) {
   return (
     <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       {/* 一覧 */}
@@ -172,6 +248,89 @@ export function GuardianView({
         )}
       </div>
     </div>
+  );
+}
+
+function ProgressPanel({ progress }: { progress: ProgressSummary | null }) {
+  const subjects = progress
+    ? Object.entries(progress.bySubject).sort((a, b) => b[1].attempts - a[1].attempts)
+    : [];
+  const rate =
+    progress && progress.total > 0
+      ? Math.round((progress.correct / progress.total) * 100)
+      : 0;
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="font-serif text-lg font-bold text-sky-700">学習の進捗</h2>
+        <span className="text-xs text-slate-400">
+          この端末で取り組んだ問題の記録です
+        </span>
+      </div>
+
+      {!progress || progress.total === 0 ? (
+        <p className="mt-3 rounded-md bg-slate-50 px-3 py-4 text-sm text-slate-500">
+          まだ問題に取り組んだ記録がありません。
+          <br />
+          お子さんが算数やクイズに挑戦すると、ここに教科ごとの取り組みが並びます。
+        </p>
+      ) : (
+        <>
+          {/* 合計 */}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="rounded-lg bg-sky-50 px-3 py-3 text-center">
+              <div className="text-2xl font-bold text-sky-700">
+                {progress.total}
+              </div>
+              <div className="text-xs text-slate-500">取り組んだ問題</div>
+            </div>
+            <div className="rounded-lg bg-emerald-50 px-3 py-3 text-center">
+              <div className="text-2xl font-bold text-emerald-700">
+                {progress.correct}
+              </div>
+              <div className="text-xs text-slate-500">できた問題</div>
+            </div>
+            <div className="rounded-lg bg-amber-50 px-3 py-3 text-center">
+              <div className="text-2xl font-bold text-amber-700">{rate}%</div>
+              <div className="text-xs text-slate-500">正答率</div>
+            </div>
+          </div>
+
+          {/* 教科別 */}
+          <ul className="mt-4 flex flex-col gap-2">
+            {subjects.map(([key, v]) => {
+              const pct =
+                v.attempts > 0
+                  ? Math.round((v.correct / v.attempts) * 100)
+                  : 0;
+              return (
+                <li key={key}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-semibold text-slate-700">
+                      {subjectLabel(key)}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {v.correct} / {v.attempts} 問（{pct}%）
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-sky-400"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <p className="mt-3 text-xs text-slate-400">
+            正答率は「できた／取り組んだ」の割合です。数字より、続けていることをほめてあげてください。
+          </p>
+        </>
+      )}
+    </section>
   );
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUnit, gradeAnswer, diagnose } from "@/lib/math";
 import type { Problem } from "@/lib/math";
 import { decodeToken } from "@/lib/math/token";
+import { logAttempt } from "@/lib/db/log";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     answerToken?: string;
     userInput?: string;
     prompt?: string;
+    childId?: string;
   };
   try {
     body = await req.json();
@@ -70,6 +72,10 @@ export async function POST(req: NextRequest) {
   };
 
   const result = gradeAnswer(unitId, problem, userInput);
+
+  // 学習履歴を保存（childId があれば。進捗・見守り用。after() で確実に書く）
+  const childId = (body.childId ?? "").trim();
+  if (childId) logAttempt(childId, "math", unitId, result.correct);
 
   // 不正解のときだけ、ルール診断で「どう考えたか→正しい筋道」を計算する。
   // 生成AIは使わず、meta から誤答パターンを再現して確実に判定する。

@@ -47,6 +47,13 @@ export interface SessionDetail {
   }[];
 }
 
+/** 学習進捗の集計（見守り／ハブ表示用）。 */
+export interface ProgressSummary {
+  total: number;
+  correct: number;
+  bySubject: Record<string, { attempts: number; correct: number }>;
+}
+
 export interface Store {
   createSession(
     id: string,
@@ -69,9 +76,34 @@ export interface Store {
     reason: string | null,
   ): Promise<void>;
 
+  /* --- 学習履歴（進捗） --- */
+  recordAttempt(
+    id: string,
+    childId: string,
+    subject: string,
+    unitId: string,
+    correct: boolean,
+  ): Promise<void>;
+  getChildProgress(childId: string): Promise<ProgressSummary>;
+
   /* --- 読み取り（見守りダッシュボード用） --- */
   listSessions(limit: number): Promise<SessionSummary[]>;
   getSessionDetail(id: string): Promise<SessionDetail | null>;
+}
+
+/** 教科別の集計行から ProgressSummary を組み立てる。 */
+function aggregateProgress(
+  rows: { subject: string; attempts: number; correct: number }[],
+): ProgressSummary {
+  const bySubject: Record<string, { attempts: number; correct: number }> = {};
+  let total = 0;
+  let correct = 0;
+  for (const r of rows) {
+    bySubject[r.subject] = { attempts: r.attempts, correct: r.correct };
+    total += r.attempts;
+    correct += r.correct;
+  }
+  return { total, correct, bySubject };
 }
 
 /* ------------------------------------------------------------------ */
@@ -124,6 +156,52 @@ class PostgresStore implements Store {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `;
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS attempts (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        correct BOOLEAN NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `;
+    await this.sql`
+      CREATE INDEX IF NOT EXISTS attempts_child_idx ON attempts (child_id)
+    `;
+  }
+
+  async recordAttempt(
+    id: string,
+    childId: string,
+    subject: string,
+    unitId: string,
+    correct: boolean,
+  ): Promise<void> {
+    await this.ready;
+    await this.sql`
+      INSERT INTO attempts (id, child_id, subject, unit_id, correct)
+      VALUES (${id}, ${childId}, ${subject}, ${unitId}, ${correct})
+    `;
+  }
+
+  async getChildProgress(childId: string): Promise<ProgressSummary> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT subject,
+             COUNT(*) AS attempts,
+             SUM(CASE WHEN correct THEN 1 ELSE 0 END) AS correct
+      FROM attempts
+      WHERE child_id = ${childId}
+      GROUP BY subject
+    `;
+    return aggregateProgress(
+      (rows as any[]).map((r) => ({
+        subject: String(r.subject),
+        attempts: Number(r.attempts ?? 0),
+        correct: Number(r.correct ?? 0),
+      })),
+    );
   }
 
   async createSession(
@@ -296,9 +374,49 @@ class SqliteStore implements Store {
         reason TEXT,
         created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       );
+      CREATE TABLE IF NOT EXISTS attempts (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        correct INTEGER NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+      );
+      CREATE INDEX IF NOT EXISTS attempts_child_idx ON attempts (child_id);
     `);
 
     this.db = sqlite;
+  }
+
+  async recordAttempt(
+    id: string,
+    childId: string,
+    subject: string,
+    unitId: string,
+    correct: boolean,
+  ): Promise<void> {
+    await this.ready;
+    this.db
+      .prepare(
+        "INSERT INTO attempts (id, child_id, subject, unit_id, correct) VALUES (?, ?, ?, ?, ?)",
+      )
+      .run(id, childId, subject, unitId, correct ? 1 : 0);
+  }
+
+  async getChildProgress(childId: string): Promise<ProgressSummary> {
+    await this.ready;
+    const rows = this.db
+      .prepare(
+        "SELECT subject, COUNT(*) AS attempts, SUM(correct) AS correct FROM attempts WHERE child_id = ? GROUP BY subject",
+      )
+      .all(childId);
+    return aggregateProgress(
+      (rows as any[]).map((r) => ({
+        subject: String(r.subject),
+        attempts: Number(r.attempts ?? 0),
+        correct: Number(r.correct ?? 0),
+      })),
+    );
   }
 
   async createSession(
@@ -472,6 +590,26 @@ class NoopStore implements Store {
       verdict,
       reason,
     });
+  }
+
+  async recordAttempt(
+    id: string,
+    childId: string,
+    subject: string,
+    unitId: string,
+    correct: boolean,
+  ): Promise<void> {
+    console.debug("[db:noop] recordAttempt", {
+      id,
+      childId,
+      subject,
+      unitId,
+      correct,
+    });
+  }
+
+  async getChildProgress(_childId: string): Promise<ProgressSummary> {
+    return { total: 0, correct: 0, bySubject: {} };
   }
 
   async listSessions(_limit: number): Promise<SessionSummary[]> {

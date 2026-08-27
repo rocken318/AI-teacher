@@ -688,6 +688,22 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
           </blockquote>
         )}
       </section>
+
+      {/* ===== 保護者向けリンク ===== */}
+      <footer className="flex flex-col items-center gap-3 pt-2 text-center sm:flex-row sm:justify-center">
+        <a
+          href="/for-parents"
+          className="rounded-full border border-line bg-white/70 px-5 py-2 text-[13px] font-bold text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:text-ink hover:shadow-card"
+        >
+          保護者の方へ・使い方ガイド
+        </a>
+        <a
+          href="/guardian"
+          className="rounded-full border border-line bg-white/70 px-5 py-2 text-[13px] font-bold text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:text-ink hover:shadow-card"
+        >
+          見守りダッシュボード
+        </a>
+      </footer>
     </div>
   );
 }

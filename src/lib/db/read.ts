@@ -1,6 +1,6 @@
 import "server-only";
 import { getStore, getDbBackend } from "./index";
-import type { SessionSummary, SessionDetail } from "./index";
+import type { SessionSummary, SessionDetail, ProgressSummary } from "./index";
 
 /**
  * 読み取り公開ヘルパー（見守りダッシュボード用）。
@@ -12,7 +12,24 @@ import type { SessionSummary, SessionDetail } from "./index";
 
 /** バックエンド名の getter を再 export（画面での「保存先」表示用） */
 export { getDbBackend };
-export type { SessionSummary, SessionDetail, DbBackend } from "./index";
+export type {
+  SessionSummary,
+  SessionDetail,
+  ProgressSummary,
+  DbBackend,
+} from "./index";
+
+/** 子ども（childId）の学習進捗集計。失敗時は空集計。 */
+export async function getChildProgress(
+  childId: string,
+): Promise<ProgressSummary> {
+  try {
+    return await getStore().getChildProgress(childId);
+  } catch (err) {
+    console.error("[db:read] getChildProgress failed:", err);
+    return { total: 0, correct: 0, bySubject: {} };
+  }
+}
 
 /** 新しい順にセッション一覧を返す。失敗時は空配列（ベストエフォート）。 */
 export async function listSessions(limit = 50): Promise<SessionSummary[]> {

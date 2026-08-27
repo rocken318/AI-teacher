@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   listSessions,
   getSessionDetail,
+  getChildProgress,
   getDbBackend,
 } from "@/lib/db/read";
 import { summarizeSession } from "@/lib/insights";
@@ -30,6 +31,13 @@ export async function GET(req: NextRequest) {
       { error: "unauthorized", reason: access.reason },
       { status: 401 },
     );
+  }
+
+  // 学習の進捗（childId 指定時）。端末に保存された学習者IDで集計を返す。
+  const childId = req.nextUrl.searchParams.get("childId");
+  if (childId) {
+    const progress = await getChildProgress(childId);
+    return NextResponse.json({ backend: getDbBackend(), progress });
   }
 
   const id = req.nextUrl.searchParams.get("id");
