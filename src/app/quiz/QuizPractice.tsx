@@ -367,7 +367,7 @@ export function QuizPractice({ subject, units, grades }: Props) {
                     onClick={next}
                     className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"
                   >
-                    つぎのもんだい →
+                    同じジャンルで もう一問 →
                   </button>
                 </div>
               </div>
