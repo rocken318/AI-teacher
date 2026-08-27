@@ -2,8 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * 学齢テーマ（皮）。意味トークンを CSS 変数（RGBチャンネル値）で持ち、
+ * <html data-stage="..."> で差し替える。tailwind.config は rgb(var(--c-*) / <alpha>) で参照。
+ * 既定（:root）＝小学生。中学生/高校生は data-stage で上書き。
+ */
 :root {
   color-scheme: light;
+
+  /* --- 小学生（elementary・既定）: 温かい紙色・明朝見出し・にぎやか --- */
+  --c-paper: 247 241 230;
+  --c-paper2: 239 230 212;
+  --c-ink: 32 32 28;
+  --c-ink-soft: 88 83 73;
+  --c-faint: 138 132 116;
+  --c-line: 221 210 189;
+  --c-primary: 47 111 176; /* sky（素の text-sky/bg-sky が参照） */
+  --c-accent: 201 98 47; /* terra */
+
+  --font-display: var(--font-serif); /* 見出し＝明朝で凛と */
+  --line-height-base: 1.85;
+
+  --body-grad:
+    radial-gradient(1200px 620px at 12% -8%, rgba(47, 111, 176, 0.10), transparent 60%),
+    radial-gradient(1000px 560px at 100% 0%, rgba(201, 98, 47, 0.09), transparent 58%),
+    linear-gradient(180deg, #f9f4ea 0%, #f7f1e6 42%, #f3ead8 100%);
+}
+
+/* --- 中学生（junior）: クールで清潔・ゴシック見出し・やや密 --- */
+[data-stage="junior"] {
+  --c-paper: 244 246 249;
+  --c-paper2: 232 236 242;
+  --c-ink: 30 38 51;
+  --c-ink-soft: 74 86 102;
+  --c-faint: 135 146 160;
+  --c-line: 210 218 227;
+  --c-primary: 34 122 133; /* teal */
+  --c-accent: 224 122 76; /* 落ち着いたコーラル */
+
+  --font-display: var(--font-sans);
+  --line-height-base: 1.75;
+
+  --body-grad:
+    radial-gradient(1100px 560px at 8% -10%, rgba(34, 122, 133, 0.10), transparent 60%),
+    linear-gradient(180deg, #f7f9fb 0%, #f4f6f9 60%, #eef1f5 100%);
+}
+
+/* --- 高校生（senior）: ミニマル・寒色・高密度・ツール感 --- */
+[data-stage="senior"] {
+  --c-paper: 248 249 251;
+  --c-paper2: 238 240 244;
+  --c-ink: 22 24 29;
+  --c-ink-soft: 71 78 90;
+  --c-faint: 140 146 156;
+  --c-line: 223 226 232;
+  --c-primary: 67 86 160; /* 抑えたインディゴ */
+  --c-accent: 100 116 139; /* スチール（色みは最小限） */
+
+  --font-display: var(--font-sans);
+  --line-height-base: 1.7;
+
+  --body-grad:
+    radial-gradient(1000px 520px at 100% -12%, rgba(67, 86, 160, 0.07), transparent 60%),
+    linear-gradient(180deg, #fbfcfd 0%, #f8f9fb 100%);
 }
 
 html,
@@ -13,15 +74,12 @@ body {
 }
 
 body {
-  /* 淡いグラデ＋紙色の温かい背景（子ども向け・明るく） */
-  background-color: #f7f1e6;
-  background-image:
-    radial-gradient(1200px 620px at 12% -8%, rgba(47, 111, 176, 0.10), transparent 60%),
-    radial-gradient(1000px 560px at 100% 0%, rgba(201, 98, 47, 0.09), transparent 58%),
-    linear-gradient(180deg, #f9f4ea 0%, #f7f1e6 42%, #f3ead8 100%);
+  background-color: rgb(var(--c-paper));
+  background-image: var(--body-grad);
   background-attachment: fixed;
-  line-height: 1.85;
+  line-height: var(--line-height-base);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease;
 }
 
 /* 紙の微細な質感（軽量な SVG ノイズ・外部画像なし） */

@@ -42,6 +42,14 @@ export default function RootLayout({
       lang="ja"
       className={`${shippori.variable} ${zenKaku.variable} ${zenMaru.variable}`}
     >
+      <head>
+        {/* 記憶した学齢テーマを描画前に適用（ちらつき防止）。既定は小学生。 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var s=localStorage.getItem('ai-sensei-stage-v1');if(s==='junior'||s==='senior'){document.documentElement.dataset.stage=s}}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="font-sans bg-paper text-ink antialiased">
         {children}
       </body>

@@ -7,6 +7,13 @@ import {
   setParentMessage,
   type Progress,
 } from "@/lib/progress";
+import {
+  type Stage,
+  STAGES,
+  getStage,
+  setStage,
+  getStageMeta,
+} from "@/lib/stage";
 
 /** 教科メタ（@/lib/quiz の SUBJECTS の要素。別チーム提供）。 */
 export type SubjectMeta = {
@@ -76,7 +83,7 @@ function Bar({ ratio, color }: { ratio: number; color: string }) {
   );
 }
 
-/** コースカード（教科／探究）。 */
+/** コースカード（教科／探究）。comingSoon=その学齢では準備中。 */
 function CourseCard({
   href,
   emoji,
@@ -85,6 +92,7 @@ function CourseCard({
   attempts,
   correct,
   tagline,
+  comingSoon = false,
 }: {
   href: string;
   emoji: string;
@@ -93,14 +101,12 @@ function CourseCard({
   attempts: number;
   correct: number;
   tagline?: string;
+  comingSoon?: boolean;
 }) {
   const ratio = pct(correct, attempts);
-  return (
-    <a
-      href={href}
-      className="group flex h-full flex-col rounded-2xl border border-line bg-white/70 p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-sky/50 hover:shadow-card"
-      style={{ borderTopColor: accent, borderTopWidth: 3 }}
-    >
+
+  const inner = (
+    <>
       <div className="flex items-center gap-3">
         <span
           aria-hidden="true"
@@ -117,51 +123,172 @@ function CourseCard({
             <p className="truncate text-[12px] text-ink-soft">{tagline}</p>
           )}
         </div>
-      </div>
-
-      {/* 進捗 */}
-      <div className="mt-4">
-        <div className="mb-1 flex items-baseline justify-between text-[12px]">
-          <span className="font-bold text-ink-soft">
-            {attempts > 0 ? (
-              <>
-                <span className="font-serif text-ink">{correct}</span>
-                <span className="text-faint"> / {attempts}</span> せいかい
-              </>
-            ) : (
-              <span className="text-faint">まだ ちょうせんしていないよ</span>
-            )}
+        {comingSoon && (
+          <span className="ml-auto shrink-0 rounded-full border border-line bg-paper2 px-2 py-0.5 text-[10px] font-bold text-faint">
+            準備中
           </span>
-          {attempts > 0 && (
-            <span className="font-bold" style={{ color: accent }}>
-              {ratio}%
-            </span>
-          )}
-        </div>
-        <Bar ratio={ratio} color={accent} />
+        )}
       </div>
 
-      <span
-        className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-terra"
-        aria-hidden="true"
-      >
-        はじめる →
-      </span>
+      {comingSoon ? (
+        <p className="mt-4 text-[12px] text-faint">
+          この学年の もんだいは もうすぐ とうじょう します。
+        </p>
+      ) : (
+        <>
+          <div className="mt-4">
+            <div className="mb-1 flex items-baseline justify-between text-[12px]">
+              <span className="font-bold text-ink-soft">
+                {attempts > 0 ? (
+                  <>
+                    <span className="font-serif text-ink">{correct}</span>
+                    <span className="text-faint"> / {attempts}</span> せいかい
+                  </>
+                ) : (
+                  <span className="text-faint">まだ ちょうせんしていないよ</span>
+                )}
+              </span>
+              {attempts > 0 && (
+                <span className="font-bold" style={{ color: accent }}>
+                  {ratio}%
+                </span>
+              )}
+            </div>
+            <Bar ratio={ratio} color={accent} />
+          </div>
+          <span
+            className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-terra"
+            aria-hidden="true"
+          >
+            はじめる →
+          </span>
+        </>
+      )}
+    </>
+  );
+
+  const base =
+    "group flex h-full flex-col rounded-2xl border border-line p-4 transition";
+  const style = { borderTopColor: accent, borderTopWidth: 3 } as const;
+
+  if (comingSoon) {
+    return (
+      <div className={`${base} bg-white/40 opacity-70`} style={style}>
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <a
+      href={href}
+      className={`${base} bg-white/70 shadow-soft hover:-translate-y-0.5 hover:border-sky/50 hover:shadow-card`}
+      style={style}
+    >
+      {inner}
     </a>
+  );
+}
+
+/** 初回に学齢を選ぶゲート。 */
+function StagePicker({ onPick }: { onPick: (s: Stage) => void }) {
+  return (
+    <div className="rounded-[1.5rem] border border-line bg-white/70 p-6 shadow-card sm:p-8">
+      <h2 className="text-center font-serif text-xl font-extrabold text-ink sm:text-2xl">
+        まなぶ人を えらんでね
+      </h2>
+      <p className="mt-2 text-center text-[13px] text-ink-soft">
+        学年に あわせて、見た目と ないようが かわります（あとで かえられます）。
+      </p>
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        {STAGES.map((s) => (
+          <button
+            key={s.key}
+            onClick={() => onPick(s.key)}
+            className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-paper p-5 text-center transition hover:-translate-y-0.5 hover:border-sky hover:shadow-soft"
+          >
+            <span aria-hidden="true" className="text-4xl">
+              {s.emoji}
+            </span>
+            <span className="font-serif text-lg font-extrabold text-ink">
+              {s.label}
+            </span>
+            <span className="text-[12px] text-faint">{s.range}</span>
+            <span className="mt-1 text-[12px] text-ink-soft">{s.tagline}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** 学齢の切替トグル（小/中/高）。 */
+function StageToggle({
+  stage,
+  onChange,
+}: {
+  stage: Stage;
+  onChange: (s: Stage) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[12px] text-faint">まなぶ人：</span>
+      <div className="inline-flex rounded-full border border-line bg-white/60 p-0.5">
+        {STAGES.map((s) => {
+          const active = s.key === stage;
+          return (
+            <button
+              key={s.key}
+              onClick={() => onChange(s.key)}
+              aria-pressed={active}
+              className={
+                active
+                  ? "rounded-full bg-sky px-3 py-1 text-[12px] font-bold text-white"
+                  : "rounded-full px-3 py-1 text-[12px] font-bold text-ink-soft hover:text-ink"
+              }
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
 export default function HomeHub({ subjects }: Props) {
   // SSR 安全: マウント後に localStorage を読む
+  const [mounted, setMounted] = useState(false);
+  const [stage, setStageState] = useState<Stage | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [parentMsg, setParentMsg] = useState<string>("");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
   useEffect(() => {
+    setMounted(true);
+    setStageState(getStage());
     setProgress(getProgress());
     setParentMsg(getParentMessage());
   }, []);
+
+  const pickStage = (s: Stage) => {
+    setStage(s); // localStorage 保存＋テーマ即適用
+    setStageState(s);
+  };
+
+  // ハイドレーション不一致を避けるため、マウント前は何も出さない
+  if (!mounted) {
+    return <div className="min-h-[40vh]" />;
+  }
+
+  // 初回（未選択）は学齢ピッカー
+  if (stage === null) {
+    return <StagePicker onPick={pickStage} />;
+  }
+
+  // 教科の中身は現状 小4〜6 のみ。中高では「準備中」表示（探究は全学齢で使える）。
+  const subjectsComingSoon = stage !== "elementary";
+  const stageMeta = getStageMeta(stage);
 
   const bySubject = progress?.bySubject ?? {};
   const totalAttempts = progress?.totalAttempts ?? 0;
@@ -187,6 +314,16 @@ export default function HomeHub({ subjects }: Props) {
 
   return (
     <div className="space-y-8">
+      {/* ===== 学齢の切替 ===== */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] text-ink-soft">
+          <span aria-hidden="true">{stageMeta.emoji}</span>{" "}
+          <span className="font-bold text-ink">{stageMeta.label}</span>
+          <span className="text-faint"> むけ</span>
+        </p>
+        <StageToggle stage={stage} onChange={pickStage} />
+      </div>
+
       {/* ===== 総合の進捗 ===== */}
       <section className="rounded-[1.5rem] border border-line bg-white/70 p-5 shadow-card sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -243,6 +380,7 @@ export default function HomeHub({ subjects }: Props) {
             attempts={math.attempts}
             correct={math.correct}
             tagline="もんだいを といて レベルアップ"
+            comingSoon={subjectsComingSoon}
           />
 
           {/* 理科・社会・国語・英語（SUBJECTS から） */}
@@ -258,11 +396,12 @@ export default function HomeHub({ subjects }: Props) {
                 attempts={p.attempts}
                 correct={p.correct}
                 tagline="クイズで まなぶ"
+                comingSoon={subjectsComingSoon}
               />
             );
           })}
 
-          {/* 探究（豆知識） */}
+          {/* 探究（豆知識）: 全学齢で使える（学年は対話内でえらべる） */}
           <CourseCard
             href="/explore"
             emoji="🔭"

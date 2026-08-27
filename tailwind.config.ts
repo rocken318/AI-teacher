@@ -13,7 +13,13 @@ const config: Config = {
           "system-ui",
           "sans-serif",
         ],
-        serif: ["var(--font-serif)", "Hiragino Mincho ProN", "serif"],
+        // 見出し＝学齢テーマの --font-display（小=明朝 / 中高=ゴシック）
+        serif: [
+          "var(--font-display)",
+          "var(--font-serif)",
+          "Hiragino Mincho ProN",
+          "serif",
+        ],
         rounded: [
           "var(--font-rounded)",
           "Hiragino Maru Gothic ProN",
@@ -23,18 +29,17 @@ const config: Config = {
         ],
       },
       colors: {
-        // lp.html の世界観に合わせた温かみのある紙色パレット
-        paper: "#f7f1e6",
-        paper2: "#efe6d4",
-        ink: "#20201c",
-        "ink-soft": "#585349",
-        faint: "#8a8474",
-        // 既定の sky-50〜950 スケールを保ちつつ、素の `sky` は独自色にする
-        // （page.tsx の bare `text-sky` と、Chat/guardian の `sky-500` 等を両立）
-        sky: { ...colors.sky, DEFAULT: "#2f6fb0" },
+        // 意味トークンは学齢テーマの CSS 変数を参照（<html data-stage> で再スキン）
+        paper: "rgb(var(--c-paper) / <alpha-value>)",
+        paper2: "rgb(var(--c-paper2) / <alpha-value>)",
+        ink: "rgb(var(--c-ink) / <alpha-value>)",
+        "ink-soft": "rgb(var(--c-ink-soft) / <alpha-value>)",
+        faint: "rgb(var(--c-faint) / <alpha-value>)",
+        line: "rgb(var(--c-line) / <alpha-value>)",
+        // 既定の sky-50〜950 スケールは保ちつつ、素の `sky` はテーマ主色に
+        sky: { ...colors.sky, DEFAULT: "rgb(var(--c-primary) / <alpha-value>)" },
         "sky-soft": "#e3edf6",
-        terra: "#c9622f", // 温かみのアクセント
-        line: "#ddd2bd",
+        terra: "rgb(var(--c-accent) / <alpha-value>)", // テーマのアクセント
       },
       boxShadow: {
         card: "0 30px 60px -34px rgba(40,32,20,.45), 0 2px 0 #fff inset",
