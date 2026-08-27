@@ -13,7 +13,10 @@ import type {
 
 // 各教科の問題バンク（別チームが作成）。
 import { SCIENCE_UNITS } from "./science";
+import { SCIENCE_UNITS_B } from "./science_b";
 import { SOCIAL_UNITS } from "./social";
+import { SOCIAL_UNITS_B } from "./social_b";
+import { SOCIAL_UNITS_C } from "./social_c";
 import { JAPANESE_UNITS } from "./japanese";
 import { ENGLISH_UNITS } from "./english";
 
@@ -25,10 +28,13 @@ export type {
   SubjectMeta,
 } from "./types";
 
-/** 全単元（4教科のバンクを結合）。 */
+/** 全単元（4教科のバンク＋増設分を結合）。 */
 export const QUIZ_UNITS: QuizUnit[] = [
   ...SCIENCE_UNITS,
+  ...SCIENCE_UNITS_B,
   ...SOCIAL_UNITS,
+  ...SOCIAL_UNITS_B,
+  ...SOCIAL_UNITS_C,
   ...JAPANESE_UNITS,
   ...ENGLISH_UNITS,
 ];

@@ -1,7 +1,7 @@
 // 算数計算エンジンの公開API。
 // UIチームはこのファイルのexportだけに依存する。
 
-import type { Grade, Problem, Unit, GradeResult } from "./types";
+import type { Grade, Problem, Unit, UnitDef, GradeResult } from "./types";
 import {
   UNIT_DEFS,
   reduceFraction,
@@ -9,11 +9,20 @@ import {
   formatRatio,
   diagnoseUnit,
 } from "./units";
+import { UNIT_DEFS_B } from "./units_b";
+import { UNIT_DEFS_C } from "./units_c";
 
 export type { Grade, AnswerType, Problem, Unit, GradeResult } from "./types";
 
+/**
+ * 全単元定義（既存＋増設分b/c）。
+ * 増設分は各defが自前の diagnose を持つ（DiagUnitDef）。既存分は units.ts の
+ * 中央 diagnoseUnit にフォールバックする（UnitDef.diagnose は任意）。
+ */
+const ALL_DEFS: UnitDef[] = [...UNIT_DEFS, ...UNIT_DEFS_B, ...UNIT_DEFS_C];
+
 /** 全単元（メタ情報のみ。ジェネレータは公開しない）。 */
-export const UNITS: Unit[] = UNIT_DEFS.map(
+export const UNITS: Unit[] = ALL_DEFS.map(
   ({ id, grade, title, lesson, answerType, hint }) => ({
     id,
     grade,
@@ -25,7 +34,7 @@ export const UNITS: Unit[] = UNIT_DEFS.map(
 );
 
 /** 内部検索用マップ。 */
-const UNIT_MAP = new Map(UNIT_DEFS.map((u) => [u.id, u]));
+const UNIT_MAP = new Map(ALL_DEFS.map((u) => [u.id, u]));
 
 /** 指定学年の単元一覧。 */
 export function unitsForGrade(grade: Grade): Unit[] {
@@ -55,6 +64,9 @@ export function diagnose(
   problem: Problem,
   userInput: string,
 ): string | null {
+  // 増設単元は def 自身の diagnose を優先。無ければ中央ルールにフォールバック。
+  const def = UNIT_MAP.get(unitId);
+  if (def?.diagnose) return def.diagnose(problem, userInput);
   return diagnoseUnit(unitId, problem, userInput);
 }
 

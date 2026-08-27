@@ -100,18 +100,46 @@ function recomputeAnswer(unitId: string, prompt: string): string {
 
 const ALL_IDS = UNITS.map((u) => u.id);
 
+// recomputeAnswer が独立再計算をサポートする既存10単元。
+// 増設分（b-*/c-*）は各ジェネレータ側で meta から自己検証済みのため、
+// ここでは下の「自己整合」テストで全単元を担保する。
+const RECOMPUTE_IDS = [
+  "div-basic",
+  "dec-addsub",
+  "rounding",
+  "dec-mul",
+  "dec-div",
+  "percent",
+  "average",
+  "frac-mul",
+  "frac-div",
+  "ratio",
+];
+
 // ------------------------------------------------------------------
 // 生成された答えが常に正しい
 // ------------------------------------------------------------------
 
-describe("generateProblem: 生成された答えは独立再計算と一致する", () => {
-  for (const id of ALL_IDS) {
+describe("generateProblem: 生成された答えは独立再計算と一致する（既存単元）", () => {
+  for (const id of RECOMPUTE_IDS) {
     it(`${id} は50回とも答えが正しい`, () => {
       for (let i = 0; i < 50; i++) {
         const p = generateProblem(id);
         expect(p.unitId).toBe(id);
         expect(recomputeAnswer(id, p.prompt)).toBe(p.answer);
-        // 自分の答えで採点すると必ず正解になる。
+        expect(gradeAnswer(id, p, p.answer).correct).toBe(true);
+      }
+    });
+  }
+});
+
+describe("全単元の自己整合（増設分ふくむ）", () => {
+  for (const id of ALL_IDS) {
+    it(`${id}: 生成→自分の答えで採点すると必ず正解`, () => {
+      for (let i = 0; i < 30; i++) {
+        const p = generateProblem(id);
+        expect(p.unitId).toBe(id);
+        expect(p.answer.length).toBeGreaterThan(0);
         expect(gradeAnswer(id, p, p.answer).correct).toBe(true);
       }
     });

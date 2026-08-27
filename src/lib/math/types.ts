@@ -61,4 +61,9 @@ export interface GradeResult {
 export interface UnitDef extends Unit {
   /** 数値ランダムな新問題を1つ生成する。答えは計算で確定。 */
   generate: () => Problem;
+  /**
+   * 誤答のルール診断（任意）。def自身が持つ場合はこれを優先。
+   * 既存単元は units.ts の中央 diagnoseUnit にフォールバックする。
+   */
+  diagnose?: (problem: Problem, userInput: string) => string | null;
 }
