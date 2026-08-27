@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import type { AnswerType, Grade } from "@/lib/math";
 import { recordAttempt } from "@/lib/progress";
+import { Sensei, type SenseiMood } from "@/components/Sensei";
 
 /** クライアントに渡す単元情報（answer は含まない）。 */
 type UnitInfo = {
@@ -292,9 +293,17 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
   const scorePct =
     attemptCount > 0 ? Math.round((correctCount / attemptCount) * 100) : 0;
 
+  const senseiMood: SenseiMood = grading
+    ? "think"
+    : phase === "graded"
+      ? result?.correct
+        ? "happy"
+        : "oops"
+      : "idle";
+
   return (
     <div>
-      {/* 単元ヘッダ + スコア */}
+      {/* 単元ヘッダ + せんせい + スコア */}
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <button
@@ -310,15 +319,18 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
             {selectedUnit.lesson}
           </p>
         </div>
-        <div className="shrink-0 rounded-2xl border border-line bg-paper px-4 py-2 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-faint">
-            スコア
-          </p>
-          <p className="font-serif text-lg font-extrabold text-ink">
-            {correctCount}
-            <span className="text-faint"> / {attemptCount}</span>
-          </p>
-          <p className="text-[11px] text-faint">{scorePct}%</p>
+        <div className="flex shrink-0 items-center gap-3">
+          <Sensei mood={senseiMood} size={62} />
+          <div className="rounded-2xl border border-line bg-paper px-4 py-2 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-faint">
+              スコア
+            </p>
+            <p className="font-serif text-lg font-extrabold text-ink">
+              {correctCount}
+              <span className="text-faint"> / {attemptCount}</span>
+            </p>
+            <p className="text-[11px] text-faint">{scorePct}%</p>
+          </div>
         </div>
       </div>
 

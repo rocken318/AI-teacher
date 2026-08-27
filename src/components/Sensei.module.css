@@ -1,0 +1,95 @@
+/* やさしい先生マスコット「せんせい」のモーション（軽量CSSのみ） */
+
+.wrap {
+  display: inline-block;
+  line-height: 0;
+  /* ふわふわ浮遊（アイドル） */
+  animation: float 3.4s ease-in-out infinite;
+  transform-origin: 50% 90%;
+  will-change: transform;
+}
+
+/* まばたき（白目の上に重ねたまぶたを時々おろす） */
+.lid {
+  transform-origin: center;
+  transform: scaleY(0);
+  animation: blink 5.2s ease-in-out infinite;
+}
+
+/* うれしい：ぴょんと弾む＋きらきら */
+.happy {
+  animation: bounce 0.6s ease;
+}
+.sparkle {
+  transform-origin: center;
+  animation: sparkle 0.9s ease-out infinite;
+}
+
+/* おっと（不正解）：ちょっと揺れる＋汗 */
+.oops {
+  animation: wobble 0.6s ease;
+}
+.sweat {
+  animation: drop 1.1s ease-in infinite;
+}
+
+/* かんがえ中：小さく上下＋点々 */
+.think .dots span {
+  animation: dots 1.4s ease-in-out infinite;
+}
+.think .dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.think .dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* あいさつ：手をふる */
+.wave {
+  transform-origin: 70% 80%;
+  animation: wave 1.4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-7px) rotate(1deg); }
+}
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(0); }
+  95%, 97% { transform: scaleY(1); }
+}
+@keyframes bounce {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-14px) scale(1.05, 0.96); }
+  60% { transform: translateY(0) scale(0.98, 1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes wobble {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+}
+@keyframes sparkle {
+  0% { opacity: 0; transform: scale(0.4); }
+  40% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.6) translateY(-6px); }
+}
+@keyframes drop {
+  0% { opacity: 0; transform: translateY(-2px); }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(10px); }
+}
+@keyframes dots {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(18deg); }
+}
+
+/* モーション配慮 */
+@media (prefers-reduced-motion: reduce) {
+  .wrap, .lid, .happy, .oops, .sparkle, .sweat, .wave,
+  .think .dots span { animation: none !important; }
+}

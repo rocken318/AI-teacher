@@ -14,6 +14,7 @@ import {
   setStage,
   getStageMeta,
 } from "@/lib/stage";
+import { Sensei, type SenseiMood } from "@/components/Sensei";
 
 /** 教科メタ（@/lib/quiz の SUBJECTS の要素。別チーム提供）。 */
 export type SubjectMeta = {
@@ -255,6 +256,15 @@ function StageToggle({
   );
 }
 
+/** せんせいの ひとこと（ローテーション表示）。 */
+const GREETINGS = [
+  "こんにちは！きょうも いっしょに まなぼう。",
+  "まちがえても だいじょうぶ。それが せいちょうだよ。",
+  "「なんで？」を たいせつにね。",
+  "すこしずつで いいよ。つづけるのが いちばん すごい。",
+  "きみの ペースで だいじょうぶ。せんせいが みているよ。",
+];
+
 export default function HomeHub({ subjects }: Props) {
   // SSR 安全: マウント後に localStorage を読む
   const [mounted, setMounted] = useState(false);
@@ -264,11 +274,23 @@ export default function HomeHub({ subjects }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
+  // せんせいの ひとこと＆きぶん（うごき）
+  const [msgIdx, setMsgIdx] = useState(0);
+  const [senseiMood, setSenseiMood] = useState<SenseiMood>("greet");
+
   useEffect(() => {
     setMounted(true);
     setStageState(getStage());
     setProgress(getProgress());
     setParentMsg(getParentMessage());
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setMsgIdx((i) => (i + 1) % GREETINGS.length);
+      setSenseiMood((m) => (m === "happy" ? "greet" : "happy"));
+    }, 4200);
+    return () => clearInterval(id);
   }, []);
 
   const pickStage = (s: Stage) => {
@@ -322,6 +344,11 @@ export default function HomeHub({ subjects }: Props) {
           <span className="text-faint"> むけ</span>
         </p>
         <StageToggle stage={stage} onChange={pickStage} />
+      </div>
+
+      {/* ===== せんせい（あいさつ・うごき） ===== */}
+      <div className="flex flex-col items-center py-2">
+        <Sensei mood={senseiMood} size={104} message={GREETINGS[msgIdx]} />
       </div>
 
       {/* ===== 総合の進捗 ===== */}
