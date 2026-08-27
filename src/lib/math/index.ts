@@ -11,6 +11,7 @@ import {
 } from "./units";
 import { UNIT_DEFS_B } from "./units_b";
 import { UNIT_DEFS_C } from "./units_c";
+import { UNIT_DEFS_J2 } from "./units_j2";
 
 export type { Grade, AnswerType, Problem, Unit, GradeResult } from "./types";
 
@@ -19,7 +20,12 @@ export type { Grade, AnswerType, Problem, Unit, GradeResult } from "./types";
  * 増設分は各defが自前の diagnose を持つ（DiagUnitDef）。既存分は units.ts の
  * 中央 diagnoseUnit にフォールバックする（UnitDef.diagnose は任意）。
  */
-const ALL_DEFS: UnitDef[] = [...UNIT_DEFS, ...UNIT_DEFS_B, ...UNIT_DEFS_C];
+const ALL_DEFS: UnitDef[] = [
+  ...UNIT_DEFS,
+  ...UNIT_DEFS_B,
+  ...UNIT_DEFS_C,
+  ...UNIT_DEFS_J2,
+];
 
 /** 全単元（メタ情報のみ。ジェネレータは公開しない）。 */
 export const UNITS: Unit[] = ALL_DEFS.map(

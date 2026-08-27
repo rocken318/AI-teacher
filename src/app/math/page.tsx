@@ -5,7 +5,17 @@ import { MathPractice } from "./MathPractice";
 
 export const runtime = "nodejs";
 
-const GRADES: Grade[] = ["小4", "小5", "小6"];
+const GRADE_ORDER: Grade[] = [
+  "小4",
+  "小5",
+  "小6",
+  "中1",
+  "中2",
+  "中3",
+  "高1",
+  "高2",
+  "高3",
+];
 
 /**
  * 算数の練習ページ（サーバーコンポーネント）。
@@ -15,8 +25,11 @@ const GRADES: Grade[] = ["小4", "小5", "小6"];
 export default function MathPage() {
   const apiKeyConfigured = hasApiKey();
 
-  // 学年 → 単元一覧（Unit の公開フィールドだけをクライアントへ）
-  const grades = GRADES.map((grade) => ({
+  // 実在する学年だけを、小→高の順で（単元のある学年のみタブに出す）
+  const presentGrades = GRADE_ORDER.filter((g) =>
+    UNITS.some((u) => u.grade === g),
+  );
+  const grades = presentGrades.map((grade) => ({
     grade,
     units: unitsForGrade(grade).map((u) => ({
       id: u.id,
@@ -28,6 +41,10 @@ export default function MathPage() {
   }));
 
   const totalUnits = UNITS.length;
+  const gradeRange =
+    presentGrades.length > 0
+      ? `${presentGrades[0]} → ${presentGrades[presentGrades.length - 1]}`
+      : "";
 
   return (
     <div className="min-h-screen">
@@ -58,7 +75,7 @@ export default function MathPage() {
         {/* ===== ヒーロー ===== */}
         <section className="mb-8 text-center sm:mb-10">
           <span className="inline-block text-[11px] font-bold uppercase tracking-[0.24em] text-terra">
-            小4 → 小6 ・ 算数ドリル
+            {gradeRange} ・ 算数ドリル
           </span>
           <h1 className="mt-4 font-serif text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
             じぶんの ペースで、

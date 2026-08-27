@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import {
   SUBJECTS,
-  QUIZ_GRADES,
   getSubjectMeta,
   subjectUnits,
+  subjectGrades,
 } from "@/lib/quiz";
 import type { Subject } from "@/lib/quiz";
 import { QuizPractice } from "../../quiz/QuizPractice";
@@ -36,6 +36,9 @@ export default async function LearnSubjectPage({
 
   const units = subjectUnits(subject);
   const totalUnits = units.length;
+  const grades = subjectGrades(subject);
+  const gradeRange =
+    grades.length > 0 ? `${grades[0]} → ${grades[grades.length - 1]}` : "";
 
   return (
     <div className="min-h-screen">
@@ -63,7 +66,7 @@ export default async function LearnSubjectPage({
         {/* ===== ヒーロー ===== */}
         <section className="mb-8 text-center sm:mb-10">
           <span className="inline-block text-[11px] font-bold uppercase tracking-[0.24em] text-terra">
-            小4 → 小6 ・ {meta.label}クイズ
+            {gradeRange} ・ {meta.label}クイズ
           </span>
           <h1 className="mt-4 font-serif text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
             <span aria-hidden="true" className="mr-2 text-3xl sm:text-4xl">
@@ -88,7 +91,7 @@ export default async function LearnSubjectPage({
 
         {/* ===== 練習カード ===== */}
         <section className="rounded-[1.5rem] border border-line bg-white/70 p-4 shadow-card sm:p-6">
-          <QuizPractice subject={subject} units={units} grades={QUIZ_GRADES} />
+          <QuizPractice subject={subject} units={units} grades={grades} />
         </section>
 
         {/* ===== フッター ===== */}

@@ -1,12 +1,20 @@
-import { SUBJECTS } from "@/lib/quiz";
+import { SUBJECTS, subjectGrades } from "@/lib/quiz";
+import { UNITS as MATH_UNITS } from "@/lib/math";
 import HomeHub from "./HomeHub";
 
 /**
  * トップページ = コース選択ハブ（サーバーコンポーネント）。
  * 進捗と「親からの一言」でやる気を高める。中身は client の HomeHub が描画。
- * 教科メタは @/lib/quiz の SUBJECTS を使う（算数は HomeHub 内で別枠追加）。
+ * 教科メタ＋各教科の実在学年を渡し、ハブが学齢に応じてコースを解放する。
  */
 export default function Home() {
+  // 各教科に実在する学年を添える（中身の有無でカードを解放するため）。
+  const subjectsWithGrades = SUBJECTS.map((s) => ({
+    ...s,
+    grades: subjectGrades(s.key),
+  }));
+  const mathGrades = Array.from(new Set(MATH_UNITS.map((u) => u.grade)));
+
   return (
     <div className="min-h-screen">
       {/* ===== ヘッダー / ナビ（最小限） ===== */}
@@ -31,7 +39,7 @@ export default function Home() {
 
       <main className="mx-auto flex w-full max-w-3xl flex-col px-4 pb-12 pt-8 sm:pt-12">
         {/* ヒーローは学齢別コピーのため HomeHub 側で描画 */}
-        <HomeHub subjects={SUBJECTS} />
+        <HomeHub subjects={subjectsWithGrades} mathGrades={mathGrades} />
 
         <p className="mt-8 text-center text-[11px] text-faint">
           AI先生 · 探究のための生成AIチューター

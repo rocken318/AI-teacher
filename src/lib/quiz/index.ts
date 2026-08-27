@@ -14,11 +14,16 @@ import type {
 // 各教科の問題バンク（別チームが作成）。
 import { SCIENCE_UNITS } from "./science";
 import { SCIENCE_UNITS_B } from "./science_b";
+import { SCIENCE_UNITS_J2 } from "./science_j2";
 import { SOCIAL_UNITS } from "./social";
 import { SOCIAL_UNITS_B } from "./social_b";
 import { SOCIAL_UNITS_C } from "./social_c";
+import { HISTORY_UNITS_J2 } from "./history_j2";
+import { GEOGRAPHY_UNITS_J2 } from "./geography_j2";
 import { JAPANESE_UNITS } from "./japanese";
+import { JAPANESE_UNITS_J2 } from "./japanese_j2";
 import { ENGLISH_UNITS } from "./english";
+import { ENGLISH_UNITS_J2 } from "./english_j2";
 
 export type {
   Subject,
@@ -32,23 +37,44 @@ export type {
 export const QUIZ_UNITS: QuizUnit[] = [
   ...SCIENCE_UNITS,
   ...SCIENCE_UNITS_B,
+  ...SCIENCE_UNITS_J2,
   ...SOCIAL_UNITS,
   ...SOCIAL_UNITS_B,
   ...SOCIAL_UNITS_C,
+  ...HISTORY_UNITS_J2,
+  ...GEOGRAPHY_UNITS_J2,
   ...JAPANESE_UNITS,
+  ...JAPANESE_UNITS_J2,
   ...ENGLISH_UNITS,
+  ...ENGLISH_UNITS_J2,
 ];
 
-/** 対象学年の一覧。 */
+/** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
+export const GRADE_ORDER: QuizGrade[] = [
+  "小4",
+  "小5",
+  "小6",
+  "中1",
+  "中2",
+  "中3",
+  "高1",
+  "高2",
+  "高3",
+];
+
+/** 対象学年の一覧（後方互換）。 */
 export const QUIZ_GRADES: QuizGrade[] = ["小4", "小5", "小6"];
 
 /**
  * 教科メタ情報（UI表示用）。
  * accent は Tailwind の色トークン名。
+ * 中学では社会を「歴史」「地理」に分ける。
  */
 export const SUBJECTS: SubjectMeta[] = [
   { key: "science", label: "理科", emoji: "🔬", accent: "emerald" },
   { key: "social", label: "社会", emoji: "🗺️", accent: "amber" },
+  { key: "history", label: "歴史", emoji: "📜", accent: "orange" },
+  { key: "geography", label: "地理", emoji: "🌏", accent: "teal" },
   { key: "japanese", label: "国語", emoji: "✍️", accent: "rose" },
   { key: "english", label: "英語", emoji: "🔤", accent: "sky" },
 ];
@@ -69,6 +95,14 @@ export function subjectUnits(subject: Subject): QuizUnit[] {
 /** 指定教科・学年の単元一覧。 */
 export function unitsFor(subject: Subject, grade: QuizGrade): QuizUnit[] {
   return QUIZ_UNITS.filter((u) => u.subject === subject && u.grade === grade);
+}
+
+/** その教科に実在する学年（小→高の順）。UIの学年タブ生成に使う。 */
+export function subjectGrades(subject: Subject): QuizGrade[] {
+  const present = new Set(
+    QUIZ_UNITS.filter((u) => u.subject === subject).map((u) => u.grade),
+  );
+  return GRADE_ORDER.filter((g) => present.has(g));
 }
 
 /** IDから単元を取得。 */

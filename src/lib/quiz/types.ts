@@ -5,11 +5,26 @@
 //
 // バンク（別チーム）と学習UI（ハブ）はこのファイルの export だけに依存する。
 
-/** 対象教科。 */
-export type Subject = "science" | "social" | "japanese" | "english";
+/** 対象教科。中学は社会を「歴史」「地理」に分ける。 */
+export type Subject =
+  | "science"
+  | "social"
+  | "history"
+  | "geography"
+  | "japanese"
+  | "english";
 
-/** 対象学年。 */
-export type QuizGrade = "小4" | "小5" | "小6";
+/** 対象学年（小4〜高3）。 */
+export type QuizGrade =
+  | "小4"
+  | "小5"
+  | "小6"
+  | "中1"
+  | "中2"
+  | "中3"
+  | "高1"
+  | "高2"
+  | "高3";
 
 /**
  * 1問（4択などの選択式）。

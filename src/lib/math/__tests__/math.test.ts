@@ -272,14 +272,16 @@ describe("gradeAnswer: 比(text)の正規化", () => {
 // ------------------------------------------------------------------
 
 describe("unitsForGrade / getUnit の整合", () => {
-  it("学年別の件数が全体と一致", () => {
-    const g4 = unitsForGrade("小4");
-    const g5 = unitsForGrade("小5");
-    const g6 = unitsForGrade("小6");
-    expect(g4.length + g5.length + g6.length).toBe(UNITS.length);
-    expect(g4.every((u) => u.grade === "小4")).toBe(true);
-    expect(g5.every((u) => u.grade === "小5")).toBe(true);
-    expect(g6.every((u) => u.grade === "小6")).toBe(true);
+  it("学年別の件数が全体と一致（全学年）", () => {
+    // 実在する全学年で unitsForGrade を合計すると UNITS 全件になる。
+    const gradesPresent = Array.from(new Set(UNITS.map((u) => u.grade)));
+    let sum = 0;
+    for (const g of gradesPresent) {
+      const list = unitsForGrade(g);
+      expect(list.every((u) => u.grade === g)).toBe(true);
+      sum += list.length;
+    }
+    expect(sum).toBe(UNITS.length);
   });
 
   it("getUnit は各IDを引ける／未知はundefined", () => {

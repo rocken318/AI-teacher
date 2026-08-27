@@ -17,17 +17,35 @@ import {
 // マスコット（Sensei）は一旦オフ。復活できるようコンポーネントは残置。
 // import { Sensei } from "@/components/Sensei";
 
-/** 教科メタ（@/lib/quiz の SUBJECTS の要素。別チーム提供）。 */
+/** 教科メタ（@/lib/quiz の SUBJECTS ＋ その教科に実在する学年）。 */
 export type SubjectMeta = {
   key: string;
   label: string;
   emoji: string;
   /** アクセント色。Tailwind の色トークン名（例 "emerald"）。 */
   accent: string;
+  /** その教科に実在する学年（例 ["小4","中2"]）。中身の有無判定に使う。 */
+  grades?: string[];
 };
 
 type Props = {
   subjects: SubjectMeta[];
+  /** 算数（math）に実在する学年。 */
+  mathGrades?: string[];
+};
+
+/** 学齢 → 対象学年。 */
+const STAGE_GRADES: Record<Stage, string[]> = {
+  elementary: ["小4", "小5", "小6"],
+  junior: ["中1", "中2", "中3"],
+  senior: ["高1", "高2", "高3"],
+};
+
+/** 学齢ごとに出す教科（クイズ系）。中学以降は社会を歴史・地理に分ける。 */
+const STAGE_SUBJECTS: Record<Stage, string[]> = {
+  elementary: ["science", "social", "japanese", "english"],
+  junior: ["science", "history", "geography", "japanese", "english"],
+  senior: ["science", "history", "geography", "japanese", "english"],
 };
 
 /**
@@ -402,7 +420,7 @@ const COPY: Record<Stage, Copy> = {
   },
 };
 
-export default function HomeHub({ subjects }: Props) {
+export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   // SSR 安全: マウント後に localStorage を読む
   const [mounted, setMounted] = useState(false);
   const [stage, setStageState] = useState<Stage | null>(null);
@@ -443,8 +461,15 @@ export default function HomeHub({ subjects }: Props) {
     return <StagePicker onPick={pickStage} />;
   }
 
-  // 教科の中身は現状 小4〜6 のみ。中高では「準備中」表示（探究は全学齢で使える）。
-  const subjectsComingSoon = stage !== "elementary";
+  // その学齢の対象学年。教科カードは「この学年に中身があるか」で解放する。
+  const stageGrades = STAGE_GRADES[stage];
+  const hasContent = (grades?: string[]) =>
+    (grades ?? []).some((g) => stageGrades.includes(g));
+  const mathComingSoon = !hasContent(mathGrades);
+  // この学齢で出す教科（順番も固定）。
+  const stageSubjects = STAGE_SUBJECTS[stage]
+    .map((key) => subjects.find((s) => s.key === key))
+    .filter((s): s is SubjectMeta => Boolean(s));
   const stageMeta = getStageMeta(stage);
   const c = COPY[stage]; // 学齢別コピー
   const g = GREETINGS[stage];
@@ -563,21 +588,21 @@ export default function HomeHub({ subjects }: Props) {
           {c.courseTitle}
         </h2>
         <div className="stagger grid gap-3 sm:grid-cols-2">
-          {/* 算数（別枠） */}
+          {/* 算数／数学（別枠） */}
           <CourseCard
             href="/math"
             emoji="🔢"
-            label="算数"
+            label={stage === "elementary" ? "算数" : "数学"}
             accent="#2f6fb0"
             attempts={math.attempts}
             correct={math.correct}
             tagline={c.taglineMath}
-            comingSoon={subjectsComingSoon}
+            comingSoon={mathComingSoon}
             copy={c}
           />
 
-          {/* 理科・社会・国語・英語（SUBJECTS から） */}
-          {subjects.map((s) => {
+          {/* 学齢に応じた教科（理科・社会/歴史地理・国語・英語） */}
+          {stageSubjects.map((s) => {
             const p = bySubject[s.key] ?? { attempts: 0, correct: 0 };
             return (
               <CourseCard
@@ -589,7 +614,7 @@ export default function HomeHub({ subjects }: Props) {
                 attempts={p.attempts}
                 correct={p.correct}
                 tagline={c.taglineQuiz}
-                comingSoon={subjectsComingSoon}
+                comingSoon={!hasContent(s.grades)}
                 copy={c}
               />
             );
