@@ -26,9 +26,22 @@ type ProblemDTO = {
   choices?: string[];
 };
 
+/** grade API のレスポンス。 */
+type GradeDTO = {
+  correct: boolean;
+  expected: string;
+  /** 不正解時のみ。ルール診断による原因（無いこともある）。 */
+  diagnosis?: string | null;
+};
+
 type Props = {
   grades: GradeGroup[];
-  apiKeyConfigured: boolean;
+  /**
+   * 親ページから渡されるが、算数の練習では未使用。
+   * ヒント・診断はすべてルールベース（生成AI不使用）のため参照しない。
+   * 契約維持のため型には残す（任意）。
+   */
+  apiKeyConfigured?: boolean;
 };
 
 type Phase = "answering" | "graded";
@@ -47,7 +60,7 @@ function inputHint(t: AnswerType): string {
   }
 }
 
-export function MathPractice({ grades, apiKeyConfigured }: Props) {
+export function MathPractice({ grades }: Props) {
   const [activeGrade, setActiveGrade] = useState<Grade>(
     grades[0]?.grade ?? "小4",
   );
@@ -58,22 +71,19 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
   const [answerToken, setAnswerToken] = useState<string>("");
   const [userInput, setUserInput] = useState("");
   const [phase, setPhase] = useState<Phase>("answering");
-  const [result, setResult] = useState<{ correct: boolean; expected: string } | null>(
-    null,
-  );
+  const [result, setResult] = useState<GradeDTO | null>(null);
 
   // スコア
   const [correctCount, setCorrectCount] = useState(0);
   const [attemptCount, setAttemptCount] = useState(0);
 
-  // AIヒント/解説
+  // 静的ヒント（生成AI不使用。problem API が返す固定の一文）
   const [hint, setHint] = useState<string>("");
-  const [feedback, setFeedback] = useState<string>("");
+  const [showHint, setShowHint] = useState(false);
 
   // 通信状態
   const [loadingProblem, setLoadingProblem] = useState(false);
   const [grading, setGrading] = useState(false);
-  const [loadingHint, setLoadingHint] = useState(false);
   const [error, setError] = useState<string>("");
 
   const activeUnits =
@@ -87,7 +97,7 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
     setResult(null);
     setUserInput("");
     setHint("");
-    setFeedback("");
+    setShowHint(false);
     try {
       const res = await fetch("/api/math/problem", {
         method: "POST",
@@ -98,9 +108,11 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
       const data = (await res.json()) as {
         problem: ProblemDTO;
         answerToken: string;
+        hint?: string;
       };
       setProblem(data.problem);
       setAnswerToken(data.answerToken);
+      setHint(data.hint ?? "");
     } catch {
       setError("もんだいの よみこみに しっぱいしました。もういちど ためしてね。");
       setProblem(null);
@@ -139,7 +151,7 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
         }),
       });
       if (!res.ok) throw new Error(`grade ${res.status}`);
-      const data = (await res.json()) as { correct: boolean; expected: string };
+      const data = (await res.json()) as GradeDTO;
       setResult(data);
       setPhase("graded");
       setAttemptCount((n) => n + 1);
@@ -151,71 +163,36 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
       }
       if (data.correct) {
         setCorrectCount((n) => n + 1);
-      } else {
-        // 不正解 → AIの やさしい解説を取りに行く
-        void fetchFeedback(userInput);
       }
     } catch {
       setError("さいてんに しっぱいしました。もういちど ためしてね。");
     } finally {
       setGrading(false);
     }
-    // fetchFeedback は answerToken にのみ依存し、その answerToken は下の依存に含む
-    // （定義順の都合で参照は省略）。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUnit, problem, answerToken, userInput]);
 
-  /** AIヒント（答えは言わない）。 */
-  const fetchHint = useCallback(async () => {
-    if (!problem || !answerToken) return;
-    setLoadingHint(true);
-    setError("");
-    try {
-      const res = await fetch("/api/math/help", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // 正解・問題文はトークンからサーバーが復元する
-        body: JSON.stringify({ answerToken, kind: "hint" }),
-      });
-      if (!res.ok) throw new Error(`help ${res.status}`);
-      const data = (await res.json()) as { text: string };
-      setHint(data.text);
-    } catch {
-      setError("ヒントの よみこみに しっぱいしました。");
-    } finally {
-      setLoadingHint(false);
-    }
-  }, [problem, answerToken]);
-
-  /** AIのやさしい解説（不正解時）。正解・問題文はトークンからサーバーが復元。 */
-  const fetchFeedback = useCallback(
-    async (wrong: string) => {
-      if (!answerToken) return;
-      try {
-        const res = await fetch("/api/math/help", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            answerToken,
-            kind: "feedback",
-            userInput: wrong,
-          }),
-        });
-        if (!res.ok) throw new Error(`help ${res.status}`);
-        const data = (await res.json()) as { text: string };
-        setFeedback(data.text);
-      } catch {
-        // 解説の失敗はサイレントに（採点結果は表示済み）
-      }
-    },
-    [answerToken],
-  );
+  /** ヒント表示（静的・生成AI不使用。problem API が返した固定文を出す）。 */
+  const toggleHint = useCallback(() => {
+    setShowHint((v) => !v);
+  }, []);
 
   /** つぎのもんだい。 */
   const next = useCallback(() => {
     if (!selectedUnit) return;
     void fetchProblem(selectedUnit.id);
   }, [selectedUnit, fetchProblem]);
+
+  /**
+   * もう一回（解き直し）。
+   * 同じ問題（answerToken）をそのまま保ち、入力と採点結果だけをクリアして
+   * 「answering」に戻す。新しい問題は取りに行かない。
+   */
+  const retry = useCallback(() => {
+    setResult(null);
+    setPhase("answering");
+    setUserInput("");
+    setShowHint(false);
+  }, []);
 
   const backToUnits = useCallback(() => {
     setSelectedUnit(null);
@@ -225,7 +202,7 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
     setPhase("answering");
     setUserInput("");
     setHint("");
-    setFeedback("");
+    setShowHint(false);
   }, []);
 
   // ============ 単元選択ビュー ============
@@ -384,15 +361,21 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
                   {grading ? "さいてん中…" : "こたえあわせ"}
                 </button>
                 <button
-                  onClick={fetchHint}
-                  disabled={loadingHint}
+                  onClick={toggleHint}
+                  disabled={!hint}
                   className="rounded-full border border-line bg-paper px-5 py-2 text-sm font-bold text-ink-soft transition hover:text-ink disabled:opacity-50"
                 >
-                  {loadingHint ? "ヒントを かんがえ中…" : "ヒント"}
+                  {showHint ? "ヒントを かくす" : "ヒント"}
                 </button>
               </div>
             ) : (
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  onClick={retry}
+                  className="rounded-full border border-sky bg-paper px-5 py-2 text-sm font-bold text-sky shadow-soft transition hover:bg-sky-soft/60"
+                >
+                  ↺ もう一回
+                </button>
                 <button
                   onClick={next}
                   className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"
@@ -402,8 +385,8 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
               </div>
             )}
 
-            {/* ヒント表示 */}
-            {hint && phase === "answering" && (
+            {/* ヒント表示（静的・生成AI不使用） */}
+            {showHint && hint && phase === "answering" && (
               <div className="mt-4 rounded-xl border border-sky/30 bg-sky-soft/60 px-4 py-3 text-[14px] leading-relaxed text-ink">
                 <span className="mr-1 font-bold text-sky">ヒント:</span>
                 {hint}
@@ -438,10 +421,19 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
                   )}
                 </div>
 
-                {!result.correct && (
+                {!result.correct && result.diagnosis && (
+                  <div className="mt-3 rounded-xl border-2 border-terra/50 bg-terra/5 px-4 py-3 text-[14px] leading-relaxed text-ink">
+                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-terra">
+                      どう かんがえたかな？
+                    </p>
+                    <p className="font-bold">{result.diagnosis}</p>
+                  </div>
+                )}
+
+                {!result.correct && !result.diagnosis && hint && (
                   <div className="mt-3 rounded-xl border border-line bg-paper px-4 py-3 text-[14px] leading-relaxed text-ink">
                     <span className="mr-1 font-bold text-terra">先生:</span>
-                    {feedback || "解説を かんがえ中…"}
+                    {hint}
                   </div>
                 )}
               </div>
@@ -450,11 +442,9 @@ export function MathPractice({ grades, apiKeyConfigured }: Props) {
         )}
       </div>
 
-      {!apiKeyConfigured && (
-        <p className="mt-3 text-center text-[11px] text-faint">
-          練習モード：ヒントと解説は 決まった 文が 出ます。
-        </p>
-      )}
+      <p className="mt-3 text-center text-[11px] text-faint">
+        ヒントと まちがいの せつめいは、決まった ルールで 出ます（AIは つかいません）。
+      </p>
     </div>
   );
 }

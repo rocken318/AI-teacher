@@ -27,6 +27,8 @@ export type AnswerTokenPayload = {
   unitId: string;
   answer: string;
   prompt: string;
+  /** 診断用の被演算数。旧トークン（meta無し）でも壊れないよう任意。 */
+  meta?: Record<string, number>;
 };
 
 export function encodeToken(payload: AnswerTokenPayload): string {
@@ -60,7 +62,16 @@ export function decodeToken(token: string): AnswerTokenPayload | null {
       typeof obj.answer === "string" &&
       typeof obj.prompt === "string"
     ) {
-      return obj;
+      // 旧トークン（meta 無し）でも壊れないよう既定値でそろえる。
+      return {
+        unitId: obj.unitId,
+        answer: obj.answer,
+        prompt: obj.prompt,
+        meta:
+          obj.meta && typeof obj.meta === "object" && !Array.isArray(obj.meta)
+            ? obj.meta
+            : {},
+      };
     }
     return null;
   } catch {

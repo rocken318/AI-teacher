@@ -8,7 +8,7 @@ export const runtime = "nodejs";
  * 採点 API。
  *
  * リクエスト: { token: string, choiceIndex: number }
- * レスポンス: { correct: boolean, answerIndex: number, explanation: string }
+ * レスポンス: { correct: boolean, answerIndex: number, explanation: string, hint: string | null }
  *
  * token を復号して { unitId, itemId, answerIndex } を取り出し、
  * gradeQuiz(unitId, itemId, choiceIndex) で採点する（正解はサーバー内で確定）。
@@ -48,5 +48,6 @@ export async function POST(req: NextRequest) {
     correct: result.correct,
     answerIndex: result.answerIndex,
     explanation: result.explanation,
+    hint: result.hint,
   });
 }

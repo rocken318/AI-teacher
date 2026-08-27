@@ -7,18 +7,22 @@ import {
   reduceFraction,
   formatFraction,
   formatRatio,
+  diagnoseUnit,
 } from "./units";
 
 export type { Grade, AnswerType, Problem, Unit, GradeResult } from "./types";
 
 /** 全単元（メタ情報のみ。ジェネレータは公開しない）。 */
-export const UNITS: Unit[] = UNIT_DEFS.map(({ id, grade, title, lesson, answerType }) => ({
-  id,
-  grade,
-  title,
-  lesson,
-  answerType,
-}));
+export const UNITS: Unit[] = UNIT_DEFS.map(
+  ({ id, grade, title, lesson, answerType, hint }) => ({
+    id,
+    grade,
+    title,
+    lesson,
+    answerType,
+    hint,
+  }),
+);
 
 /** 内部検索用マップ。 */
 const UNIT_MAP = new Map(UNIT_DEFS.map((u) => [u.id, u]));
@@ -31,6 +35,27 @@ export function unitsForGrade(grade: Grade): Unit[] {
 /** IDから単元を取得。 */
 export function getUnit(id: string): Unit | undefined {
   return UNITS.find((u) => u.id === id);
+}
+
+/**
+ * 単元の静的ヒント（解き方の最初の一歩）。未知IDは空文字。
+ * 生成AIは使わず、あらかじめ用意した一文を返す。
+ */
+export function getHint(unitId: string): string {
+  return UNIT_MAP.get(unitId)?.hint ?? "";
+}
+
+/**
+ * 誤答をルールで診断する。
+ * ユーザー入力（正規化後）が「ありがちな誤答」と一致したら原因メッセージ、
+ * 特定できなければ null を返す。計算で確実に判定し、ハルシネーションはしない。
+ */
+export function diagnose(
+  unitId: string,
+  problem: Problem,
+  userInput: string,
+): string | null {
+  return diagnoseUnit(unitId, problem, userInput);
 }
 
 /**

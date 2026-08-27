@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUnit, generateProblem } from "@/lib/math";
+import { getUnit, generateProblem, getHint } from "@/lib/math";
 import { encodeToken } from "@/lib/math/token";
 
 export const runtime = "nodejs";
@@ -41,11 +41,12 @@ export async function POST(req: NextRequest) {
   // 問題生成・採点は別チームの純ロジックに委譲（自分では計算しない）
   const problem = generateProblem(unitId);
 
-  // answer を含む採点トークン（base64url）。素の正解JSONは晒さない。
+  // answer と診断用 meta を含む採点トークン（base64url）。素の正解JSONは晒さない。
   const answerToken = encodeToken({
     unitId,
     answer: problem.answer,
     prompt: problem.prompt,
+    meta: problem.meta ?? {},
   });
 
   return NextResponse.json({
@@ -57,5 +58,7 @@ export async function POST(req: NextRequest) {
       choices: problem.choices,
     },
     answerToken,
+    // 静的ヒント（生成AI不使用）。UI のヒントボタン用。
+    hint: getHint(unitId),
   });
 }

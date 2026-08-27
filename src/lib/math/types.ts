@@ -28,6 +28,12 @@ export interface Problem {
   answerType: AnswerType;
   /** 選択肢（現状は未使用だが契約として保持）。 */
   choices?: string[];
+  /**
+   * 診断用の被演算数（計算に使った数値）。
+   * 例: frac-mul なら { n1, d1, n2, d2 }、percent なら { base, percent } 等。
+   * ありがちな誤答をこの値から計算で再現し、原因を確実に特定する（生成AIは使わない）。
+   */
+  meta?: Record<string, number>;
 }
 
 /** 単元（問題ジェネレータのメタ情報）。 */
@@ -38,6 +44,8 @@ export interface Unit {
   /** 教科書的な短い説明（2〜4文、やさしい日本語）。 */
   lesson: string;
   answerType: AnswerType;
+  /** 解き方の最初の一歩（静的・やさしい一文。答えは言わない）。 */
+  hint: string;
 }
 
 /** 採点結果。 */

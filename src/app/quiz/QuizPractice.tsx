@@ -17,6 +17,8 @@ type GradeDTO = {
   correct: boolean;
   answerIndex: number;
   explanation: string;
+  /** 選んだ誤答に刺さる一言（未設定・正解時は null）。 */
+  hint?: string | null;
 };
 
 type Props = {
@@ -127,6 +129,19 @@ export function QuizPractice({ subject, units, grades }: Props) {
     if (!selectedUnit) return;
     void fetchQuestion(selectedUnit.id);
   }, [selectedUnit, fetchQuestion]);
+
+  /**
+   * もう一回（同じ問題を解き直す）。
+   * token は維持し、選択と採点結果だけをクリアして再解答できるようにする。
+   * 新しく通信はしない（AIも使わない）。
+   */
+  const retry = useCallback(() => {
+    if (!question) return;
+    setResult(null);
+    setChosen(null);
+    setPhase("answering");
+    setError("");
+  }, [question]);
 
   const backToUnits = useCallback(() => {
     setSelectedUnit(null);
@@ -325,12 +340,29 @@ export function QuizPractice({ subject, units, grades }: Props) {
                   </span>
                 </div>
 
+                {/* 誤答ヒント（不正解で hint があるときだけ）。まず勘違いを指摘する。 */}
+                {!result.correct && result.hint && (
+                  <div className="mt-3 rounded-xl border border-terra/50 bg-terra/5 px-4 py-3 text-[14px] font-bold leading-relaxed text-ink">
+                    <span className="mr-1 text-terra">ヒント:</span>
+                    {result.hint}
+                  </div>
+                )}
+
+                {/* 正しい理解（かいせつ）。hint の有無にかかわらず出す。 */}
                 <div className="mt-3 rounded-xl border border-line bg-paper px-4 py-3 text-[14px] leading-relaxed text-ink">
                   <span className="mr-1 font-bold text-terra">かいせつ:</span>
                   {result.explanation}
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {!result.correct && (
+                    <button
+                      onClick={retry}
+                      className="rounded-full border border-terra bg-white px-5 py-2 text-sm font-bold text-terra shadow-soft transition hover:bg-terra/5"
+                    >
+                      ↻ もう一回
+                    </button>
+                  )}
                   <button
                     onClick={next}
                     className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"

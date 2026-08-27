@@ -25,6 +25,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["電流", "電池", "磁石"],
         answerIndex: 0,
         explanation: "回路を流れる電気の流れを「電流」といいます。",
+        choiceHints: [
+          null,
+          "「電池」は電気を送り出すものだよ。どう線を流れる電気そのものは『電流』というんだ。",
+          "「磁石」は鉄を引きつけるものだね。どう線を流れる電気は『電流』というよ。",
+        ],
       },
       {
         id: "sci-4-electricity-2",
@@ -36,6 +41,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 1,
         explanation: "電気は、切れ目のない一つの輪（回路）になっているときに流れて豆電球が光ります。",
+        choiceHints: [
+          "とちゅうで切れていると電気は流れないよ。切れ目のない『一つの輪』にするのがポイントなんだ。",
+          null,
+          "どう線が1本だけだと輪にならないね。電池のプラスとマイナスを両方つないで、一つの輪にしよう。",
+        ],
       },
       {
         id: "sci-4-electricity-3",
@@ -43,6 +53,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["速くなる", "変わらない", "止まる"],
         answerIndex: 0,
         explanation: "直列つなぎにすると電流が大きくなるので、モーターは速く回ります。",
+        choiceHints: [
+          null,
+          "電池が増えると変わらない…ではないよ。直列つなぎだと電流が大きくなって、速くなるんだ。",
+          "電池を増やしても止まらないよ。直列つなぎは電流が大きくなって、むしろ速く回るんだ。",
+        ],
       },
       {
         id: "sci-4-electricity-4",
@@ -50,6 +65,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["同じ向きのまま", "反対向きになる", "回らなくなる"],
         answerIndex: 1,
         explanation: "電流の向きが逆になるので、モーターの回る向きも反対になります。",
+        choiceHints: [
+          "電池の向きを反対にすると、同じままにはならないよ。電流の向きが逆になって、回る向きも反対になるんだ。",
+          null,
+          "向きを反対にしても回らなくなるわけではないよ。ちゃんと回るけど、回る向きが反対になるんだ。",
+        ],
       },
       {
         id: "sci-4-electricity-5",
@@ -57,6 +77,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["ものさし", "けんび鏡", "けん流計（電流計）"],
         answerIndex: 2,
         explanation: "電流の大きさは「けん流計（電流計）」で調べることができます。",
+        choiceHints: [
+          "ものさしは長さをはかる道具だね。電流の大きさは『けん流計（電流計）』ではかるよ。",
+          "けんび鏡は小さいものを大きく見る道具だよ。電流の大きさは『けん流計（電流計）』ではかるんだ。",
+          null,
+        ],
       },
       {
         id: "sci-4-electricity-6",
@@ -64,6 +89,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["鉄のくぎ", "木のわりばし", "ガラスのコップ"],
         answerIndex: 0,
         explanation: "鉄などの金属は電気を通します。木やガラスは電気を通しません。",
+        choiceHints: [
+          null,
+          "木は電気を通さないよ。電気を通すのは鉄などの金属なんだ。",
+          "ガラスは電気を通さないよ。電気を通すのは鉄などの金属だよ。",
+        ],
       },
     ],
   },
@@ -141,6 +171,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["0℃", "50℃", "100℃"],
         answerIndex: 0,
         explanation: "水は0℃でこおり始めて、氷になります。",
+        choiceHints: [
+          null,
+          "50℃はまだあたたかくて、こおらないよ。水がこおり始めるのは0℃なんだ。",
+          "100℃は水がわき立つ（ふっとうする）温度だよ。こおり始めるのは0℃だから逆だね。",
+        ],
       },
       {
         id: "sci-4-water-states-2",
@@ -148,6 +183,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["ふっとう・約100℃", "じょう発・約0℃", "ぎょうこ・約50℃"],
         answerIndex: 0,
         explanation: "水は約100℃でふっとうし、さかんにあわ（水じょう気）を出してわき立ちます。",
+        choiceHints: [
+          null,
+          "じょう発は水面から静かに気体になることで、0℃でわき立つわけではないよ。さかんにあわが出てわき立つのは『ふっとう・約100℃』だよ。",
+          "ぎょうこは水が氷になることだよ。あわが出てわき立つのは『ふっとう・約100℃』なんだ。",
+        ],
       },
       {
         id: "sci-4-water-states-3",
@@ -155,6 +195,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["小さくなる", "大きくなる", "変わらない"],
         answerIndex: 1,
         explanation: "水は氷になると体積が大きくなります。だからペットボトルの水をこおらせるとふくらみます。",
+        choiceHints: [
+          "逆だよ。水は氷になると体積は『大きく』なるんだ。だから氷は水にうかぶし、こおらせるとふくらむよ。",
+          null,
+          "変わらないと思ったかな。じつは水は氷になると体積が大きくなるんだ。だからこおらせるとふくらむよ。",
+        ],
       },
       {
         id: "sci-4-water-states-4",
@@ -166,6 +211,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 1,
         explanation: "水じょう気は目に見えません。湯気は、水じょう気が冷えて小さな水のつぶにもどったものです。",
+        choiceHints: [
+          "水じょう気は目に見えないんだ。目に見える白い湯気は、水じょう気が冷えて小さな『水のつぶ』にもどったものだよ。",
+          null,
+          "けむりではないよ。湯気は、水じょう気が冷えてできた小さな水のつぶなんだ。",
+        ],
       },
       {
         id: "sci-4-water-states-5",
@@ -173,6 +223,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["水じょう気", "氷", "湯気"],
         answerIndex: 0,
         explanation: "水が気体になったものを「水じょう気」といい、目には見えません。",
+        choiceHints: [
+          null,
+          "氷は水が冷えてこおった固体だよ。熱して出てくる目に見えない気体は『水じょう気』なんだ。",
+          "湯気は目に見える小さな水のつぶだね。目に見えない気体のほうは『水じょう気』というよ。",
+        ],
       },
       {
         id: "sci-4-water-states-6",
@@ -184,6 +239,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 1,
         explanation: "水が水じょう気になって空気中へ出ていく（じょう発する）ので、せんたく物はかわきます。",
+        choiceHints: [
+          "氷になったのではないよ。せんたく物の水が『水じょう気』になって空気中へ出ていくから、かわくんだ。",
+          null,
+          "水はふえていないよ。反対に、水が水じょう気になって空気中へ出ていく（へっていく）からかわくんだ。",
+        ],
       },
     ],
   },
@@ -393,6 +453,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 1,
         explanation: "とけた食塩はなくなったのではなく、目に見えないほど小さくなって水全体に広がっています。",
+        choiceHints: [
+          "なくなったわけではないよ。目に見えないほど小さくなって水全体に広がっているだけなんだ（だから重さは残るよ）。",
+          null,
+          "全部とけたのなら、底に残ってはいないよ。目に見えないほど小さくなって水全体に広がっているんだ。",
+        ],
       },
       {
         id: "sci-5-dissolving-2",
@@ -400,6 +465,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["50g", "60g", "10g"],
         answerIndex: 1,
         explanation: "とけても重さはなくならないので、水50g＋食塩10g＝60gになります。",
+        choiceHints: [
+          "食塩の重さが消えたと思ったかな。とけても重さはなくならないよ。水50g＋食塩10g＝60gだよ。",
+          null,
+          "食塩10gだけではないよ。水の重さも足すのを忘れずに。水50g＋食塩10g＝60gだよ。",
+        ],
       },
       {
         id: "sci-5-dissolving-3",
@@ -407,6 +477,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["ふえる", "へる", "変わらない"],
         answerIndex: 0,
         explanation: "水の量がふえると、とかすことのできる量もふえます。",
+        choiceHints: [
+          null,
+          "逆だよ。水がふえれば、その分だけとかせる量も『ふえる』んだ。",
+          "変わらないわけではないよ。水の量がふえると、とかせる量もふえるんだ。",
+        ],
       },
       {
         id: "sci-5-dissolving-4",
@@ -414,6 +489,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["高くする（あたためる）", "低くする（冷やす）", "変えても同じ"],
         answerIndex: 0,
         explanation: "ミョウバンは水の温度を高くするほど、とける量が大きくふえます。",
+        choiceHints: [
+          null,
+          "冷やすと逆にとける量はへってしまうよ。ミョウバンは水をあたためる（高くする）ほどたくさんとけるんだ。",
+          "食塩は温度で大きく変わらないけれど、ミョウバンは別だよ。温度を高くするほどたくさんとけるんだ。",
+        ],
       },
       {
         id: "sci-5-dissolving-5",
@@ -425,6 +505,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "食塩水を熱するなどして水をじょう発させると、とけていた食塩がふたたび出てきます。",
+        choiceHints: [
+          null,
+          "食塩を足すと、とけている食塩をとり出すことにはならないよ。水をじょう発させると、とけていた食塩が出てくるんだ。",
+          "食塩水は、置いておくだけでは食塩が出てこないよ（食塩は冷やしてもあまり出ない）。水をじょう発させるのが確実だよ。",
+        ],
       },
       {
         id: "sci-5-dissolving-6",
@@ -432,6 +517,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["ろ過", "ふっとう", "受粉"],
         answerIndex: 0,
         explanation: "ろ紙を使って、とけ残った固体と液体を分ける方法を「ろ過」といいます。",
+        choiceHints: [
+          null,
+          "ふっとうは水がわき立つことだよ。紙で固体と液体を分ける方法は『ろ過』というんだ。",
+          "受粉は花の学習で出てくる言葉だね。紙で固体と液体を分けるのは『ろ過』だよ。",
+        ],
       },
     ],
   },
@@ -451,6 +541,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["電磁石", "かん電池", "方位じしん"],
         answerIndex: 0,
         explanation: "コイルに鉄しんを入れて電流を流すと磁石になるものを「電磁石」といいます。",
+        choiceHints: [
+          null,
+          "かん電池は電気を送り出すものだよ。コイルに電流を流すと磁石になるものは『電磁石』なんだ。",
+          "方位じしんは北を指す道具だね。コイルに電流を流すと磁石になるものは『電磁石』だよ。",
+        ],
       },
       {
         id: "sci-5-electromagnet-2",
@@ -462,6 +557,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "電磁石は電流が流れているときだけ磁石になり、電流を止めると磁石のはたらきはなくなります。",
+        choiceHints: [
+          null,
+          "ずっと磁石のままにはならないよ。電磁石は電流が流れているときだけ磁石で、止めるとはたらきがなくなるんだ。",
+          "止めると強くなる…のではないよ。電流を止めると、電磁石は磁石のはたらきがなくなるんだ。",
+        ],
       },
       {
         id: "sci-5-electromagnet-3",
@@ -473,6 +573,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "コイルのまき数をふやしたり、流れる電流を大きくしたりすると、電磁石は強くなります。",
+        choiceHints: [
+          null,
+          "まき数をへらすと逆に弱くなるよ。電磁石を強くするには、まき数を『ふやす』んだ。",
+          "鉄しんを取り出すと弱くなってしまうよ。強くするには、まき数をふやしたり電流を大きくするんだ。",
+        ],
       },
       {
         id: "sci-5-electromagnet-4",
@@ -480,6 +585,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["N極とS極", "プラスとマイナスの味", "赤色と青色の光"],
         answerIndex: 0,
         explanation: "電磁石にもN極とS極があります。電流の向きを変えると、N極とS極が入れかわります。",
+        choiceHints: [
+          null,
+          "味はないよ。ぼう磁石と同じように、電磁石にも『N極とS極』があるんだ。",
+          "光ではないよ。ぼう磁石と同じで、電磁石にも『N極とS極』があるんだ。",
+        ],
       },
       {
         id: "sci-5-electromagnet-5",
@@ -487,6 +597,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["強くなる", "弱くなる", "変わらない"],
         answerIndex: 0,
         explanation: "電流を大きくすると、電磁石は強くなります。",
+        choiceHints: [
+          null,
+          "逆だよ。電流を大きくすると、電磁石は『強く』なるんだ。",
+          "変わらないわけではないよ。電流を大きくすると電磁石は強くなるんだ。",
+        ],
       },
       {
         id: "sci-5-electromagnet-6",
@@ -494,6 +609,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["モーター", "ガラスのコップ", "木のいす"],
         answerIndex: 0,
         explanation: "モーターは電磁石のはたらきを利用してじくを回しています。",
+        choiceHints: [
+          null,
+          "ガラスのコップは電磁石とは関係ないよ。電磁石を利用しているのは『モーター』なんだ。",
+          "木のいすは電磁石とは関係ないよ。電磁石を利用しているのは『モーター』だよ。",
+        ],
       },
     ],
   },
@@ -517,6 +637,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["酸素", "ちっ素", "二酸化炭素"],
         answerIndex: 0,
         explanation: "ものが燃えるときには、空気中の酸素が使われます。",
+        choiceHints: [
+          null,
+          "ちっ素は空気にいちばん多いけれど、ものを燃やすはたらきはないよ。燃えるのに使われるのは『酸素』なんだ。",
+          "二酸化炭素は燃えたあとにふえる気体だよ。燃えるときに使われる（へる）のは『酸素』だから逆だね。",
+        ],
       },
       {
         id: "sci-6-combustion-2",
@@ -524,6 +649,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["二酸化炭素", "酸素", "水素"],
         answerIndex: 0,
         explanation: "ものが燃えると酸素が使われ、二酸化炭素ができてふえます。",
+        choiceHints: [
+          null,
+          "酸素は燃えるときに使われて『へる』ほうだよ。燃えたあとに『ふえる』のは二酸化炭素なんだ。",
+          "水素ではないよ。ものが燃えたあとにふえるのは二酸化炭素だよ。",
+        ],
       },
       {
         id: "sci-6-combustion-3",
@@ -531,6 +661,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["白くにごる", "赤くなる", "何も変わらない"],
         answerIndex: 0,
         explanation: "二酸化炭素を石灰水に通すと、石灰水が白くにごります。",
+        choiceHints: [
+          null,
+          "色が赤くなるのはリトマス紙の話とまざっているかも。石灰水は二酸化炭素で『白くにごる』んだ。",
+          "何も変わらないわけではないよ。二酸化炭素があると、石灰水は白くにごるんだ。",
+        ],
       },
       {
         id: "sci-6-combustion-4",
@@ -538,6 +673,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["ちっ素", "酸素", "二酸化炭素"],
         answerIndex: 0,
         explanation: "空気のおよそ5分の4はちっ素で、いちばん多くふくまれています。酸素は約5分の1です。",
+        choiceHints: [
+          null,
+          "酸素も多いけれど、空気の約5分の1なんだ。いちばん多い（約5分の4）のは『ちっ素』だよ。",
+          "二酸化炭素は空気にほんの少ししかないよ。いちばん多いのは『ちっ素』（約5分の4）なんだ。",
+        ],
       },
       {
         id: "sci-6-combustion-5",
@@ -549,6 +689,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "びんの中の酸素が使われて減っていくため、やがて火は消えます。",
+        choiceHints: [
+          null,
+          "ずっとは燃え続けられないよ。ふたをしていると新しい空気が入らず、酸素がなくなって火は消えるんだ。",
+          "大きくはならないよ。酸素がだんだん使われてへっていくので、火はやがて消えるんだ。",
+        ],
       },
       {
         id: "sci-6-combustion-6",
@@ -560,6 +705,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "酸素にはものを燃やすはたらきがあるので、酸素が多いとはげしく燃えます。",
+        choiceHints: [
+          null,
+          "酸素はものを燃やすはたらきがあるよ。だからすぐ消えるどころか、空気中よりはげしく燃えるんだ。",
+          "何も変わらないわけではないよ。酸素が多いと、空気中よりはげしく燃えるんだ。",
+        ],
       },
     ],
   },
@@ -583,6 +733,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "酸性の水よう液は、青色リトマス紙を赤色に変えます。",
+        choiceHints: [
+          null,
+          "逆だよ。『赤→青』はアルカリ性のはたらき。酸性は『青→赤』（青色リトマス紙を赤くする）んだ。",
+          "酸性はちゃんとリトマス紙を変えるよ。青色リトマス紙を赤色に変えるのが酸性のしるしなんだ。",
+        ],
       },
       {
         id: "sci-6-aqueous-solutions-2",
@@ -594,6 +749,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "アルカリ性の水よう液は、赤色リトマス紙を青色に変えます。",
+        choiceHints: [
+          null,
+          "逆だよ。『青→赤』は酸性のはたらき。アルカリ性は『赤→青』（赤色リトマス紙を青くする）んだ。",
+          "アルカリ性は両方赤くはしないよ。赤色リトマス紙を『青色』に変えるのがアルカリ性なんだ。",
+        ],
       },
       {
         id: "sci-6-aqueous-solutions-3",
@@ -601,6 +761,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["中性", "酸性", "アルカリ性"],
         answerIndex: 0,
         explanation: "食塩水は中性で、リトマス紙の色を変えません。",
+        choiceHints: [
+          null,
+          "食塩水はすっぱくないよね。酸性ではなく『中性』で、リトマス紙の色を変えないんだ。",
+          "食塩水はアルカリ性ではないよ。『中性』で、どちらのリトマス紙も色を変えないんだ。",
+        ],
       },
       {
         id: "sci-6-aqueous-solutions-4",
@@ -612,6 +777,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "うすい塩酸は鉄をとかします。このときあわ（気体）が出ます。",
+        choiceHints: [
+          null,
+          "鉄はふえないよ。反対に、うすい塩酸は鉄をとかしてしまうんだ（あわを出しながらね）。",
+          "何も起こらないわけではないよ。うすい塩酸は鉄をとかし、あわ（気体）が出るんだ。",
+        ],
       },
       {
         id: "sci-6-aqueous-solutions-5",
@@ -619,6 +789,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["二酸化炭素", "酸素", "ちっ素"],
         answerIndex: 0,
         explanation: "炭酸水は、水に二酸化炭素がとけた水よう液です。",
+        choiceHints: [
+          null,
+          "酸素ではないよ。炭酸水のあわの正体は『二酸化炭素』なんだ（石灰水を白くにごらせるよ）。",
+          "ちっ素ではないよ。炭酸水にとけているのは『二酸化炭素』だよ。",
+        ],
       },
       {
         id: "sci-6-aqueous-solutions-6",
@@ -630,6 +805,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "塩酸には塩化水素、アンモニア水にはアンモニアという気体がとけていて、においがあります。",
+        choiceHints: [
+          null,
+          "とけているのは固体ではないよ。塩酸やアンモニア水はにおいのある『気体』がとけているんだ。",
+          "何もとけていないなら、においはしないよね。じつはにおいのある『気体』がとけているんだ。",
+        ],
       },
     ],
   },
@@ -649,6 +829,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["支点", "力点", "作用点"],
         answerIndex: 0,
         explanation: "てこを支えている動かない点を「支点」といいます。",
+        choiceHints: [
+          null,
+          "力点は『力を加える点』だよ。棒を支えている動かない点は『支点』なんだ。",
+          "作用点は『ものにはたらく点』だよ。棒を支えている動かない点は『支点』なんだ。",
+        ],
       },
       {
         id: "sci-6-lever-2",
@@ -656,6 +841,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["長くする", "短くする", "変えない"],
         answerIndex: 0,
         explanation: "支点から力点までのきょりを長くするほど、小さな力で重いものを持ち上げられます。",
+        choiceHints: [
+          null,
+          "逆だよ。きょりを短くすると、かえって大きな力がいるんだ。『長くする』ほど小さな力ですむよ。",
+          "変えないままでは楽にならないよ。支点から力点までを『長くする』と、小さな力ですむんだ。",
+        ],
       },
       {
         id: "sci-6-lever-3",
@@ -663,6 +853,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["作用点", "支点", "頂点"],
         answerIndex: 0,
         explanation: "てこで力がはたらく（ものを動かす）点を「作用点」といいます。",
+        choiceHints: [
+          null,
+          "支点は棒を支える動かない点だよ。ものにはたらきかける点は『作用点』なんだ。",
+          "頂点はてこの用語ではないよ。ものにはたらきかける点は『作用点』というんだ。",
+        ],
       },
       {
         id: "sci-6-lever-4",
@@ -670,6 +865,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["20g", "10g", "5g"],
         answerIndex: 0,
         explanation: "「重さ×きょり」が左右で等しいとつり合います。左は10×6=60。右は3のきょりなので、60÷3=20gです。",
+        choiceHints: [
+          null,
+          "同じ10gだと思ったかな。きょりがちがうよ。左は10×6=60、右は3のきょりだから60÷3=20gなんだ。",
+          "きょりの数字（6と3）で計算したかな。使うのは『重さ×きょり』だよ。左10×6=60、60÷3=20gだね。",
+        ],
       },
       {
         id: "sci-6-lever-5",
@@ -681,6 +881,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         ],
         answerIndex: 0,
         explanation: "左右で「おもりの重さ × 支点からのきょり」が等しいとき、てこはつり合います。",
+        choiceHints: [
+          null,
+          "足し算（＋）ではないよ。てこは『重さ × きょり』（かけ算）が左右で等しいときにつり合うんだ。",
+          "おもりの数だけでは決まらないよ。『重さ × きょり』が左右で等しいときにつり合うんだ。",
+        ],
       },
       {
         id: "sci-6-lever-6",
@@ -688,6 +893,11 @@ export const SCIENCE_UNITS: QuizUnit[] = [
         choices: ["はさみ", "コップ", "下じき"],
         answerIndex: 0,
         explanation: "はさみは支点・力点・作用点があり、てこのはたらきを利用した道具です。",
+        choiceHints: [
+          null,
+          "コップはてこではないよ。支点・力点・作用点があるのは『はさみ』なんだ。",
+          "下じきはてこではないよ。支点・力点・作用点があるのは『はさみ』だよ。",
+        ],
       },
     ],
   },

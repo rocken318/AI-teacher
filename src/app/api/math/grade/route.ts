@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUnit, gradeAnswer } from "@/lib/math";
+import { getUnit, gradeAnswer, diagnose } from "@/lib/math";
 import type { Problem } from "@/lib/math";
 import { decodeToken } from "@/lib/math/token";
 
@@ -66,12 +66,21 @@ export async function POST(req: NextRequest) {
     prompt: payload.prompt,
     answer: payload.answer,
     answerType: unit.answerType,
+    meta: payload.meta ?? {},
   };
 
   const result = gradeAnswer(unitId, problem, userInput);
 
+  // 不正解のときだけ、ルール診断で「どう考えたか→正しい筋道」を計算する。
+  // 生成AIは使わず、meta から誤答パターンを再現して確実に判定する。
+  const diagnosis = result.correct
+    ? null
+    : diagnose(unitId, problem, userInput);
+
   return NextResponse.json({
     correct: result.correct,
     expected: result.expected,
+    // 正解時は diagnosis を省略、不正解でも特定できなければ null。
+    ...(diagnosis ? { diagnosis } : {}),
   });
 }

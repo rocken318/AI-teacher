@@ -97,7 +97,12 @@ export function gradeQuiz(
   unitId: string,
   itemId: string,
   choiceIndex: number,
-): { correct: boolean; answerIndex: number; explanation: string } | null {
+): {
+  correct: boolean;
+  answerIndex: number;
+  explanation: string;
+  hint: string | null;
+} | null {
   const unit = UNIT_MAP.get(unitId);
   if (!unit) return null;
   const item = unit.items.find((it: QuizItem) => it.id === itemId);
@@ -106,5 +111,7 @@ export function gradeQuiz(
     correct: choiceIndex === item.answerIndex,
     answerIndex: item.answerIndex,
     explanation: item.explanation,
+    // 選んだ選択肢へのヒント。正解時や未設定は null（explanation にフォールバック）。
+    hint: item.choiceHints?.[choiceIndex] ?? null,
   };
 }

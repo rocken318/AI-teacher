@@ -16,6 +16,9 @@ export type QuizGrade = "小4" | "小5" | "小6";
  * - choices: 選択肢の表示文言（順序どおり）。
  * - answerIndex: 正解の choices インデックス（0始まり）。クライアントには晒さない。
  * - explanation: authored（人が書いた）解説文。AIは使わない＝事実誤りを出さない。
+ * - choiceHints: 各選択肢を選んだ子への一言（誤答の勘違いを指摘する短い文）。
+ *     choices と同じ長さの配列。正解の index は null でよい。省略可（未設定の
+ *     単元は従来どおり explanation にフォールバックする）。AIは使わない＝authored。
  */
 export interface QuizItem {
   id: string;
@@ -23,6 +26,7 @@ export interface QuizItem {
   choices: string[];
   answerIndex: number;
   explanation: string;
+  choiceHints?: (string | null)[];
 }
 
 /** 単元（1教科・1学年の中の学習まとまり）。 */
