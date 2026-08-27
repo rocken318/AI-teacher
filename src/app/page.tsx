@@ -30,28 +30,7 @@ export default function Home() {
       </header>
 
       <main className="mx-auto flex w-full max-w-3xl flex-col px-4 pb-12 pt-8 sm:pt-12">
-        {/* ===== ヒーロー（短いコピー） ===== */}
-        <section className="mb-8 text-center sm:mb-10">
-          <span className="inline-block text-[11px] font-bold uppercase tracking-[0.24em] text-terra">
-            小1 → 高3 ・ 探究する生成AI
-          </span>
-          <h1 className="mt-4 font-serif text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
-            きょうは
-            <span className="relative inline-block text-sky">
-              なにを まなぶ？
-              <span
-                aria-hidden="true"
-                className="absolute inset-x-0 bottom-1.5 -z-10 h-[6px] rounded bg-terra/80"
-              />
-            </span>
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            すきな コースを えらんで、じぶんの ペースで まなぼう。
-            きみの がんばりは ちゃんと きろくされるよ。
-          </p>
-        </section>
-
-        {/* ===== ハブ本体 ===== */}
+        {/* ヒーローは学齢別コピーのため HomeHub 側で描画 */}
         <HomeHub subjects={SUBJECTS} />
 
         <p className="mt-8 text-center text-[11px] text-faint">
