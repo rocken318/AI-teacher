@@ -91,11 +91,11 @@ function formatDate(iso: string): string {
 export function GuardianView({
   sessions,
   authCode,
-  canChangePasscode = false,
+  passcodeConfigured = false,
 }: {
   sessions: SessionSummary[];
   authCode?: string | null;
-  canChangePasscode?: boolean;
+  passcodeConfigured?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [data, setData] = useState<DetailResponse | null>(null);
@@ -174,19 +174,24 @@ export function GuardianView({
         />
       )}
 
-      {canChangePasscode && <PasscodeSettings />}
+      <PasscodeSettings configured={passcodeConfigured} />
     </div>
   );
 }
 
-/** パスコードの変更（現在のパスコード＋新しいパスコード）。 */
-function PasscodeSettings() {
+/**
+ * パスコードの設定／変更。
+ * - 未設定（configured=false）: 新しいパスコードだけで「設定」。
+ * - 設定済み（configured=true）: 現在のパスコードも必要な「変更」。
+ */
+function PasscodeSettings({ configured }: { configured: boolean }) {
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const title = configured ? "パスコードの変更" : "パスコードを設定";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -212,7 +217,12 @@ function PasscodeSettings() {
         }),
       });
       if (res.ok) {
-        setMsg({ ok: true, text: "パスコードを変更しました。" });
+        setMsg({
+          ok: true,
+          text: configured
+            ? "パスコードを変更しました。"
+            : "パスコードを設定しました。次回からは入力が必要になります。",
+        });
         setCurrent("");
         setNext("");
         setConfirm("");
@@ -224,9 +234,9 @@ function PasscodeSettings() {
         text:
           data.error === "wrong-current"
             ? "現在のパスコードが違います。"
-            : data.error === "env-managed"
-              ? "環境変数で管理されているため、ここでは変更できません。"
-              : "変更に失敗しました。",
+            : data.error === "no-store"
+              ? "保存先が見つかりませんでした（データベース未接続）。"
+              : "保存に失敗しました。",
       });
     } catch {
       setMsg({ ok: false, text: "通信に失敗しました。" });
@@ -243,21 +253,23 @@ function PasscodeSettings() {
         className="flex w-full items-center justify-between text-left"
       >
         <span className="font-serif text-base font-bold text-slate-700">
-          パスコードの変更
+          {title}
         </span>
         <span className="text-xs text-slate-400">{open ? "閉じる" : "開く"}</span>
       </button>
 
       {open && (
         <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-            placeholder="現在のパスコード"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-          />
+          {configured && (
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              placeholder="現在のパスコード"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            />
+          )}
           <input
             type="password"
             autoComplete="new-password"
@@ -291,7 +303,7 @@ function PasscodeSettings() {
             disabled={busy}
             className="mt-1 self-start rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
           >
-            {busy ? "変更中…" : "変更する"}
+            {busy ? "保存中…" : configured ? "変更する" : "設定する"}
           </button>
         </form>
       )}

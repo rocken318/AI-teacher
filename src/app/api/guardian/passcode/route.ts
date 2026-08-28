@@ -14,11 +14,10 @@ export const runtime = "nodejs";
 /**
  * 保護者パスコードの設定・変更・ログイン API。
  *
- *  GET  → { configured, managedByEnv }  設定状態（設定UIの出し分け用・秘密は返さない）
+ *  GET  → { configured }  設定状態（設定UIの出し分け用・秘密は返さない）
  *  POST { action: "login", code }             → パスコードで解錠（Cookie を張る）
  *  POST { action: "set", newCode, currentCode? } → 設定/変更（初回は currentCode 不要）
  *
- * env(GUARDIAN_PASSCODE) 管理時は「set」不可（env 側で管理）。
  * 保存先が無い（Vercel で DATABASE_URL 未設定）ときは 500 no-store。
  */
 
@@ -78,10 +77,6 @@ export async function POST(req: NextRequest) {
     }
 
     const state = await getPasscodeState();
-    if (state.managedByEnv) {
-      // env で管理されているので、アプリ内では変更できない。
-      return NextResponse.json({ error: "env-managed" }, { status: 409 });
-    }
 
     // すでに設定済みなら、現在のパスコード一致を要求する。
     if (state.configured) {
