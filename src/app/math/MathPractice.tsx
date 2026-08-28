@@ -320,6 +320,11 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   const scorePct =
     attemptCount > 0 ? Math.round((correctCount / attemptCount) * 100) : 0;
 
+  // 中1以上（正負の数〜）は答えがマイナスになりうる。
+  // このときは「−」を持つ通常キーボードを呼び出す（テンキーには − が無いため）。
+  const allowNeg =
+    selectedUnit.grade.startsWith("中") || selectedUnit.grade.startsWith("高");
+
   return (
     <div>
       {/* 単元ヘッダ + スコア */}
@@ -383,8 +388,10 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
               <input
                 id="math-answer"
                 type="text"
+                // マイナスが要る学年・比の入力は通常キーボード（− が出る）。
+                // 小学の計算はテンキー（decimal）のまま出しやすさを優先。
                 inputMode={
-                  problem.answerType === "text" ? "text" : "decimal"
+                  problem.answerType === "text" || allowNeg ? "text" : "decimal"
                 }
                 autoComplete="off"
                 value={userInput}
