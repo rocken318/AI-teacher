@@ -21,10 +21,13 @@ function isSubject(value: string): value is Subject {
  */
 export default async function LearnSubjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ subject: string }>;
+  searchParams: Promise<{ grade?: string }>;
 }) {
   const { subject } = await params;
+  const { grade: gradeParam } = await searchParams;
   if (!isSubject(subject)) {
     notFound();
   }
@@ -34,11 +37,24 @@ export default async function LearnSubjectPage({
     notFound();
   }
 
-  const units = subjectUnits(subject);
+  const allGrades = subjectGrades(subject);
+  // URL の ?grade= が この教科に実在する学年なら、その学年に固定する。
+  const lockedGrade =
+    gradeParam && allGrades.includes(gradeParam as (typeof allGrades)[number])
+      ? (gradeParam as (typeof allGrades)[number])
+      : undefined;
+  const grades = lockedGrade ? [lockedGrade] : allGrades;
+
+  const allUnits = subjectUnits(subject);
+  const units = lockedGrade
+    ? allUnits.filter((u) => u.grade === lockedGrade)
+    : allUnits;
   const totalUnits = units.length;
-  const grades = subjectGrades(subject);
-  const gradeRange =
-    grades.length > 0 ? `${grades[0]} → ${grades[grades.length - 1]}` : "";
+  const gradeRange = lockedGrade
+    ? lockedGrade
+    : grades.length > 0
+      ? `${grades[0]} → ${grades[grades.length - 1]}`
+      : "";
 
   return (
     <div className="min-h-screen">
@@ -91,7 +107,12 @@ export default async function LearnSubjectPage({
 
         {/* ===== 練習カード ===== */}
         <section className="rounded-[1.5rem] border border-line bg-white/70 p-4 shadow-card sm:p-6">
-          <QuizPractice subject={subject} units={units} grades={grades} />
+          <QuizPractice
+            subject={subject}
+            units={units}
+            grades={grades}
+            lockedGrade={lockedGrade}
+          />
         </section>
 
         {/* ===== フッター ===== */}

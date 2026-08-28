@@ -10,9 +10,13 @@ import {
 import {
   type Stage,
   STAGES,
+  STAGE_GRADES,
   getStage,
   setStage,
   getStageMeta,
+  getGrade,
+  setGrade as persistGrade,
+  clearGrade,
 } from "@/lib/stage";
 // マスコット（Sensei）は一旦オフ。復活できるようコンポーネントは残置。
 // import { Sensei } from "@/components/Sensei";
@@ -32,13 +36,6 @@ type Props = {
   subjects: SubjectMeta[];
   /** 算数（math）に実在する学年。 */
   mathGrades?: string[];
-};
-
-/** 学齢 → 対象学年。 */
-const STAGE_GRADES: Record<Stage, string[]> = {
-  elementary: ["小4", "小5", "小6"],
-  junior: ["中1", "中2", "中3"],
-  senior: ["高1", "高2", "高3"],
 };
 
 /** 学齢ごとに出す教科（クイズ系）。中学以降は社会を歴史・地理に分ける。 */
@@ -239,6 +236,87 @@ function StagePicker({ onPick }: { onPick: (s: Stage) => void }) {
   );
 }
 
+/** 学齢を選んだあと、具体的な学年を選ぶゲート。 */
+function GradePicker({
+  stage,
+  onPick,
+  onBack,
+}: {
+  stage: Stage;
+  onPick: (g: string) => void;
+  onBack: () => void;
+}) {
+  const meta = getStageMeta(stage);
+  return (
+    <div className="rounded-[1.5rem] border border-line bg-white/70 p-6 shadow-card sm:p-8">
+      <button
+        onClick={onBack}
+        className="mb-3 text-[12px] font-bold text-sky hover:underline"
+      >
+        ← 学校をえらびなおす
+      </button>
+      <h2 className="text-center font-serif text-xl font-extrabold text-ink sm:text-2xl">
+        {meta.emoji} {meta.label}の どの学年ですか？
+      </h2>
+      <p className="mt-2 text-center text-[13px] text-ink-soft">
+        学年に合わせて、出てくる問題が変わります（あとで変更できます）。
+      </p>
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        {STAGE_GRADES[stage].map((g) => (
+          <button
+            key={g}
+            onClick={() => onPick(g)}
+            className="flex flex-col items-center gap-1 rounded-2xl border border-line bg-paper p-5 text-center transition hover:-translate-y-0.5 hover:border-sky hover:shadow-soft"
+          >
+            <span className="font-serif text-2xl font-extrabold text-ink">
+              {g}
+            </span>
+            <span className="text-[12px] text-faint">えらぶ →</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** 学年の切替トグル（同じ学齢の中で 小4/小5/小6 など）。 */
+function GradeToggle({
+  stage,
+  grade,
+  onChange,
+  chooseLabel,
+}: {
+  stage: Stage;
+  grade: string;
+  onChange: (g: string) => void;
+  chooseLabel: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[12px] text-faint">{chooseLabel}</span>
+      <div className="inline-flex rounded-full border border-line bg-white/60 p-0.5">
+        {STAGE_GRADES[stage].map((g) => {
+          const active = g === grade;
+          return (
+            <button
+              key={g}
+              onClick={() => onChange(g)}
+              aria-pressed={active}
+              className={
+                active
+                  ? "rounded-full bg-terra px-3 py-1 text-[12px] font-bold text-white"
+                  : "rounded-full px-3 py-1 text-[12px] font-bold text-ink-soft hover:text-ink"
+              }
+            >
+              {g}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /** 学齢の切替トグル（小/中/高）。 */
 function StageToggle({
   stage,
@@ -424,6 +502,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   // SSR 安全: マウント後に localStorage を読む
   const [mounted, setMounted] = useState(false);
   const [stage, setStageState] = useState<Stage | null>(null);
+  const [grade, setGradeState] = useState<string | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [parentMsg, setParentMsg] = useState<string>("");
   const [editing, setEditing] = useState(false);
@@ -434,7 +513,11 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
 
   useEffect(() => {
     setMounted(true);
-    setStageState(getStage());
+    const s = getStage();
+    setStageState(s);
+    // 学年は、記憶した学齢と一致するときだけ採用する。
+    const g = getGrade();
+    setGradeState(s && g && STAGE_GRADES[s].includes(g) ? g : null);
     setProgress(getProgress());
     setParentMsg(getParentMessage());
   }, []);
@@ -449,6 +532,20 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   const pickStage = (s: Stage) => {
     setStage(s); // localStorage 保存＋テーマ即適用
     setStageState(s);
+    // 学齢を変えたら学年は選び直す。
+    clearGrade();
+    setGradeState(null);
+  };
+
+  const pickGrade = (g: string) => {
+    persistGrade(g);
+    setGradeState(g);
+  };
+
+  const backToStage = () => {
+    clearGrade();
+    setGradeState(null);
+    setStageState(null);
   };
 
   // ハイドレーション不一致を避けるため、マウント前は何も出さない
@@ -456,16 +553,19 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
     return <div className="min-h-[40vh]" />;
   }
 
-  // 初回（未選択）は学齢ピッカー
+  // 初回（未選択）は学齢ピッカー → つぎに学年ピッカー
   if (stage === null) {
     return <StagePicker onPick={pickStage} />;
   }
+  if (grade === null) {
+    return <GradePicker stage={stage} onPick={pickGrade} onBack={backToStage} />;
+  }
 
-  // その学齢の対象学年。教科カードは「この学年に中身があるか」で解放する。
-  const stageGrades = STAGE_GRADES[stage];
-  const hasContent = (grades?: string[]) =>
-    (grades ?? []).some((g) => stageGrades.includes(g));
+  // 選んだ学年に中身があるかで、教科カードを解放する。
+  const hasContent = (grades?: string[]) => (grades ?? []).includes(grade);
   const mathComingSoon = !hasContent(mathGrades);
+  // 教科ページへは選んだ学年を引き継ぐ。
+  const gq = `?grade=${encodeURIComponent(grade)}`;
   // この学齢で出す教科（順番も固定）。
   const stageSubjects = STAGE_SUBJECTS[stage]
     .map((key) => subjects.find((s) => s.key === key))
@@ -519,18 +619,28 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
         </p>
       </section>
 
-      {/* ===== 学齢の切替 ===== */}
-      <div className="flex items-center justify-between gap-3">
+      {/* ===== 学齢・学年の切替 ===== */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-ink-soft">
           <span aria-hidden="true">{stageMeta.emoji}</span>{" "}
           <span className="font-bold text-ink">{stageMeta.label}</span>
           <span className="text-faint"> {c.muke}</span>
+          <span className="mx-1.5 text-faint">/</span>
+          <span className="font-bold text-terra">{grade}</span>
         </p>
-        <StageToggle
-          stage={stage}
-          onChange={pickStage}
-          chooseLabel={c.chooseWho}
-        />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <StageToggle
+            stage={stage}
+            onChange={pickStage}
+            chooseLabel={c.chooseWho}
+          />
+          <GradeToggle
+            stage={stage}
+            grade={grade}
+            onChange={pickGrade}
+            chooseLabel="学年："
+          />
+        </div>
       </div>
 
       {/* ===== ひとこと（やさしく入れ替わる） ===== */}
@@ -590,7 +700,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
         <div className="stagger grid gap-3 sm:grid-cols-2">
           {/* 算数／数学（別枠） */}
           <CourseCard
-            href="/math"
+            href={`/math${gq}`}
             emoji="🔢"
             label={stage === "elementary" ? "算数" : "数学"}
             accent="#2f6fb0"
@@ -607,7 +717,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
             return (
               <CourseCard
                 key={s.key}
-                href={`/learn/${s.key}`}
+                href={`/learn/${s.key}${gq}`}
                 emoji={s.emoji}
                 label={s.label}
                 accent={accentColor(s.accent)}

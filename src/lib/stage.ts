@@ -41,9 +41,56 @@ export const STAGES: StageMeta[] = [
 ];
 
 const STORAGE_KEY = "ai-sensei-stage-v1";
+const GRADE_KEY = "ai-sensei-grade-v1";
+
+/** 学齢 → 対象学年ラベル（このアプリで中身がある範囲）。 */
+export const STAGE_GRADES: Record<Stage, string[]> = {
+  elementary: ["小4", "小5", "小6"],
+  junior: ["中1", "中2", "中3"],
+  senior: ["高1", "高2", "高3"],
+};
 
 export function getStageMeta(stage: Stage): StageMeta {
   return STAGES.find((s) => s.key === stage) ?? STAGES[0];
+}
+
+/** 学年ラベルが属する学齢を返す（不明なら null）。 */
+export function stageForGrade(grade: string): Stage | null {
+  for (const s of STAGES) {
+    if (STAGE_GRADES[s.key].includes(grade)) return s.key;
+  }
+  return null;
+}
+
+/** 記憶した学年ラベルを返す。未選択なら null。 */
+export function getGrade(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(GRADE_KEY);
+    return v && stageForGrade(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 学年を保存する。 */
+export function setGrade(grade: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(GRADE_KEY, grade);
+  } catch {
+    /* noop */
+  }
+}
+
+/** 記憶した学年を消す（学齢を変えたときなど）。 */
+export function clearGrade(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(GRADE_KEY);
+  } catch {
+    /* noop */
+  }
 }
 
 function isStage(v: unknown): v is Stage {

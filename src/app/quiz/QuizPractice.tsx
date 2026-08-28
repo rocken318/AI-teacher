@@ -25,12 +25,16 @@ type Props = {
   subject: Subject;
   units: QuizUnit[];
   grades: QuizGrade[];
+  /** トップで学年を選んでいるとき、その学年。指定時は学年タブを出さない。 */
+  lockedGrade?: QuizGrade;
 };
 
 type Phase = "answering" | "graded";
 
-export function QuizPractice({ subject, units, grades }: Props) {
-  const [activeGrade, setActiveGrade] = useState<QuizGrade>(grades[0] ?? "小4");
+export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
+  const [activeGrade, setActiveGrade] = useState<QuizGrade>(
+    lockedGrade ?? grades[0] ?? "小4",
+  );
   const [selectedUnit, setSelectedUnit] = useState<QuizUnit | null>(null);
 
   // 出題中の状態
@@ -159,28 +163,30 @@ export function QuizPractice({ subject, units, grades }: Props) {
   if (!selectedUnit) {
     return (
       <div>
-        {/* 学年タブ */}
-        <div role="tablist" aria-label="学年" className="mb-5 flex flex-wrap gap-2">
-          {grades.map((g) => {
-            const active = g === activeGrade;
-            return (
-              <button
-                key={g}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveGrade(g)}
-                className={
-                  "rounded-full border px-4 py-1.5 text-sm font-bold transition " +
-                  (active
-                    ? "border-sky bg-sky text-white shadow-soft"
-                    : "border-line bg-paper text-ink-soft hover:text-ink")
-                }
-              >
-                {g}
-              </button>
-            );
-          })}
-        </div>
+        {/* 学年タブ（トップで学年を選んでいるときは出さない） */}
+        {!lockedGrade && (
+          <div role="tablist" aria-label="学年" className="mb-5 flex flex-wrap gap-2">
+            {grades.map((g) => {
+              const active = g === activeGrade;
+              return (
+                <button
+                  key={g}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveGrade(g)}
+                  className={
+                    "rounded-full border px-4 py-1.5 text-sm font-bold transition " +
+                    (active
+                      ? "border-sky bg-sky text-white shadow-soft"
+                      : "border-line bg-paper text-ink-soft hover:text-ink")
+                  }
+                >
+                  {g}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 単元カード */}
         {activeUnits.length === 0 ? (

@@ -22,14 +22,27 @@ const GRADE_ORDER: Grade[] = [
  * 学年ごとの単元一覧を UNITS / unitsForGrade から組み立てて
  * クライアントの練習画面 (MathPractice) に渡す。
  */
-export default function MathPage() {
+export default async function MathPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ grade?: string }>;
+}) {
   const apiKeyConfigured = hasApiKey();
+  const { grade: gradeParam } = await searchParams;
 
-  // 実在する学年だけを、小→高の順で（単元のある学年のみタブに出す）
+  // 実在する学年だけを、小→高の順で
   const presentGrades = GRADE_ORDER.filter((g) =>
     UNITS.some((u) => u.grade === g),
   );
-  const grades = presentGrades.map((grade) => ({
+
+  // URL の ?grade= が有効な学年なら、その学年に固定する（トップで選んだ学年）。
+  const lockedGrade =
+    gradeParam && presentGrades.includes(gradeParam as Grade)
+      ? (gradeParam as Grade)
+      : undefined;
+  const shownGrades = lockedGrade ? [lockedGrade] : presentGrades;
+
+  const grades = shownGrades.map((grade) => ({
     grade,
     units: unitsForGrade(grade).map((u) => ({
       id: u.id,
@@ -40,9 +53,12 @@ export default function MathPage() {
     })),
   }));
 
-  const totalUnits = UNITS.length;
-  const gradeRange =
-    presentGrades.length > 0
+  const totalUnits = lockedGrade
+    ? unitsForGrade(lockedGrade).length
+    : UNITS.length;
+  const gradeRange = lockedGrade
+    ? lockedGrade
+    : presentGrades.length > 0
       ? `${presentGrades[0]} → ${presentGrades[presentGrades.length - 1]}`
       : "";
 
@@ -112,7 +128,11 @@ export default function MathPage() {
 
         {/* ===== 練習カード ===== */}
         <section className="rounded-[1.5rem] border border-line bg-white/70 p-4 shadow-card sm:p-6">
-          <MathPractice grades={grades} apiKeyConfigured={apiKeyConfigured} />
+          <MathPractice
+            grades={grades}
+            apiKeyConfigured={apiKeyConfigured}
+            lockedGrade={lockedGrade}
+          />
         </section>
 
         {/* ===== フッター ===== */}

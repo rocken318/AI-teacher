@@ -37,11 +37,14 @@ type GradeDTO = {
 type Props = {
   grades: GradeGroup[];
   /**
-   * 親ページから渡されるが、算数の練習では未使用。
-   * ヒント・診断はすべてルールベース（生成AI不使用）のため参照しない。
-   * 契約維持のため型には残す（任意）。
+   * API キーの有無。まちがい時の AI解説を出せるかの表示に使う。
    */
   apiKeyConfigured?: boolean;
+  /**
+   * トップで選んだ学年に固定するとき、その学年。
+   * 指定時は学年タブを出さず、この学年の単元だけを見せる。
+   */
+  lockedGrade?: Grade;
 };
 
 type Phase = "answering" | "graded";
@@ -60,11 +63,15 @@ function inputHint(t: AnswerType): string {
   }
 }
 
-export function MathPractice({ grades }: Props) {
+export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   const [activeGrade, setActiveGrade] = useState<Grade>(
-    grades[0]?.grade ?? "小4",
+    lockedGrade ?? grades[0]?.grade ?? "小4",
   );
   const [selectedUnit, setSelectedUnit] = useState<UnitInfo | null>(null);
+
+  // まちがい時の AI解説（生成AI）。答えは言わず、手順に よりそって みちびく。
+  const [aiFeedback, setAiFeedback] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   // 出題中の状態
   const [problem, setProblem] = useState<ProblemDTO | null>(null);
@@ -98,6 +105,8 @@ export function MathPractice({ grades }: Props) {
     setUserInput("");
     setHint("");
     setShowHint(false);
+    setAiFeedback("");
+    setAiLoading(false);
     try {
       const res = await fetch("/api/math/problem", {
         method: "POST",
@@ -133,6 +142,38 @@ export function MathPractice({ grades }: Props) {
     [fetchProblem],
   );
 
+  /**
+   * まちがえたときの AI解説を取りにいく（生成AI・失敗しても落とさない）。
+   * 正解・問題文はトークンからサーバーが復元するので、ここでは token と誤答を渡す。
+   */
+  const fetchAiFeedback = useCallback(
+    async (token: string, wrongInput: string, grade: Grade) => {
+      setAiFeedback("");
+      setAiLoading(true);
+      try {
+        const res = await fetch("/api/math/help", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "feedback",
+            answerToken: token,
+            userInput: wrongInput,
+            grade,
+          }),
+        });
+        if (!res.ok) throw new Error(`help ${res.status}`);
+        const data = (await res.json()) as { text?: string };
+        setAiFeedback(data.text ?? "");
+      } catch {
+        // 失敗時は AI枠を出さない（ルール診断・定型文が残る）。
+        setAiFeedback("");
+      } finally {
+        setAiLoading(false);
+      }
+    },
+    [],
+  );
+
   /** こたえあわせ。 */
   const submit = useCallback(async () => {
     if (!selectedUnit || !problem || !answerToken) return;
@@ -164,13 +205,16 @@ export function MathPractice({ grades }: Props) {
       }
       if (data.correct) {
         setCorrectCount((n) => n + 1);
+      } else {
+        // まちがえたら、AI先生に「その子なりの てほどき」を頼む。
+        void fetchAiFeedback(answerToken, userInput, selectedUnit.grade);
       }
     } catch {
       setError("さいてんに しっぱいしました。もういちど ためしてね。");
     } finally {
       setGrading(false);
     }
-  }, [selectedUnit, problem, answerToken, userInput]);
+  }, [selectedUnit, problem, answerToken, userInput, fetchAiFeedback]);
 
   /** ヒント表示（静的・生成AI不使用。problem API が返した固定文を出す）。 */
   const toggleHint = useCallback(() => {
@@ -193,6 +237,8 @@ export function MathPractice({ grades }: Props) {
     setPhase("answering");
     setUserInput("");
     setShowHint(false);
+    setAiFeedback("");
+    setAiLoading(false);
   }, []);
 
   const backToUnits = useCallback(() => {
@@ -204,38 +250,42 @@ export function MathPractice({ grades }: Props) {
     setUserInput("");
     setHint("");
     setShowHint(false);
+    setAiFeedback("");
+    setAiLoading(false);
   }, []);
 
   // ============ 単元選択ビュー ============
   if (!selectedUnit) {
     return (
       <div>
-        {/* 学年タブ */}
-        <div
-          role="tablist"
-          aria-label="学年"
-          className="mb-5 flex flex-wrap gap-2"
-        >
-          {grades.map((g) => {
-            const active = g.grade === activeGrade;
-            return (
-              <button
-                key={g.grade}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveGrade(g.grade)}
-                className={
-                  "rounded-full border px-4 py-1.5 text-sm font-bold transition " +
-                  (active
-                    ? "border-sky bg-sky text-white shadow-soft"
-                    : "border-line bg-paper text-ink-soft hover:text-ink")
-                }
-              >
-                {g.grade}
-              </button>
-            );
-          })}
-        </div>
+        {/* 学年タブ（トップで学年を選んでいるときは出さない） */}
+        {!lockedGrade && (
+          <div
+            role="tablist"
+            aria-label="学年"
+            className="mb-5 flex flex-wrap gap-2"
+          >
+            {grades.map((g) => {
+              const active = g.grade === activeGrade;
+              return (
+                <button
+                  key={g.grade}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveGrade(g.grade)}
+                  className={
+                    "rounded-full border px-4 py-1.5 text-sm font-bold transition " +
+                    (active
+                      ? "border-sky bg-sky text-white shadow-soft"
+                      : "border-line bg-paper text-ink-soft hover:text-ink")
+                  }
+                >
+                  {g.grade}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 単元カード */}
         {activeUnits.length === 0 ? (
@@ -346,9 +396,33 @@ export function MathPractice({ grades }: Props) {
                 placeholder={inputHint(problem.answerType)}
                 className="w-full rounded-xl border border-line bg-paper px-4 py-2.5 font-serif text-lg text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/30 disabled:opacity-60"
               />
-              <p className="mt-1 text-[12px] text-faint">
-                {inputHint(problem.answerType)}
-              </p>
+              <div className="mt-1.5 flex items-center justify-between gap-2">
+                <p className="text-[12px] text-faint">
+                  {inputHint(problem.answerType)}
+                </p>
+                {/* マイナス入力ボタン（テンキーに − が無い端末むけ）。比(:)以外で出す。 */}
+                {problem.answerType !== "text" && phase === "answering" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setUserInput((v) =>
+                        v.startsWith("-") ? v.slice(1) : "-" + v,
+                      )
+                    }
+                    disabled={grading}
+                    aria-pressed={userInput.startsWith("-")}
+                    title="こたえが マイナスの ときに おす"
+                    className={
+                      "shrink-0 rounded-full border px-3 py-1 text-sm font-bold transition disabled:opacity-50 " +
+                      (userInput.startsWith("-")
+                        ? "border-sky bg-sky text-white"
+                        : "border-line bg-paper text-ink-soft hover:text-ink")
+                    }
+                  >
+                    − マイナス
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* アクション */}
@@ -422,6 +496,7 @@ export function MathPractice({ grades }: Props) {
                   )}
                 </div>
 
+                {/* ① まず、ルール診断で「どう考えたか」をすぐ返す（即時・具体的） */}
                 {!result.correct && result.diagnosis && (
                   <div className="mt-3 rounded-xl border-2 border-terra/50 bg-terra/5 px-4 py-3 text-[14px] leading-relaxed text-ink">
                     <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-terra">
@@ -431,12 +506,33 @@ export function MathPractice({ grades }: Props) {
                   </div>
                 )}
 
-                {!result.correct && !result.diagnosis && hint && (
-                  <div className="mt-3 rounded-xl border border-line bg-paper px-4 py-3 text-[14px] leading-relaxed text-ink">
-                    <span className="mr-1 font-bold text-terra">先生:</span>
-                    {hint}
+                {/* ② AI先生が、その子に よりそって 手順を みちびく */}
+                {!result.correct && aiLoading && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-sky/30 bg-sky-soft/50 px-4 py-3 text-[14px] text-ink-soft">
+                    <span className="anim-pop">💭</span>
+                    AI先生が いっしょに 考えています…
                   </div>
                 )}
+                {!result.correct && !aiLoading && aiFeedback && (
+                  <div className="mt-3 rounded-xl border border-sky/40 bg-sky-soft/60 px-4 py-3 text-[14px] leading-relaxed text-ink">
+                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-sky">
+                      AI先生の てほどき
+                    </p>
+                    <p className="whitespace-pre-wrap">{aiFeedback}</p>
+                  </div>
+                )}
+
+                {/* ③ どちらも無いときだけ、静的ヒントでフォロー */}
+                {!result.correct &&
+                  !result.diagnosis &&
+                  !aiLoading &&
+                  !aiFeedback &&
+                  hint && (
+                    <div className="mt-3 rounded-xl border border-line bg-paper px-4 py-3 text-[14px] leading-relaxed text-ink">
+                      <span className="mr-1 font-bold text-terra">先生:</span>
+                      {hint}
+                    </div>
+                  )}
               </div>
             )}
           </>
@@ -444,7 +540,8 @@ export function MathPractice({ grades }: Props) {
       </div>
 
       <p className="mt-3 text-center text-[11px] text-faint">
-        ヒントと まちがいの せつめいは、決まった ルールで 出ます（AIは つかいません）。
+        採点は サーバーで 行います。まちがえた ときは、AI先生が 手順を いっしょに 考えます
+        {apiKeyConfigured ? "" : "（いまは 練習モード：決まった 文で ふぉろーします）"}。
       </p>
     </div>
   );
