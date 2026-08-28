@@ -6,7 +6,7 @@ import {
   getDbBackend,
 } from "@/lib/db/read";
 import { summarizeSession } from "@/lib/insights";
-import { evaluateGuardianAccess, GUARDIAN_COOKIE } from "@/lib/guardian-auth";
+import { resolveGuardianAccess, GUARDIAN_COOKIE } from "@/lib/guardian-auth";
 
 export const runtime = "nodejs";
 
@@ -21,7 +21,7 @@ export const runtime = "nodejs";
  */
 export async function GET(req: NextRequest) {
   // アクセスゲート（ページと同じ判定）。会話ログを無認証で返さない。
-  const access = evaluateGuardianAccess({
+  const access = await resolveGuardianAccess({
     providedCode:
       req.nextUrl.searchParams.get("code") ?? req.headers.get("x-guardian-code"),
     cookieCode: req.cookies.get(GUARDIAN_COOKIE)?.value,

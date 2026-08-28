@@ -91,9 +91,11 @@ function formatDate(iso: string): string {
 export function GuardianView({
   sessions,
   authCode,
+  canChangePasscode = false,
 }: {
   sessions: SessionSummary[];
   authCode?: string | null;
+  canChangePasscode?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [data, setData] = useState<DetailResponse | null>(null);
@@ -171,7 +173,129 @@ export function GuardianView({
           data={data}
         />
       )}
+
+      {canChangePasscode && <PasscodeSettings />}
     </div>
+  );
+}
+
+/** パスコードの変更（現在のパスコード＋新しいパスコード）。 */
+function PasscodeSettings() {
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    if (next.trim().length < 4) {
+      setMsg({ ok: false, text: "新しいパスコードは4文字以上にしてください。" });
+      return;
+    }
+    if (next !== confirm) {
+      setMsg({ ok: false, text: "確認用のパスコードが一致しません。" });
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/guardian/passcode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set",
+          newCode: next,
+          currentCode: current,
+        }),
+      });
+      if (res.ok) {
+        setMsg({ ok: true, text: "パスコードを変更しました。" });
+        setCurrent("");
+        setNext("");
+        setConfirm("");
+        return;
+      }
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setMsg({
+        ok: false,
+        text:
+          data.error === "wrong-current"
+            ? "現在のパスコードが違います。"
+            : data.error === "env-managed"
+              ? "環境変数で管理されているため、ここでは変更できません。"
+              : "変更に失敗しました。",
+      });
+    } catch {
+      setMsg({ ok: false, text: "通信に失敗しました。" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <span className="font-serif text-base font-bold text-slate-700">
+          パスコードの変更
+        </span>
+        <span className="text-xs text-slate-400">{open ? "閉じる" : "開く"}</span>
+      </button>
+
+      {open && (
+        <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            placeholder="現在のパスコード"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+          />
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            placeholder="新しいパスコード（4文字以上）"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+          />
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="新しいパスコード（確認）"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+          />
+          {msg && (
+            <p
+              className={
+                "rounded-md px-3 py-2 text-sm " +
+                (msg.ok
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-rose-50 text-rose-700")
+              }
+            >
+              {msg.text}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="mt-1 self-start rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
+          >
+            {busy ? "変更中…" : "変更する"}
+          </button>
+        </form>
+      )}
+    </section>
   );
 }
 

@@ -1,22 +1,34 @@
 import "server-only";
-import { getDbBackend } from "@/lib/db/read";
+import { scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
+import { getConfigValue } from "@/lib/db/config";
 
 /**
  * 見守りダッシュボードのアクセスゲート（ページ／API 共通）。
  *
- * 方針:
- *  - GUARDIAN_PASSCODE が設定されていれば、一致（クエリ/ヘッダ or Cookie）を要求。
- *  - 未設定のとき、本番(Vercel)でデータが存在しうる(backend!="none")なら**フェイルクローズ**
- *    （子どもの会話ログを未保護で公開しない）。ローカル or データ無しは開発閲覧を許可。
+ * パスコードの決まり方（優先順）:
+ *  1. 環境変数 GUARDIAN_PASSCODE があればそれを使う（従来どおり・env 管理）。
+ *  2. 無ければ、DB に保存された保護者パスコード（ハッシュ）と照合する。
+ *     → アプリ内（見守りページ）から設定・変更できる。
+ *  3. どちらも未設定:
+ *     - 本番(Vercel)では「未設定」を返し、まずパスコード設定を促す（データは見せない）。
+ *     - ローカル開発では中身確認のため閲覧を許可する。
  *
- * 本格的な認証・RLS は Supabase 接続後に置き換える（今回はプレビューの安全側デフォルト）。
+ * Cookie / クエリ / ヘッダで渡された「生パスコード」を、env 値 or 保存ハッシュと照合する。
  */
 
 export const GUARDIAN_COOKIE = "guardian_code";
 
+/** DB 設定のキー（保護者パスコードのハッシュ）。 */
+export const GUARDIAN_PASSCODE_KEY = "guardian_passcode";
+
 export type GuardianAccess =
   | { allowed: true; code: string | null; reason: "passcode-ok" | "open-dev" }
-  | { allowed: false; reason: "need-passcode" | "wrong-passcode" | "locked-production" };
+  | {
+      allowed: false;
+      reason: "need-passcode" | "wrong-passcode" | "unconfigured";
+      configured: boolean;
+      managedByEnv: boolean;
+    };
 
 /** 長さが一致する場合は定数時間寄りで比較（タイミング差を抑える）。 */
 function safeEqual(a: string, b: string): boolean {
@@ -26,31 +38,104 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export function evaluateGuardianAccess(input: {
+/** パスコードを salt 付き scrypt でハッシュ化する（保存用文字列）。 */
+export function hashPasscode(code: string): string {
+  const salt = randomBytes(16);
+  const hash = scryptSync(code, salt, 32);
+  return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
+}
+
+/** 生パスコードを保存ハッシュと照合する（定数時間比較）。 */
+export function verifyPasscode(code: string, stored: string): boolean {
+  const parts = stored.split("$");
+  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
+  try {
+    const salt = Buffer.from(parts[1], "hex");
+    const expected = Buffer.from(parts[2], "hex");
+    const actual = scryptSync(code, salt, expected.length);
+    return (
+      actual.length === expected.length && timingSafeEqual(actual, expected)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** env のパスコード（trim 済み。未設定なら undefined）。 */
+function envPasscode(): string | undefined {
+  const v = process.env.GUARDIAN_PASSCODE?.trim();
+  return v ? v : undefined;
+}
+
+/** パスコードの設定状態（設定UIの出し分け用）。 */
+export async function getPasscodeState(): Promise<{
+  configured: boolean;
+  managedByEnv: boolean;
+}> {
+  if (envPasscode()) return { configured: true, managedByEnv: true };
+  const stored = await getConfigValue(GUARDIAN_PASSCODE_KEY);
+  return { configured: Boolean(stored), managedByEnv: false };
+}
+
+/** 生パスコードが正しいかを、env or 保存ハッシュで判定する。 */
+export async function checkPasscode(code: string): Promise<boolean> {
+  const raw = code.trim();
+  if (!raw) return false;
+  const env = envPasscode();
+  if (env) return safeEqual(raw, env);
+  const stored = await getConfigValue(GUARDIAN_PASSCODE_KEY);
+  return stored ? verifyPasscode(raw, stored) : false;
+}
+
+/**
+ * アクセス可否を解決する（ページ／API 共通のゲート）。
+ * providedCode（?code= or ヘッダ）と cookieCode のどちらかが通れば許可。
+ */
+export async function resolveGuardianAccess(input: {
   providedCode?: string | null;
   cookieCode?: string | null;
-}): GuardianAccess {
-  const passcode = process.env.GUARDIAN_PASSCODE?.trim();
+}): Promise<GuardianAccess> {
   const provided = (input.providedCode ?? "").trim();
   const cookie = (input.cookieCode ?? "").trim();
+  const env = envPasscode();
 
-  if (passcode) {
-    if (
-      (provided.length > 0 && safeEqual(provided, passcode)) ||
-      (cookie.length > 0 && safeEqual(cookie, passcode))
-    ) {
-      return { allowed: true, code: passcode, reason: "passcode-ok" };
-    }
-    return { allowed: false, reason: provided.length > 0 ? "wrong-passcode" : "need-passcode" };
+  if (env) {
+    if (provided && safeEqual(provided, env))
+      return { allowed: true, code: provided, reason: "passcode-ok" };
+    if (cookie && safeEqual(cookie, env))
+      return { allowed: true, code: cookie, reason: "passcode-ok" };
+    return {
+      allowed: false,
+      reason: provided ? "wrong-passcode" : "need-passcode",
+      configured: true,
+      managedByEnv: true,
+    };
   }
 
-  // パスコード未設定
+  // env 未設定 → DB 保存のパスコード
+  const stored = await getConfigValue(GUARDIAN_PASSCODE_KEY);
+  if (stored) {
+    if (provided && verifyPasscode(provided, stored))
+      return { allowed: true, code: provided, reason: "passcode-ok" };
+    if (cookie && verifyPasscode(cookie, stored))
+      return { allowed: true, code: cookie, reason: "passcode-ok" };
+    return {
+      allowed: false,
+      reason: provided ? "wrong-passcode" : "need-passcode",
+      configured: true,
+      managedByEnv: false,
+    };
+  }
+
+  // どこにも未設定。ローカル開発は閲覧許可、本番は設定を促す。
   const isProd = Boolean(process.env.VERCEL);
-  const backend = getDbBackend();
-  if (isProd && backend !== "none") {
-    // 本番でデータが存在しうるのに未保護 → 表示しない
-    return { allowed: false, reason: "locked-production" };
+  if (!isProd) {
+    return { allowed: true, code: null, reason: "open-dev" };
   }
-  // ローカル開発 or データ無し(none) は中身確認のため許可
-  return { allowed: true, code: null, reason: "open-dev" };
+  return {
+    allowed: false,
+    reason: "unconfigured",
+    configured: false,
+    managedByEnv: false,
+  };
 }

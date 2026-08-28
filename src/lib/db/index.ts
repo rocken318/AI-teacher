@@ -86,6 +86,10 @@ export interface Store {
   ): Promise<void>;
   getChildProgress(childId: string): Promise<ProgressSummary>;
 
+  /* --- 設定（key/value）。見守りパスコードのハッシュ保存などに使う --- */
+  getConfig(key: string): Promise<string | null>;
+  setConfig(key: string, value: string): Promise<void>;
+
   /* --- 読み取り（見守りダッシュボード用） --- */
   listSessions(limit: number): Promise<SessionSummary[]>;
   getSessionDetail(id: string): Promise<SessionDetail | null>;
@@ -168,6 +172,31 @@ class PostgresStore implements Store {
     `;
     await this.sql`
       CREATE INDEX IF NOT EXISTS attempts_child_idx ON attempts (child_id)
+    `;
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS app_config (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `;
+  }
+
+  async getConfig(key: string): Promise<string | null> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT value FROM app_config WHERE key = ${key} LIMIT 1
+    `;
+    const r = (rows as any[])[0];
+    return r ? String(r.value) : null;
+  }
+
+  async setConfig(key: string, value: string): Promise<void> {
+    await this.ready;
+    await this.sql`
+      INSERT INTO app_config (key, value, updated_at)
+      VALUES (${key}, ${value}, now())
+      ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = now()
     `;
   }
 
@@ -383,9 +412,32 @@ class SqliteStore implements Store {
         created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       );
       CREATE INDEX IF NOT EXISTS attempts_child_idx ON attempts (child_id);
+      CREATE TABLE IF NOT EXISTS app_config (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+      );
     `);
 
     this.db = sqlite;
+  }
+
+  async getConfig(key: string): Promise<string | null> {
+    await this.ready;
+    const r = this.db
+      .prepare("SELECT value FROM app_config WHERE key = ? LIMIT 1")
+      .get(key) as any;
+    return r ? String(r.value) : null;
+  }
+
+  async setConfig(key: string, value: string): Promise<void> {
+    await this.ready;
+    this.db
+      .prepare(
+        "INSERT INTO app_config (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) " +
+          "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+      )
+      .run(key, value);
   }
 
   async recordAttempt(
@@ -610,6 +662,15 @@ class NoopStore implements Store {
 
   async getChildProgress(_childId: string): Promise<ProgressSummary> {
     return { total: 0, correct: 0, bySubject: {} };
+  }
+
+  async getConfig(_key: string): Promise<string | null> {
+    return null;
+  }
+
+  async setConfig(_key: string, _value: string): Promise<void> {
+    // 保存先が無い（Vercel で DATABASE_URL 未設定）。設定は保持できない。
+    throw new Error("no-store");
   }
 
   async listSessions(_limit: number): Promise<SessionSummary[]> {
