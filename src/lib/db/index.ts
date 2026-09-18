@@ -159,7 +159,11 @@ class PostgresStore implements Store {
     const postgres = (mod as any).default ?? mod;
     // Vercel(サーバーレス) × Supabase の Transaction Pooler(pgbouncer, :6543) で確実に動くよう、
     // prepared statements を無効化し、関数インスタンスあたりの接続数を絞る。
-    this.sql = postgres(databaseUrl, { prepare: false, max: 1, idle_timeout: 20 });
+    this.sql = postgres(databaseUrl, {
+      prepare: false,
+      max: 1,
+      idle_timeout: 20,
+    });
 
     // テーブル作成は初期化時に一度だけ（IF NOT EXISTS）。
     await this.sql`
@@ -204,7 +208,8 @@ class PostgresStore implements Store {
     await this.sql`
       CREATE INDEX IF NOT EXISTS attempts_child_idx ON attempts (child_id)
     `;
-    await this.sql`ALTER TABLE attempts ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'practice'`;
+    await this
+      .sql`ALTER TABLE attempts ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'practice'`;
     await this.sql`
       CREATE TABLE IF NOT EXISTS test_results (
         id TEXT PRIMARY KEY,
@@ -217,7 +222,8 @@ class PostgresStore implements Store {
         taken_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `;
-    await this.sql`CREATE INDEX IF NOT EXISTS test_results_key_idx ON test_results (child_id, test_key, taken_at)`;
+    await this
+      .sql`CREATE INDEX IF NOT EXISTS test_results_key_idx ON test_results (child_id, test_key, taken_at)`;
     await this.sql`
       CREATE TABLE IF NOT EXISTS app_config (
         key TEXT PRIMARY KEY,
@@ -458,7 +464,10 @@ class SqliteStore implements Store {
   private withDb<T>(fn: (db: any) => T): T {
     const db = new this.Database(this.sqlitePath);
     try {
-      db.pragma("journal_mode = WAL");
+      // WAL は付けない。都度 open/close では利点が無く、-wal/-shm のサイドカーが
+      // Windows でロック要因になり EBUSY を招く（既定の DELETE ジャーナルのまま使う）。
+      // 近接した同時書き込みでの SQLITE_BUSY を避けるための安全策のみ設定する。
+      db.pragma("busy_timeout = 3000");
       return fn(db);
     } finally {
       db.close();
@@ -475,7 +484,8 @@ class SqliteStore implements Store {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
     const sqlite = new Database(sqlitePath);
-    sqlite.pragma("journal_mode = WAL");
+    // WAL は使わない（都度 open/close 方針・Windows のサイドカーロック回避）。
+    sqlite.pragma("busy_timeout = 3000");
 
     // マイグレーション未実行でも walking skeleton が動くよう、テーブルを自動作成する。
     sqlite.exec(`
@@ -517,16 +527,6 @@ class SqliteStore implements Store {
         value TEXT NOT NULL,
         updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       );
-    `);
-
-    // 既存DB（source 列が無い）への冪等マイグレーション。
-    const cols = sqlite.prepare(`PRAGMA table_info(attempts)`).all() as any[];
-    if (!cols.some((c) => c.name === "source")) {
-      sqlite.exec(
-        `ALTER TABLE attempts ADD COLUMN source TEXT NOT NULL DEFAULT 'practice'`,
-      );
-    }
-    sqlite.exec(`
       CREATE TABLE IF NOT EXISTS test_results (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
@@ -539,6 +539,14 @@ class SqliteStore implements Store {
       );
       CREATE INDEX IF NOT EXISTS test_results_key_idx ON test_results (child_id, test_key, taken_at);
     `);
+
+    // 既存DB（source 列が無い）への冪等マイグレーション（レガシーDB用なので別 exec）。
+    const cols = sqlite.prepare(`PRAGMA table_info(attempts)`).all() as any[];
+    if (!cols.some((c) => c.name === "source")) {
+      sqlite.exec(
+        `ALTER TABLE attempts ADD COLUMN source TEXT NOT NULL DEFAULT 'practice'`,
+      );
+    }
 
     // スキーマ作成用の接続は都度 open/close 方針に合わせてここで閉じる。
     sqlite.close();
@@ -766,28 +774,28 @@ class SqliteStore implements Store {
         .all(id) as any[];
 
       return {
-      session: {
-        id: String(s.id),
-        topic: String(s.topic),
-        gradeBand: String(s.grade_band),
-        topicId: s.topic_id == null ? null : String(s.topic_id),
-        startedAt: s.started_at == null ? "" : String(s.started_at),
-        messageCount: Number(s.message_count ?? 0),
-      },
-      messages: messageRows.map((r) => ({
-        id: String(r.id),
-        sender: String(r.sender),
-        text: String(r.text),
-        createdAt: r.created_at == null ? "" : String(r.created_at),
-      })),
-      moderations: moderationRows.map((r) => ({
-        id: String(r.id),
-        messageId: r.message_id == null ? null : String(r.message_id),
-        stage: String(r.stage),
-        verdict: String(r.verdict),
-        reason: r.reason == null ? null : String(r.reason),
-        createdAt: r.created_at == null ? "" : String(r.created_at),
-      })),
+        session: {
+          id: String(s.id),
+          topic: String(s.topic),
+          gradeBand: String(s.grade_band),
+          topicId: s.topic_id == null ? null : String(s.topic_id),
+          startedAt: s.started_at == null ? "" : String(s.started_at),
+          messageCount: Number(s.message_count ?? 0),
+        },
+        messages: messageRows.map((r) => ({
+          id: String(r.id),
+          sender: String(r.sender),
+          text: String(r.text),
+          createdAt: r.created_at == null ? "" : String(r.created_at),
+        })),
+        moderations: moderationRows.map((r) => ({
+          id: String(r.id),
+          messageId: r.message_id == null ? null : String(r.message_id),
+          stage: String(r.stage),
+          verdict: String(r.verdict),
+          reason: r.reason == null ? null : String(r.reason),
+          createdAt: r.created_at == null ? "" : String(r.created_at),
+        })),
       };
     });
   }
