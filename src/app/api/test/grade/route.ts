@@ -8,6 +8,9 @@ import { buildTestKey } from "@/lib/test/session";
 
 export const runtime = "nodejs";
 
+/** 実際のテストは常に 5 / 10 / 20 問。ここを固定すると保存する total を信用できる。 */
+const ALLOWED_COUNTS = [5, 10, 20];
+
 type AnswerIn = {
   unitId?: string;
   answerToken?: string;
@@ -60,6 +63,39 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Fix 1: 出題数は 5 / 10 / 20 のいずれか。1問だけを「テスト1回」として
+  // 保存されるのを防ぎ、保存する total を信用できる値に保つ。
+  if (!ALLOWED_COUNTS.includes(answers.length)) {
+    return NextResponse.json(
+      { error: "answers は 5 / 10 / 20 問" },
+      { status: 400 },
+    );
+  }
+
+  // Fix 2a: 選択単元はすべて既知の単元でなければならない（start と同じ扱い）。
+  // これで testKey / 履歴バケットが実在の単元だけで作られる。
+  for (const id of unitIds) {
+    if (!getUnit(id)) {
+      return NextResponse.json(
+        { error: `unknown unitId: ${id}` },
+        { status: 404 },
+      );
+    }
+  }
+
+  // Fix 2b: 各解答が申告する unitId は選択単元集合に含まれていること。
+  // （採点前に検証。トークンが不正/改ざんなら従来どおり item ごとに correct:false。
+  //  こちらは「申告 unitId が選択と一致するか」の検証で、結果を正しい testKey に紐づける。）
+  const unitSet = new Set(unitIds);
+  for (const a of answers) {
+    if (!unitSet.has((a.unitId ?? "").trim())) {
+      return NextResponse.json(
+        { error: "answers の単元が unitIds と一致しません" },
+        { status: 400 },
+      );
+    }
+  }
+
   const items = answers.map((a) => {
     const unitId = (a.unitId ?? "").trim();
     const token = (a.answerToken ?? "").trim();
@@ -76,6 +112,9 @@ export async function POST(req: NextRequest) {
         diagnosis: null as string | null,
       };
     }
+    // Fix 4: math/grade と違い、この一括採点では prompt 不一致で全体を 400 にしない。
+    // 1問の申告ズレでバッチ全体を落とすべきではないため、prompt はトークンの確定値を
+    // そのまま使い、採点はトークン（正解）＋ userInput のみを信用する。
     const problem: Problem = {
       unitId,
       prompt: payload.prompt,
@@ -111,13 +150,20 @@ export async function POST(req: NextRequest) {
     if (hist.length > 0) {
       prevScore = hist[0].score;
       prevTotal = hist[0].total;
-      let best = hist[0];
-      for (const h of hist) {
-        if (h.score / h.total > best.score / best.total) best = h;
+      // Fix 3: total<=0 の異常行（旧/他系統データ）は 0/0 → NaN で比較を壊すため除外。
+      const valid = hist.filter((h) => h.total > 0);
+      if (valid.length > 0) {
+        let best = valid[0];
+        for (const h of valid) {
+          if (h.score / h.total > best.score / best.total) best = h;
+        }
+        bestScore = best.score;
+        bestTotal = best.total;
+        isBest = score / total > best.score / best.total;
+      } else {
+        // 有効な過去行が無ければ今回を初回扱い（自己ベスト）。
+        isBest = true;
       }
-      bestScore = best.score;
-      bestTotal = best.total;
-      isBest = score / total > best.score / best.total;
     } else {
       isBest = true;
     }
