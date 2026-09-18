@@ -54,6 +54,28 @@ export interface ProgressSummary {
   bySubject: Record<string, { attempts: number; correct: number }>;
 }
 
+/** テスト結果の保存入力。 */
+export interface TestResultInput {
+  id: string;
+  childId: string;
+  subject: string;
+  unitIds: string;
+  testKey: string;
+  total: number;
+  score: number;
+}
+
+/** テスト結果の履歴1件分。 */
+export interface TestResultRow {
+  id: string;
+  subject: string;
+  unitIds: string;
+  testKey: string;
+  total: number;
+  score: number;
+  takenAt: string;
+}
+
 export interface Store {
   createSession(
     id: string,
@@ -83,8 +105,17 @@ export interface Store {
     subject: string,
     unitId: string,
     correct: boolean,
+    source: string,
   ): Promise<void>;
   getChildProgress(childId: string): Promise<ProgressSummary>;
+
+  /* --- テスト結果（テストモード） --- */
+  recordTestResult(input: TestResultInput): Promise<void>;
+  getTestHistory(
+    childId: string,
+    testKey: string,
+    limit: number,
+  ): Promise<TestResultRow[]>;
 
   /* --- 設定（key/value）。見守りパスコードのハッシュ保存などに使う --- */
   getConfig(key: string): Promise<string | null>;
@@ -173,6 +204,20 @@ class PostgresStore implements Store {
     await this.sql`
       CREATE INDEX IF NOT EXISTS attempts_child_idx ON attempts (child_id)
     `;
+    await this.sql`ALTER TABLE attempts ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'practice'`;
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS test_results (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        unit_ids TEXT NOT NULL,
+        test_key TEXT NOT NULL,
+        total INTEGER NOT NULL,
+        score INTEGER NOT NULL,
+        taken_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `;
+    await this.sql`CREATE INDEX IF NOT EXISTS test_results_key_idx ON test_results (child_id, test_key, taken_at)`;
     await this.sql`
       CREATE TABLE IF NOT EXISTS app_config (
         key TEXT PRIMARY KEY,
@@ -206,12 +251,45 @@ class PostgresStore implements Store {
     subject: string,
     unitId: string,
     correct: boolean,
+    source: string,
   ): Promise<void> {
     await this.ready;
     await this.sql`
-      INSERT INTO attempts (id, child_id, subject, unit_id, correct)
-      VALUES (${id}, ${childId}, ${subject}, ${unitId}, ${correct})
+      INSERT INTO attempts (id, child_id, subject, unit_id, correct, source)
+      VALUES (${id}, ${childId}, ${subject}, ${unitId}, ${correct}, ${source})
     `;
+  }
+
+  async recordTestResult(input: TestResultInput): Promise<void> {
+    await this.ready;
+    await this.sql`
+      INSERT INTO test_results (id, child_id, subject, unit_ids, test_key, total, score)
+      VALUES (${input.id}, ${input.childId}, ${input.subject}, ${input.unitIds}, ${input.testKey}, ${input.total}, ${input.score})
+    `;
+  }
+
+  async getTestHistory(
+    childId: string,
+    testKey: string,
+    limit: number,
+  ): Promise<TestResultRow[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT id, subject, unit_ids, test_key, total, score, taken_at
+      FROM test_results
+      WHERE child_id = ${childId} AND test_key = ${testKey}
+      ORDER BY taken_at DESC
+      LIMIT ${limit}
+    `;
+    return (rows as any[]).map((r) => ({
+      id: String(r.id),
+      subject: String(r.subject),
+      unitIds: String(r.unit_ids),
+      testKey: String(r.test_key),
+      total: Number(r.total ?? 0),
+      score: Number(r.score ?? 0),
+      takenAt: r.taken_at == null ? "" : String(r.taken_at),
+    }));
   }
 
   async getChildProgress(childId: string): Promise<ProgressSummary> {
@@ -360,17 +438,38 @@ class PostgresStore implements Store {
 /* ------------------------------------------------------------------ */
 
 class SqliteStore implements Store {
-  private db: any;
+  private sqlitePath: string;
+  // better-sqlite3 の Database コンストラクタ（動的 import 後にキャッシュ）。
+  private Database: any;
   private ready: Promise<void>;
 
   constructor(sqlitePath: string) {
+    this.sqlitePath = sqlitePath;
     this.ready = this.init(sqlitePath);
+  }
+
+  /**
+   * 1操作ごとに接続を開き、コールバック後に必ず close する。
+   *
+   * 永続接続を保持すると Windows ではファイルハンドルがロックされ、
+   * テストの一時DB削除（rmSync）が EBUSY で失敗する。ローカル専用・低トラフィックの
+   * Store なので、都度 open/close でも実用上問題ない。
+   */
+  private withDb<T>(fn: (db: any) => T): T {
+    const db = new this.Database(this.sqlitePath);
+    try {
+      db.pragma("journal_mode = WAL");
+      return fn(db);
+    } finally {
+      db.close();
+    }
   }
 
   private async init(sqlitePath: string): Promise<void> {
     const { existsSync, mkdirSync } = await import("node:fs");
     const mod = await import("better-sqlite3");
     const Database = (mod as any).default ?? mod;
+    this.Database = Database;
 
     const dir = path.dirname(sqlitePath);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -409,6 +508,7 @@ class SqliteStore implements Store {
         subject TEXT NOT NULL,
         unit_id TEXT NOT NULL,
         correct INTEGER NOT NULL,
+        source TEXT NOT NULL DEFAULT 'practice',
         created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       );
       CREATE INDEX IF NOT EXISTS attempts_child_idx ON attempts (child_id);
@@ -419,25 +519,51 @@ class SqliteStore implements Store {
       );
     `);
 
-    this.db = sqlite;
+    // 既存DB（source 列が無い）への冪等マイグレーション。
+    const cols = sqlite.prepare(`PRAGMA table_info(attempts)`).all() as any[];
+    if (!cols.some((c) => c.name === "source")) {
+      sqlite.exec(
+        `ALTER TABLE attempts ADD COLUMN source TEXT NOT NULL DEFAULT 'practice'`,
+      );
+    }
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS test_results (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        unit_ids TEXT NOT NULL,
+        test_key TEXT NOT NULL,
+        total INTEGER NOT NULL,
+        score INTEGER NOT NULL,
+        taken_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+      );
+      CREATE INDEX IF NOT EXISTS test_results_key_idx ON test_results (child_id, test_key, taken_at);
+    `);
+
+    // スキーマ作成用の接続は都度 open/close 方針に合わせてここで閉じる。
+    sqlite.close();
   }
 
   async getConfig(key: string): Promise<string | null> {
     await this.ready;
-    const r = this.db
-      .prepare("SELECT value FROM app_config WHERE key = ? LIMIT 1")
-      .get(key) as any;
-    return r ? String(r.value) : null;
+    return this.withDb((db) => {
+      const r = db
+        .prepare("SELECT value FROM app_config WHERE key = ? LIMIT 1")
+        .get(key) as any;
+      return r ? String(r.value) : null;
+    });
   }
 
   async setConfig(key: string, value: string): Promise<void> {
     await this.ready;
-    this.db
-      .prepare(
-        "INSERT INTO app_config (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) " +
-          "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
-      )
-      .run(key, value);
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO app_config (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) " +
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+        )
+        .run(key, value),
+    );
   }
 
   async recordAttempt(
@@ -446,22 +572,75 @@ class SqliteStore implements Store {
     subject: string,
     unitId: string,
     correct: boolean,
+    source: string,
   ): Promise<void> {
     await this.ready;
-    this.db
-      .prepare(
-        "INSERT INTO attempts (id, child_id, subject, unit_id, correct) VALUES (?, ?, ?, ?, ?)",
-      )
-      .run(id, childId, subject, unitId, correct ? 1 : 0);
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO attempts (id, child_id, subject, unit_id, correct, source) VALUES (?, ?, ?, ?, ?, ?)",
+        )
+        .run(id, childId, subject, unitId, correct ? 1 : 0, source),
+    );
+  }
+
+  async recordTestResult(input: TestResultInput): Promise<void> {
+    await this.ready;
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO test_results (id, child_id, subject, unit_ids, test_key, total, score) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          input.id,
+          input.childId,
+          input.subject,
+          input.unitIds,
+          input.testKey,
+          input.total,
+          input.score,
+        ),
+    );
+  }
+
+  async getTestHistory(
+    childId: string,
+    testKey: string,
+    limit: number,
+  ): Promise<TestResultRow[]> {
+    await this.ready;
+    const rows = this.withDb(
+      (db) =>
+        db
+          .prepare(
+            `SELECT id, subject, unit_ids, test_key, total, score, taken_at
+             FROM test_results
+             WHERE child_id = ? AND test_key = ?
+             ORDER BY taken_at DESC, rowid DESC
+             LIMIT ?`,
+          )
+          .all(childId, testKey, limit) as any[],
+    );
+    return rows.map((r) => ({
+      id: String(r.id),
+      subject: String(r.subject),
+      unitIds: String(r.unit_ids),
+      testKey: String(r.test_key),
+      total: Number(r.total ?? 0),
+      score: Number(r.score ?? 0),
+      takenAt: r.taken_at == null ? "" : String(r.taken_at),
+    }));
   }
 
   async getChildProgress(childId: string): Promise<ProgressSummary> {
     await this.ready;
-    const rows = this.db
-      .prepare(
-        "SELECT subject, COUNT(*) AS attempts, SUM(correct) AS correct FROM attempts WHERE child_id = ? GROUP BY subject",
-      )
-      .all(childId);
+    const rows = this.withDb((db) =>
+      db
+        .prepare(
+          "SELECT subject, COUNT(*) AS attempts, SUM(correct) AS correct FROM attempts WHERE child_id = ? GROUP BY subject",
+        )
+        .all(childId),
+    );
     return aggregateProgress(
       (rows as any[]).map((r) => ({
         subject: String(r.subject),
@@ -478,11 +657,13 @@ class SqliteStore implements Store {
     topicId?: string,
   ): Promise<void> {
     await this.ready;
-    this.db
-      .prepare(
-        "INSERT INTO sessions (id, topic, grade_band, topic_id) VALUES (?, ?, ?, ?)",
-      )
-      .run(id, topic, gradeBand, topicId ?? null);
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO sessions (id, topic, grade_band, topic_id) VALUES (?, ?, ?, ?)",
+        )
+        .run(id, topic, gradeBand, topicId ?? null),
+    );
   }
 
   async logMessage(
@@ -492,11 +673,13 @@ class SqliteStore implements Store {
     text: string,
   ): Promise<void> {
     await this.ready;
-    this.db
-      .prepare(
-        "INSERT INTO messages (id, session_id, sender, text) VALUES (?, ?, ?, ?)",
-      )
-      .run(id, sessionId, sender, text);
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO messages (id, session_id, sender, text) VALUES (?, ?, ?, ?)",
+        )
+        .run(id, sessionId, sender, text),
+    );
   }
 
   async logModeration(
@@ -508,29 +691,34 @@ class SqliteStore implements Store {
     reason: string | null,
   ): Promise<void> {
     await this.ready;
-    this.db
-      .prepare(
-        "INSERT INTO moderations (id, session_id, message_id, stage, verdict, reason) VALUES (?, ?, ?, ?, ?, ?)",
-      )
-      .run(id, sessionId, messageId, stage, verdict, reason);
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO moderations (id, session_id, message_id, stage, verdict, reason) VALUES (?, ?, ?, ?, ?, ?)",
+        )
+        .run(id, sessionId, messageId, stage, verdict, reason),
+    );
   }
 
   async listSessions(limit: number): Promise<SessionSummary[]> {
     await this.ready;
-    const rows = this.db
-      .prepare(
-        `SELECT
-           s.id AS id,
-           s.topic AS topic,
-           s.grade_band AS grade_band,
-           s.topic_id AS topic_id,
-           s.started_at AS started_at,
-           (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
-         FROM sessions s
-         ORDER BY s.started_at DESC
-         LIMIT ?`,
-      )
-      .all(limit) as any[];
+    const rows = this.withDb(
+      (db) =>
+        db
+          .prepare(
+            `SELECT
+               s.id AS id,
+               s.topic AS topic,
+               s.grade_band AS grade_band,
+               s.topic_id AS topic_id,
+               s.started_at AS started_at,
+               (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+             FROM sessions s
+             ORDER BY s.started_at DESC
+             LIMIT ?`,
+          )
+          .all(limit) as any[],
+    );
     return rows.map((r) => ({
       id: String(r.id),
       topic: String(r.topic),
@@ -543,40 +731,41 @@ class SqliteStore implements Store {
 
   async getSessionDetail(id: string): Promise<SessionDetail | null> {
     await this.ready;
-    const s = this.db
-      .prepare(
-        `SELECT
-           s.id AS id,
-           s.topic AS topic,
-           s.grade_band AS grade_band,
-           s.topic_id AS topic_id,
-           s.started_at AS started_at,
-           (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
-         FROM sessions s
-         WHERE s.id = ?
-         LIMIT 1`,
-      )
-      .get(id) as any;
-    if (!s) return null;
+    return this.withDb((db) => {
+      const s = db
+        .prepare(
+          `SELECT
+             s.id AS id,
+             s.topic AS topic,
+             s.grade_band AS grade_band,
+             s.topic_id AS topic_id,
+             s.started_at AS started_at,
+             (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+           FROM sessions s
+           WHERE s.id = ?
+           LIMIT 1`,
+        )
+        .get(id) as any;
+      if (!s) return null;
 
-    const messageRows = this.db
-      .prepare(
-        `SELECT id, sender, text, created_at
-         FROM messages
-         WHERE session_id = ?
-         ORDER BY created_at ASC`,
-      )
-      .all(id) as any[];
-    const moderationRows = this.db
-      .prepare(
-        `SELECT id, message_id, stage, verdict, reason, created_at
-         FROM moderations
-         WHERE session_id = ?
-         ORDER BY created_at ASC`,
-      )
-      .all(id) as any[];
+      const messageRows = db
+        .prepare(
+          `SELECT id, sender, text, created_at
+           FROM messages
+           WHERE session_id = ?
+           ORDER BY created_at ASC`,
+        )
+        .all(id) as any[];
+      const moderationRows = db
+        .prepare(
+          `SELECT id, message_id, stage, verdict, reason, created_at
+           FROM moderations
+           WHERE session_id = ?
+           ORDER BY created_at ASC`,
+        )
+        .all(id) as any[];
 
-    return {
+      return {
       session: {
         id: String(s.id),
         topic: String(s.topic),
@@ -599,7 +788,8 @@ class SqliteStore implements Store {
         reason: r.reason == null ? null : String(r.reason),
         createdAt: r.created_at == null ? "" : String(r.created_at),
       })),
-    };
+      };
+    });
   }
 }
 
@@ -650,6 +840,7 @@ class NoopStore implements Store {
     subject: string,
     unitId: string,
     correct: boolean,
+    source: string,
   ): Promise<void> {
     console.debug("[db:noop] recordAttempt", {
       id,
@@ -657,7 +848,20 @@ class NoopStore implements Store {
       subject,
       unitId,
       correct,
+      source,
     });
+  }
+
+  async recordTestResult(input: TestResultInput): Promise<void> {
+    console.debug("[db:noop] recordTestResult", input);
+  }
+
+  async getTestHistory(
+    _childId: string,
+    _testKey: string,
+    _limit: number,
+  ): Promise<TestResultRow[]> {
+    return [];
   }
 
   async getChildProgress(_childId: string): Promise<ProgressSummary> {

@@ -67,7 +67,7 @@ export function logAttempt(
 ): void {
   const id = randomUUID();
   runAfterResponse(() =>
-    getStore().recordAttempt(id, childId, subject, unitId, correct),
+    getStore().recordAttempt(id, childId, subject, unitId, correct, "practice"),
   );
 }
 
