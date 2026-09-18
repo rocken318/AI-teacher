@@ -80,6 +80,9 @@ export default async function MathPage({
             <a href="/math" className="font-semibold text-ink">
               算数
             </a>
+            <a href="/test" className="hover:text-ink">
+              テスト
+            </a>
             <a href="/guardian" className="hover:text-ink">
               みまもり
             </a>
@@ -110,6 +113,14 @@ export default async function MathPage({
           <p className="mx-auto mt-2 text-[13px] text-faint">
             ぜんぶで {totalUnits} 単元 ・ こたえは サーバーで しずかに 採点します。
           </p>
+          <div className="mt-6">
+            <a
+              href="/test"
+              className="inline-flex items-center gap-1 rounded-full border border-terra bg-paper px-5 py-2 text-sm font-bold text-terra shadow-soft transition hover:bg-terra/5"
+            >
+              📝 テストにちょうせん →
+            </a>
+          </div>
         </section>
 
         {/* ===== 練習モードのバナー ===== */}
