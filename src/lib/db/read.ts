@@ -1,6 +1,11 @@
 import "server-only";
 import { getStore, getDbBackend } from "./index";
-import type { SessionSummary, SessionDetail, ProgressSummary } from "./index";
+import type {
+  SessionSummary,
+  SessionDetail,
+  ProgressSummary,
+  TestResultRow,
+} from "./index";
 
 /**
  * 読み取り公開ヘルパー（見守りダッシュボード用）。
@@ -16,6 +21,7 @@ export type {
   SessionSummary,
   SessionDetail,
   ProgressSummary,
+  TestResultRow,
   DbBackend,
 } from "./index";
 
@@ -50,5 +56,19 @@ export async function getSessionDetail(
   } catch (err) {
     console.error("[db:read] getSessionDetail failed:", err);
     return null;
+  }
+}
+
+/** 同一 test_key の履歴（新しい順）。失敗時は空配列。 */
+export async function getTestHistory(
+  childId: string,
+  testKey: string,
+  limit = 50,
+): Promise<TestResultRow[]> {
+  try {
+    return await getStore().getTestHistory(childId, testKey, limit);
+  } catch (err) {
+    console.error("[db:read] getTestHistory failed:", err);
+    return [];
   }
 }
