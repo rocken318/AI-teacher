@@ -257,6 +257,20 @@ export function TestRunner({ units }: { units: UnitInfo[] }) {
 
   if (phase === "running") {
     const it = items[cursor];
+    // 契約上 items は必ず 5/10/20 件だが、万一空でも白画面にせず setup へ戻す保険。
+    if (!it) {
+      return (
+        <p className="py-8 text-center text-[13px] text-faint">
+          もんだいの よみこみに しっぱいしました。
+          <button
+            onClick={() => restart()}
+            className="ml-2 font-bold text-sky hover:underline"
+          >
+            もどる
+          </button>
+        </p>
+      );
+    }
     const isLast = cursor === items.length - 1;
     const allowNeg =
       typeof it?.unitId === "string" && false;
@@ -325,12 +339,15 @@ export function TestRunner({ units }: { units: UnitInfo[] }) {
     );
   }
 
-  const r = result!;
+  // result フェーズだが result 未設定という不整合状態は描画しない（防御）。
+  if (!result) return null;
+  const r = result;
   const pct = Math.round((r.score / r.total) * 100);
   const wrong = r.items.filter((i) => !i.correct);
   const wrongUnits = Array.from(new Set(wrong.map((w) => w.unitId)));
+  // 前回比。prevTotal>0 を確認し、レガシー 0 件行による NaN を防ぐ。
   const diff =
-    r.prevScore != null && r.prevTotal != null
+    r.prevScore != null && r.prevTotal != null && r.prevTotal > 0
       ? r.score - Math.round((r.prevScore / r.prevTotal) * r.total)
       : null;
 
