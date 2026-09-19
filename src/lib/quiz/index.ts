@@ -19,7 +19,9 @@ import { SOCIAL_UNITS } from "./social";
 import { SOCIAL_UNITS_B } from "./social_b";
 import { SOCIAL_UNITS_C } from "./social_c";
 import { HISTORY_UNITS_J2 } from "./history_j2";
+import { HISTORY_J2_MORE } from "./history_j2_more";
 import { GEOGRAPHY_UNITS_J2 } from "./geography_j2";
+import { GEOGRAPHY_J2_MORE } from "./geography_j2_more";
 import { JAPANESE_UNITS } from "./japanese";
 import { JAPANESE_UNITS_J2 } from "./japanese_j2";
 import { ENGLISH_UNITS } from "./english";
@@ -74,7 +76,9 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...SOCIAL_UNITS_B,
   ...SOCIAL_UNITS_C,
   ...HISTORY_UNITS_J2,
+  ...HISTORY_J2_MORE,
   ...GEOGRAPHY_UNITS_J2,
+  ...GEOGRAPHY_J2_MORE,
   ...JAPANESE_UNITS,
   ...JAPANESE_UNITS_J2,
   ...ENGLISH_UNITS,
