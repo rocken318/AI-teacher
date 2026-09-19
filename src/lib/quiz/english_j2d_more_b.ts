@@ -19,25 +19,25 @@ export const ENGLISH_J2D_MORE_B: QuizUnit[] = [
     items: [
       {
         id: "j2de2-conjunction-m1",
-        question: "I was happy ___ I heard the good news.（私はその良い知らせを聞いてうれしかった）",
+        question: "Please call me ___ you arrive at the station.（駅に着いたら電話してください）",
         choices: ["when", "if", "that", "because"],
         answerIndex: 0,
         explanation:
-          "「〜したとき」と時を表すのは when です。「知らせを聞いたとき」という時の節が続いています。",
+          "「〜したとき・〜したら」と時を表すのは when です。「駅に着いたら電話して」という時の節なので when を使います。if は「もし〜かどうかわからない」という不確かな条件に使います。",
         choiceHints: [
           null,
-          "if は「もし〜なら」と条件を表します。「〜したとき」は when です。",
-          "that は「〜ということ」です。「〜したとき」は when です。",
-          "because は「〜だから」と理由を表します。ここは時を表す when です。",
+          "if は「もし〜なら（かもしれない）」と不確かな条件を表します。到着したときに電話してほしい、という時の節なので when です。",
+          "that は「〜ということ」です。「〜したとき・〜したら」は when です。",
+          "because は「〜だから」と理由を表します。「〜したら（電話して）」は時を表す when です。",
         ],
       },
       {
         id: "j2de2-conjunction-m2",
-        question: "She cried ___ she lost her dog.（彼女は犬をなくしたので泣いた）",
+        question: "She stayed home from school ___ she had a cold.（彼女は風邪をひいていたので学校を休んだ）",
         choices: ["when", "if", "because", "that"],
         answerIndex: 2,
         explanation:
-          "「〜だから・〜なので」と理由を表すのは because です。うしろの節「犬をなくした」が泣いた理由を述べています。",
+          "「〜だから・〜なので」と理由を表すのは because です。「風邪をひいていた」ことが学校を休んだ理由です。",
         choiceHints: [
           "when は「〜のとき」です。ここは理由を表す because です。",
           "if は「もし〜なら」です。ここは理由を表す because です。",
@@ -61,14 +61,14 @@ export const ENGLISH_J2D_MORE_B: QuizUnit[] = [
       },
       {
         id: "j2de2-conjunction-m4",
-        question: "Do you know ___ she likes cooking?（彼女が料理が好きだということを知っていますか）",
+        question: "We all know ___ the earth goes around the sun.（地球が太陽のまわりを回ることは誰もが知っている）",
         choices: ["when", "if", "because", "that"],
         answerIndex: 3,
         explanation:
-          "know のあとで「〜ということ」を表すのは接続詞 that です。この that は省略することもできます。",
+          "know のあとで「〜ということ（事実）」を表すのは接続詞 that です。確かな事実を述べるときには that を使い、if/whether（〜かどうか）は使いません。この that は省略することもできます。",
         choiceHints: [
           "when は「〜のとき」です。know のあとで「〜ということ」は that です。",
-          "if は「もし〜なら」です。ここでは「〜ということ」の that を使います。",
+          "if は「〜かどうか」と不確かな内容に使います。確かな事実を述べるここでは that を使います。",
           "because は「〜だから」です。ここでは「〜ということ」の that を使います。",
           null,
         ],
@@ -89,11 +89,11 @@ export const ENGLISH_J2D_MORE_B: QuizUnit[] = [
       },
       {
         id: "j2de2-conjunction-m6",
-        question: "I was surprised ___ I saw the huge building.（私はその巨大な建物を見たとき驚いた）",
+        question: "I was listening to music ___ he called me.（彼が電話してきたとき、私は音楽を聞いていた）",
         choices: ["because", "when", "if", "that"],
         answerIndex: 1,
         explanation:
-          "「〜したとき」と時を表すのは when です。「建物を見たとき」という時の節が続いています。",
+          "「〜したとき」と時を表すのは when です。「彼が電話してきたとき」という時の節が続いています。",
         choiceHints: [
           "because は「〜だから」と理由を表します。「〜したとき」は when です。",
           null,
@@ -273,14 +273,14 @@ export const ENGLISH_J2D_MORE_B: QuizUnit[] = [
         id: "j2de2-passive-m3",
         question: "「この橋は多くの人に知られている」を表す英文はどれ？",
         choices: [
-          "This bridge is known by many people.",
-          "This bridge is know by many people.",
-          "This bridge was known by many people.",
+          "This bridge is known to many people.",
+          "This bridge is know to many people.",
+          "This bridge was known to many people.",
           "This bridge knows many people.",
         ],
         answerIndex: 0,
         explanation:
-          "「知られている」という現在の受動態は is known です。know の過去分詞は known です。",
+          "「知られている」という現在の受動態は is known です。know の過去分詞は known で、「〜に知られている」は be known to 〜 と表します。",
         choiceHints: [
           null,
           "is のあとは過去分詞にします。know ではなく known です。",
