@@ -10,6 +10,8 @@ type QuestionDTO = {
   question: string;
   choices: string[];
   token: string;
+  /** 単元の全問を出し切った合図（seen をこの1問に戻す）。 */
+  reset?: boolean;
 };
 
 /** grade API のレスポンス。 */
@@ -41,6 +43,8 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
   const [randomMode, setRandomMode] = useState(false);
   // ランダムモードで実際に出題中の単元id（採点・記録に使う）。
   const [currentUnitId, setCurrentUnitId] = useState<string>("");
+  // 既に出した問題id（同一単元で重複を避ける＝全問出し切るまで再登場させない）。
+  const [seenItemIds, setSeenItemIds] = useState<string[]>([]);
 
   // 出題中の状態
   const [question, setQuestion] = useState<QuestionDTO | null>(null);
@@ -62,8 +66,12 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     [units, activeGrade],
   );
 
-  /** 新しい問題を取得する。 */
-  const fetchQuestion = useCallback(async (unitId: string) => {
+  /**
+   * 新しい問題を取得する。
+   * seen（既出 itemId）を送り、未出題から出題してもらう（重複回避）。
+   * 全問出し切った合図（reset）が来たら seen をこの1問だけに戻して周回を続ける。
+   */
+  const fetchQuestion = useCallback(async (unitId: string, seen: string[]) => {
     setLoadingQuestion(true);
     setError("");
     setPhase("answering");
@@ -74,11 +82,12 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
       const res = await fetch("/api/quiz/question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unitId }),
+        body: JSON.stringify({ unitId, seen }),
       });
       if (!res.ok) throw new Error(`question ${res.status}`);
       const data = (await res.json()) as QuestionDTO;
       setQuestion(data);
+      setSeenItemIds(data.reset ? [data.itemId] : [...seen, data.itemId]);
     } catch {
       setError("もんだいの よみこみに しっぱいしました。もういちど ためしてね。");
       setQuestion(null);
@@ -94,7 +103,8 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
       setSelectedUnit(unit);
       setCorrectCount(0);
       setAttemptCount(0);
-      void fetchQuestion(unit.id);
+      setSeenItemIds([]);
+      void fetchQuestion(unit.id, []);
     },
     [fetchQuestion],
   );
@@ -122,7 +132,9 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     });
     setCorrectCount(0);
     setAttemptCount(0);
-    void fetchQuestion(id);
+    // ランダムモードは毎問ちがう単元なので、重複回避の seen は使わない。
+    setSeenItemIds([]);
+    void fetchQuestion(id, []);
   }, [pickRandomUnitId, activeGrade, fetchQuestion]);
 
   /** 選択肢を選ぶ → 採点する。 */
@@ -171,11 +183,13 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     if (!selectedUnit) return;
     if (randomMode) {
       const id = pickRandomUnitId();
-      if (id) void fetchQuestion(id);
+      // ランダムは毎問ちがう単元なので seen は空でよい。
+      if (id) void fetchQuestion(id, []);
       return;
     }
-    void fetchQuestion(selectedUnit.id);
-  }, [selectedUnit, randomMode, pickRandomUnitId, fetchQuestion]);
+    // 同一単元は既出を避けて出題（全問出し切るまで重複なし）。
+    void fetchQuestion(selectedUnit.id, seenItemIds);
+  }, [selectedUnit, randomMode, pickRandomUnitId, fetchQuestion, seenItemIds]);
 
   /**
    * もう一回（同じ問題を解き直す）。
@@ -193,6 +207,7 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
   const backToUnits = useCallback(() => {
     setRandomMode(false);
     setCurrentUnitId("");
+    setSeenItemIds([]);
     setSelectedUnit(null);
     setQuestion(null);
     setResult(null);
