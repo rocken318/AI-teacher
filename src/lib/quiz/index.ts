@@ -37,6 +37,9 @@ import { ENGLISH_UNITS_J2D } from "./english_j2d";
 import { SCIENCE_J2_MORE } from "./science_j2_more";
 import { SCIENCE_J2D_MORE_A } from "./science_j2d_more_a";
 import { SCIENCE_J2D_MORE_B } from "./science_j2d_more_b";
+import { ENGLISH_J2_MORE } from "./english_j2_more";
+import { ENGLISH_J2D_MORE_A } from "./english_j2d_more_a";
+import { ENGLISH_J2D_MORE_B } from "./english_j2d_more_b";
 
 export type {
   Subject,
@@ -97,6 +100,9 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...GEOGRAPHY_J2D_MORE_B,
   ...JAPANESE_UNITS_J2D,
   ...ENGLISH_UNITS_J2D,
+  ...ENGLISH_J2_MORE,
+  ...ENGLISH_J2D_MORE_A,
+  ...ENGLISH_J2D_MORE_B,
   ...SCIENCE_J2_MORE,
   ...SCIENCE_J2D_MORE_A,
   ...SCIENCE_J2D_MORE_B,
