@@ -4,6 +4,17 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 /** セッションCookie名。 */
 export const SESSION_COOKIE = "ai_sensei_session";
 
+// 本番で AUTH_SECRET 未設定だと既定鍵になり、セッションを偽造されうる。
+// クラッシュはさせない（デプロイを止めない）が、ログで強く警告する。
+if (
+  !process.env.AUTH_SECRET &&
+  (process.env.VERCEL || process.env.NODE_ENV === "production")
+) {
+  console.error(
+    "[auth] AUTH_SECRET が未設定です。本番では必ず設定してください（既定鍵のままだとセッション偽造の恐れ）。",
+  );
+}
+
 const KEY = createHash("sha256")
   .update(process.env.AUTH_SECRET ?? "ai-sensei-auth-default-secret-v1")
   .digest();

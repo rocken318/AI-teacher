@@ -24,7 +24,15 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({ ok: true });
     res.cookies.set(SESSION_COOKIE, signSession(id, SESSION_TTL_MS), sessionCookieOptions());
     return res;
-  } catch {
+  } catch (err) {
+    // 同時signupの競合で email UNIQUE 制約に当たった場合は 409（データ整合性はDBが担保）。
+    const msg = String((err as { message?: unknown })?.message ?? err ?? "").toLowerCase();
+    if (msg.includes("unique") || msg.includes("duplicate")) {
+      return NextResponse.json(
+        { error: "このメールアドレスは既に使われています。" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "no-store" }, { status: 500 });
   }
 }
