@@ -34,6 +34,7 @@ import { GEOGRAPHY_J2D_MORE_A } from "./geography_j2d_more_a";
 import { GEOGRAPHY_J2D_MORE_B } from "./geography_j2d_more_b";
 import { JAPANESE_UNITS_J2D } from "./japanese_j2d";
 import { ENGLISH_UNITS_J2D } from "./english_j2d";
+import { SCIENCE_J2D_MORE_B } from "./science_j2d_more_b";
 
 export type {
   Subject,
@@ -94,6 +95,7 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...GEOGRAPHY_J2D_MORE_B,
   ...JAPANESE_UNITS_J2D,
   ...ENGLISH_UNITS_J2D,
+  ...SCIENCE_J2D_MORE_B,
 ]);
 
 /** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
