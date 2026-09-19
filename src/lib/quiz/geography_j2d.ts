@@ -995,7 +995,7 @@ export const GEOGRAPHY_UNITS_J2D: QuizUnit[] = [
       {
         id: "j2dg2-region-kyushu-1",
         question: "世界最大級のカルデラがある、九州を代表する火山はどれですか。",
-        choices: ["阿蘇山", "浅間山", "桜島でも阿蘇のカルデラが最大級"],
+        choices: ["阿蘇山", "浅間山", "桜島"],
         answerIndex: 0,
         explanation:
           "熊本県の阿蘇山は、世界最大級のカルデラ（火山活動でできた大きなくぼ地）で知られ、いまも活動している九州を代表する火山です。",
