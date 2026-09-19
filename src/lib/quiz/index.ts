@@ -38,8 +38,35 @@ export type {
   SubjectMeta,
 } from "./types";
 
-/** 全単元（4教科のバンク＋増設分を結合）。 */
-export const QUIZ_UNITS: QuizUnit[] = [
+/**
+ * 同一 id の単元を合体する（メタは最初の定義、items を連結）。
+ * これにより「既存単元に問題を足す追加ファイル」を、同じ id の QuizUnit として
+ * 別ファイルで書けば、UI上は同じ単元のまま問題数だけ増やせる。
+ * item id は単元内で一意になるよう連結時に重複を除く（後勝ちしない）。
+ */
+export function mergeUnitsById(units: QuizUnit[]): QuizUnit[] {
+  const map = new Map<string, QuizUnit>();
+  const order: string[] = [];
+  for (const u of units) {
+    const existing = map.get(u.id);
+    if (existing) {
+      const seen = new Set(existing.items.map((it) => it.id));
+      for (const it of u.items) {
+        if (!seen.has(it.id)) {
+          existing.items.push(it);
+          seen.add(it.id);
+        }
+      }
+    } else {
+      map.set(u.id, { ...u, items: [...u.items] });
+      order.push(u.id);
+    }
+  }
+  return order.map((id) => map.get(id)!);
+}
+
+/** 全単元（4教科のバンク＋増設分＋追加問題を結合。同一idは合体）。 */
+export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...SCIENCE_UNITS,
   ...SCIENCE_UNITS_B,
   ...SCIENCE_UNITS_J2,
@@ -57,7 +84,7 @@ export const QUIZ_UNITS: QuizUnit[] = [
   ...GEOGRAPHY_UNITS_J2D,
   ...JAPANESE_UNITS_J2D,
   ...ENGLISH_UNITS_J2D,
-];
+]);
 
 /** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
 export const GRADE_ORDER: QuizGrade[] = [
