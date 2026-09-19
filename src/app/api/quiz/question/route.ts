@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuizUnit, pickQuestion } from "@/lib/quiz";
+import { getQuizUnit, pickQuestionExcluding } from "@/lib/quiz";
 import { encodeQuizToken } from "@/lib/quiz/token";
 
 export const runtime = "nodejs";
 
 /**
- * 問題を1問配る API。
+ * 問題を1問配る API（練習用・重複を避ける）。
  *
- * リクエスト: { unitId: string }
+ * リクエスト: { unitId: string, seen?: string[] }   // seen = 既に出した itemId
  * レスポンス: {
- *   itemId: string,
- *   question: string,
- *   choices: string[],
+ *   itemId, question, choices,
  *   token: string,   // { unitId, itemId, answerIndex } を暗号化した採点トークン
+ *   reset: boolean,  // 単元の全問を出し切った＝呼び出し側は seen をこの1問に戻す合図
  * }
  *
+ * seen を除いた未出題から出すので、単元の全問（6〜8問）を出し切るまで重複しない。
  * answerIndex はレスポンスに出さない（token に暗号化して入れる＝カンニング防止）。
  * 未知の unitId は 404。
  */
 export async function POST(req: NextRequest) {
-  let body: { unitId?: string };
+  let body: { unitId?: string; seen?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -36,7 +36,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unknown unitId" }, { status: 404 });
   }
 
-  const picked = pickQuestion(unitId);
+  const seen = Array.isArray(body.seen)
+    ? body.seen.map((s) => String(s))
+    : [];
+
+  const picked = pickQuestionExcluding(unitId, seen);
   if (!picked) {
     return NextResponse.json({ error: "no question available" }, { status: 404 });
   }
@@ -58,5 +62,6 @@ export async function POST(req: NextRequest) {
     question: picked.question,
     choices: picked.choices,
     token,
+    reset: picked.reset,
   });
 }

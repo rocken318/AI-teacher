@@ -139,6 +139,37 @@ export function pickQuestion(
 }
 
 /**
+ * 練習用: 既出（seen）を避けて1問選ぶ。
+ * - seen に無い item から一様ランダムに選ぶ（＝単元の全問を出し切るまで重複しない）。
+ * - 全問出し切った（未出題が無い）ときは reset=true を返し、全問から選び直す
+ *   （呼び出し側は seen をこの1問だけにリセットして周回を続けられる）。
+ * answerIndex は返さない（カンニング防止）。未知 unitId / 問題なしは null。
+ */
+export function pickQuestionExcluding(
+  unitId: string,
+  seen: string[],
+): {
+  itemId: string;
+  question: string;
+  choices: string[];
+  reset: boolean;
+} | null {
+  const unit = UNIT_MAP.get(unitId);
+  if (!unit || unit.items.length === 0) return null;
+  const seenSet = new Set(seen);
+  const unseen = unit.items.filter((it) => !seenSet.has(it.id));
+  const reset = unseen.length === 0;
+  const pool = reset ? unit.items : unseen;
+  const item = pool[Math.floor(Math.random() * pool.length)];
+  return {
+    itemId: item.id,
+    question: item.question,
+    choices: item.choices,
+    reset,
+  };
+}
+
+/**
  * 採点する。unit → item を引き、choiceIndex と authored の answerIndex を比較。
  * explanation はバンクの authored 文言をそのまま返す（AIは使わない）。
  * 未知の unitId / itemId は null。

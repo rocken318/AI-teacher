@@ -105,7 +105,11 @@ export async function POST(req: NextRequest) {
   // ここから補充すれば教科整合（testKey の許容単元）を崩さない。
   const candidatePool = Array.from(new Set(slots));
 
-  const usedItemIds = new Set<string>();
+  // 「使用済み」は 単元:問題id の複合キーで管理する。
+  // 旧単元は問題idが "q1..q6" を使い回すため、id だけで判定すると別単元の
+  // 別問題まで重複扱いになってしまう（＝出題が偏る）。複合キーで正しく区別する。
+  const usedKeys = new Set<string>();
+  const keyOf = (unitId: string, itemId: string) => `${unitId}:${itemId}`;
   const items: Array<{
     index: number;
     unitId: string;
@@ -126,11 +130,13 @@ export async function POST(req: NextRequest) {
       if (!unit || unit.items.length === 0) continue;
 
       // この単元でまだ使っていない item を優先。全部使い切っていれば重複を許容。
-      const unused = unit.items.filter((it) => !usedItemIds.has(it.id));
+      const unused = unit.items.filter(
+        (it) => !usedKeys.has(keyOf(unitId, it.id)),
+      );
       const source = unused.length > 0 ? unused : unit.items;
       const chosen = source[Math.floor(Math.random() * source.length)];
 
-      usedItemIds.add(chosen.id);
+      usedKeys.add(keyOf(unitId, chosen.id));
       items.push({
         index,
         unitId,
