@@ -11,6 +11,7 @@ test("TEST_SUBJECTS に全教科が含まれる", () => {
   expect(TEST_SUBJECTS).toEqual([
     "math",
     "science",
+    "social",
     "history",
     "geography",
     "japanese",
@@ -18,6 +19,7 @@ test("TEST_SUBJECTS に全教科が含まれる", () => {
   ]);
   expect(isTestSubject("math")).toBe(true);
   expect(isTestSubject("science")).toBe(true);
+  expect(isTestSubject("social")).toBe(true);
   expect(isTestSubject("unknown")).toBe(false);
 });
 
