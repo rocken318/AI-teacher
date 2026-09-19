@@ -69,6 +69,11 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   );
   const [selectedUnit, setSelectedUnit] = useState<UnitInfo | null>(null);
 
+  // ランダムモード（全単元プールから毎問ランダムに単元を選ぶ）。
+  const [randomMode, setRandomMode] = useState(false);
+  // ランダムモードで実際に出題中の単元id（採点・記録に使う）。
+  const [currentUnitId, setCurrentUnitId] = useState<string>("");
+
   // まちがい時の AI解説（生成AI）。答えは言わず、手順に よりそって みちびく。
   const [aiFeedback, setAiFeedback] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -107,6 +112,7 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
     setShowHint(false);
     setAiFeedback("");
     setAiLoading(false);
+    setCurrentUnitId(unitId);
     try {
       const res = await fetch("/api/math/problem", {
         method: "POST",
@@ -134,6 +140,7 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   /** 単元を選ぶ → スコアをリセットして1問目を出す。 */
   const chooseUnit = useCallback(
     (unit: UnitInfo) => {
+      setRandomMode(false);
       setSelectedUnit(unit);
       setCorrectCount(0);
       setAttemptCount(0);
@@ -141,6 +148,31 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
     },
     [fetchProblem],
   );
+
+  /** 現在学年の全単元からランダムに1つ選んで unitId を返す（無ければ空文字）。 */
+  const pickRandomUnitId = useCallback(() => {
+    if (activeUnits.length === 0) return "";
+    const u = activeUnits[Math.floor(Math.random() * activeUnits.length)];
+    return u.id;
+  }, [activeUnits]);
+
+  /** ランダム（全単元）モードを開始する。 */
+  const startRandom = useCallback(() => {
+    const id = pickRandomUnitId();
+    if (!id) return;
+    setRandomMode(true);
+    // 表示用のダミー単元（実際に出た単元は currentUnitId で追う）。
+    setSelectedUnit({
+      id: "__random__",
+      grade: activeGrade,
+      title: "ランダム（全単元）",
+      lesson: "この学年の いろいろな 単元から ランダムに 出題します。",
+      answerType: "integer",
+    });
+    setCorrectCount(0);
+    setAttemptCount(0);
+    void fetchProblem(id);
+  }, [pickRandomUnitId, activeGrade, fetchProblem]);
 
   /**
    * まちがえたときの AI解説を取りにいく（生成AI・失敗しても落とさない）。
@@ -178,6 +210,8 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   const submit = useCallback(async () => {
     if (!selectedUnit || !problem || !answerToken) return;
     if (!userInput.trim()) return;
+    // 採点・記録は「実際に出た単元id」で行う（ランダムモードでも診断が正しく効く）。
+    const gradeUnitId = currentUnitId || selectedUnit.id;
     setGrading(true);
     setError("");
     try {
@@ -185,7 +219,7 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          unitId: selectedUnit.id,
+          unitId: gradeUnitId,
           answerToken,
           userInput,
           prompt: problem.prompt,
@@ -199,7 +233,7 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
       setAttemptCount((n) => n + 1);
       // 進捗を記録（localStorage・失敗しても落とさない）
       try {
-        recordAttempt("math", selectedUnit.id, data.correct);
+        recordAttempt("math", gradeUnitId, data.correct);
       } catch {
         /* noop */
       }
@@ -214,18 +248,30 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
     } finally {
       setGrading(false);
     }
-  }, [selectedUnit, problem, answerToken, userInput, fetchAiFeedback]);
+  }, [
+    selectedUnit,
+    problem,
+    answerToken,
+    userInput,
+    currentUnitId,
+    fetchAiFeedback,
+  ]);
 
   /** ヒント表示（静的・生成AI不使用。problem API が返した固定文を出す）。 */
   const toggleHint = useCallback(() => {
     setShowHint((v) => !v);
   }, []);
 
-  /** つぎのもんだい。 */
+  /** つぎのもんだい。ランダムモードでは また別のランダム単元を出す。 */
   const next = useCallback(() => {
     if (!selectedUnit) return;
+    if (randomMode) {
+      const id = pickRandomUnitId();
+      if (id) void fetchProblem(id);
+      return;
+    }
     void fetchProblem(selectedUnit.id);
-  }, [selectedUnit, fetchProblem]);
+  }, [selectedUnit, randomMode, pickRandomUnitId, fetchProblem]);
 
   /**
    * もう一回（解き直し）。
@@ -242,6 +288,8 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   }, []);
 
   const backToUnits = useCallback(() => {
+    setRandomMode(false);
+    setCurrentUnitId("");
     setSelectedUnit(null);
     setProblem(null);
     setAnswerToken("");
@@ -284,6 +332,21 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* ランダム（全単元）で始める */}
+        {activeUnits.length > 0 && (
+          <div className="mb-4">
+            <button
+              onClick={startRandom}
+              className="w-full rounded-2xl border border-terra/40 bg-terra/5 px-4 py-3 text-left font-bold text-terra shadow-soft transition hover:border-terra/60 hover:bg-terra/10 sm:w-auto"
+            >
+              🎲 ランダム（全単元）
+              <span className="ml-2 text-[12px] font-normal text-ink-soft">
+                この学年の いろいろな 単元から 出します
+              </span>
+            </button>
           </div>
         )}
 
@@ -462,7 +525,7 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
                   onClick={next}
                   className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"
                 >
-                  同じジャンルで もう一問 →
+                  {randomMode ? "べつの単元で もう一問 →" : "同じジャンルで もう一問 →"}
                 </button>
               </div>
             )}

@@ -37,6 +37,11 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
   );
   const [selectedUnit, setSelectedUnit] = useState<QuizUnit | null>(null);
 
+  // ランダムモード（全単元プールから毎問ランダムに単元を選ぶ）。
+  const [randomMode, setRandomMode] = useState(false);
+  // ランダムモードで実際に出題中の単元id（採点・記録に使う）。
+  const [currentUnitId, setCurrentUnitId] = useState<string>("");
+
   // 出題中の状態
   const [question, setQuestion] = useState<QuestionDTO | null>(null);
   const [phase, setPhase] = useState<Phase>("answering");
@@ -64,6 +69,7 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     setPhase("answering");
     setResult(null);
     setChosen(null);
+    setCurrentUnitId(unitId);
     try {
       const res = await fetch("/api/quiz/question", {
         method: "POST",
@@ -84,6 +90,7 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
   /** 単元を選ぶ → スコアをリセットして1問目を出す。 */
   const chooseUnit = useCallback(
     (unit: QuizUnit) => {
+      setRandomMode(false);
       setSelectedUnit(unit);
       setCorrectCount(0);
       setAttemptCount(0);
@@ -91,6 +98,32 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     },
     [fetchQuestion],
   );
+
+  /** 現在学年の全単元からランダムに1つ選んで unitId を返す（無ければ空文字）。 */
+  const pickRandomUnitId = useCallback(() => {
+    if (activeUnits.length === 0) return "";
+    const u = activeUnits[Math.floor(Math.random() * activeUnits.length)];
+    return u.id;
+  }, [activeUnits]);
+
+  /** ランダム（全単元）モードを開始する。 */
+  const startRandom = useCallback(() => {
+    const id = pickRandomUnitId();
+    if (!id) return;
+    setRandomMode(true);
+    // 表示用のダミー単元（実際に出た単元は currentUnitId で追う）。
+    setSelectedUnit({
+      id: "__random__",
+      subject,
+      grade: activeGrade,
+      title: "ランダム（全単元）",
+      lesson: "この学年の いろいろな 単元から ランダムに 出題します。",
+      items: [],
+    });
+    setCorrectCount(0);
+    setAttemptCount(0);
+    void fetchQuestion(id);
+  }, [pickRandomUnitId, activeGrade, fetchQuestion]);
 
   /** 選択肢を選ぶ → 採点する。 */
   const submit = useCallback(
@@ -117,8 +150,9 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
         if (data.correct) setCorrectCount((n) => n + 1);
 
         // 進捗記録（別チームの localStorage 実装／未実装でも落ちないように）。
+        // 実際に出た単元id で記録する（ランダムモードでも診断が正しく効く）。
         try {
-          recordAttempt(subject, selectedUnit.id, data.correct);
+          recordAttempt(subject, currentUnitId || selectedUnit.id, data.correct);
         } catch {
           // 進捗記録の失敗はサイレントに（採点は成立している）。
         }
@@ -129,14 +163,19 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
         setGrading(false);
       }
     },
-    [selectedUnit, question, phase, grading, subject],
+    [selectedUnit, question, phase, grading, subject, currentUnitId],
   );
 
-  /** つぎのもんだい。 */
+  /** つぎのもんだい。ランダムモードでは また別のランダム単元を出す。 */
   const next = useCallback(() => {
     if (!selectedUnit) return;
+    if (randomMode) {
+      const id = pickRandomUnitId();
+      if (id) void fetchQuestion(id);
+      return;
+    }
     void fetchQuestion(selectedUnit.id);
-  }, [selectedUnit, fetchQuestion]);
+  }, [selectedUnit, randomMode, pickRandomUnitId, fetchQuestion]);
 
   /**
    * もう一回（同じ問題を解き直す）。
@@ -152,6 +191,8 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
   }, [question]);
 
   const backToUnits = useCallback(() => {
+    setRandomMode(false);
+    setCurrentUnitId("");
     setSelectedUnit(null);
     setQuestion(null);
     setResult(null);
@@ -185,6 +226,21 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* ランダム（全単元）で始める */}
+        {activeUnits.length > 0 && (
+          <div className="mb-4">
+            <button
+              onClick={startRandom}
+              className="w-full rounded-2xl border border-terra/40 bg-terra/5 px-4 py-3 text-left font-bold text-terra shadow-soft transition hover:border-terra/60 hover:bg-terra/10 sm:w-auto"
+            >
+              🎲 ランダム（全単元）
+              <span className="ml-2 text-[12px] font-normal text-ink-soft">
+                この学年の いろいろな 単元から 出します
+              </span>
+            </button>
           </div>
         )}
 
@@ -377,7 +433,7 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
                     onClick={next}
                     className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"
                   >
-                    同じジャンルで もう一問 →
+                    {randomMode ? "べつの単元で もう一問 →" : "同じジャンルで もう一問 →"}
                   </button>
                 </div>
               </div>
