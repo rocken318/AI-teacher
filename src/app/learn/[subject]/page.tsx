@@ -103,6 +103,14 @@ export default async function LearnSubjectPage({
           <p className="mx-auto mt-2 text-[13px] text-faint">
             ぜんぶで {totalUnits} 単元 ・ こたえは サーバーで しずかに 採点します。
           </p>
+          <div className="mt-5">
+            <a
+              href={`/test?subject=${subject}`}
+              className="inline-flex items-center gap-1 rounded-full border border-terra bg-terra/5 px-5 py-2 text-sm font-bold text-terra transition hover:bg-terra/10"
+            >
+              📝 テストにちょうせん →
+            </a>
+          </div>
         </section>
 
         {/* ===== 練習カード ===== */}
