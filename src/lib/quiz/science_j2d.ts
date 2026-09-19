@@ -841,7 +841,7 @@ export const SCIENCE_UNITS_J2D: QuizUnit[] = [
       {
         id: "j2ds2-nerve-3",
         question: "感覚器官が受けとった刺激の信号を、脳や脊髄に伝える神経を何といいますか。",
-        choices: ["感覚神経", "運動神経", "視神経以外の中枢神経"],
+        choices: ["感覚神経", "運動神経", "中枢神経"],
         answerIndex: 0,
         explanation: "感覚器官からの刺激の信号を中枢神経に伝える神経を感覚神経といいます。中枢からの命令を筋肉に伝えるのは運動神経です。",
         choiceHints: [
