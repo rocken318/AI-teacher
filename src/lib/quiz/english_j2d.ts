@@ -819,15 +819,15 @@ export const ENGLISH_UNITS_J2D: QuizUnit[] = [
       },
       {
         id: "j2de2-conjunction-2",
-        question: "I couldn't go out ___ it was raining hard.（雨が激しく降っていたので外出できなかった）",
-        choices: ["when", "because", "if", "that"],
+        question: "I stayed home yesterday ___ I felt sick.（私は昨日、気分が悪かったので家にいた）",
+        choices: ["so", "because", "if", "that"],
         answerIndex: 1,
         explanation:
-          "「〜だから・〜なので」と理由を表すのは because です。",
+          "「〜だから・〜なので」と理由を表すのは because です。うしろの節が理由（気分が悪かった）を述べています。",
         choiceHints: [
-          "when は「〜のとき」です。理由を表すのは because です。",
+          "so は「だから」で、結果を導く語です。理由の節をつなぐのは because です。",
           null,
-          "if は「もし〜なら」です。理由を表すのは because です。",
+          "if は「もし〜なら」と条件を表します。ここは理由なので because です。",
           "that は「〜ということ」です。理由を表すのは because です。",
         ],
       },
@@ -903,16 +903,16 @@ export const ENGLISH_UNITS_J2D: QuizUnit[] = [
       },
       {
         id: "j2de2-conjunction-8",
-        question: "He was happy ___ he won the game.（試合に勝ったので彼はうれしかった）",
-        choices: ["because", "if", "that", "when"],
+        question: "I was late for school today ___ I missed the bus.（私は今日、バスに乗りおくれたので学校に遅刻した）",
+        choices: ["because", "if", "that", "so"],
         answerIndex: 0,
         explanation:
-          "「〜だから・〜なので」と理由を表すのは because です。",
+          "「〜だから・〜なので」と理由を表すのは because です。うしろの節が遅刻の理由（バスに乗りおくれた）を述べています。",
         choiceHints: [
           null,
-          "if は「もし〜なら」です。理由を表すのは because です。",
+          "if は「もし〜なら」と条件を表します。ここは理由なので because です。",
           "that は「〜ということ」です。理由を表すのは because です。",
-          "ここでは理由を表すので when（〜のとき）より because が自然です。",
+          "so は「だから」で結果を導く語です。理由の節をつなぐのは because です。",
         ],
       },
     ],
