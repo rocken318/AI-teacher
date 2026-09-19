@@ -735,7 +735,7 @@ export const SCIENCE_J2_MORE: QuizUnit[] = [
       },
       {
         id: "j2s-weather-m5",
-        question: "日本の春や秋によく現れる、南から北へ移動しながら晴れと雨を交互にもたらす高気圧はどれですか。",
+        question: "日本の春や秋によく現れる、西から東へ移動しながら晴れと雨を交互にもたらす高気圧はどれですか。",
         choices: ["シベリア高気圧", "移動性高気圧", "太平洋高気圧"],
         answerIndex: 1,
         explanation:
