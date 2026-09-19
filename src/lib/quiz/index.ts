@@ -28,7 +28,10 @@ import { ENGLISH_UNITS } from "./english";
 import { ENGLISH_UNITS_J2 } from "./english_j2";
 import { SCIENCE_UNITS_J2D } from "./science_j2d";
 import { HISTORY_UNITS_J2D } from "./history_j2d";
+import { HISTORY_J2D_MORE } from "./history_j2d_more";
 import { GEOGRAPHY_UNITS_J2D } from "./geography_j2d";
+import { GEOGRAPHY_J2D_MORE_A } from "./geography_j2d_more_a";
+import { GEOGRAPHY_J2D_MORE_B } from "./geography_j2d_more_b";
 import { JAPANESE_UNITS_J2D } from "./japanese_j2d";
 import { ENGLISH_UNITS_J2D } from "./english_j2d";
 
@@ -85,7 +88,10 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...ENGLISH_UNITS_J2,
   ...SCIENCE_UNITS_J2D,
   ...HISTORY_UNITS_J2D,
+  ...HISTORY_J2D_MORE,
   ...GEOGRAPHY_UNITS_J2D,
+  ...GEOGRAPHY_J2D_MORE_A,
+  ...GEOGRAPHY_J2D_MORE_B,
   ...JAPANESE_UNITS_J2D,
   ...ENGLISH_UNITS_J2D,
 ]);
