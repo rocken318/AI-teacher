@@ -19,14 +19,19 @@ import { SOCIAL_UNITS } from "./social";
 import { SOCIAL_UNITS_B } from "./social_b";
 import { SOCIAL_UNITS_C } from "./social_c";
 import { HISTORY_UNITS_J2 } from "./history_j2";
+import { HISTORY_J2_MORE } from "./history_j2_more";
 import { GEOGRAPHY_UNITS_J2 } from "./geography_j2";
+import { GEOGRAPHY_J2_MORE } from "./geography_j2_more";
 import { JAPANESE_UNITS } from "./japanese";
 import { JAPANESE_UNITS_J2 } from "./japanese_j2";
 import { ENGLISH_UNITS } from "./english";
 import { ENGLISH_UNITS_J2 } from "./english_j2";
 import { SCIENCE_UNITS_J2D } from "./science_j2d";
 import { HISTORY_UNITS_J2D } from "./history_j2d";
+import { HISTORY_J2D_MORE } from "./history_j2d_more";
 import { GEOGRAPHY_UNITS_J2D } from "./geography_j2d";
+import { GEOGRAPHY_J2D_MORE_A } from "./geography_j2d_more_a";
+import { GEOGRAPHY_J2D_MORE_B } from "./geography_j2d_more_b";
 import { JAPANESE_UNITS_J2D } from "./japanese_j2d";
 import { ENGLISH_UNITS_J2D } from "./english_j2d";
 
@@ -38,8 +43,35 @@ export type {
   SubjectMeta,
 } from "./types";
 
-/** 全単元（4教科のバンク＋増設分を結合）。 */
-export const QUIZ_UNITS: QuizUnit[] = [
+/**
+ * 同一 id の単元を合体する（メタは最初の定義、items を連結）。
+ * これにより「既存単元に問題を足す追加ファイル」を、同じ id の QuizUnit として
+ * 別ファイルで書けば、UI上は同じ単元のまま問題数だけ増やせる。
+ * item id は単元内で一意になるよう連結時に重複を除く（後勝ちしない）。
+ */
+export function mergeUnitsById(units: QuizUnit[]): QuizUnit[] {
+  const map = new Map<string, QuizUnit>();
+  const order: string[] = [];
+  for (const u of units) {
+    const existing = map.get(u.id);
+    if (existing) {
+      const seen = new Set(existing.items.map((it) => it.id));
+      for (const it of u.items) {
+        if (!seen.has(it.id)) {
+          existing.items.push(it);
+          seen.add(it.id);
+        }
+      }
+    } else {
+      map.set(u.id, { ...u, items: [...u.items] });
+      order.push(u.id);
+    }
+  }
+  return order.map((id) => map.get(id)!);
+}
+
+/** 全単元（4教科のバンク＋増設分＋追加問題を結合。同一idは合体）。 */
+export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...SCIENCE_UNITS,
   ...SCIENCE_UNITS_B,
   ...SCIENCE_UNITS_J2,
@@ -47,17 +79,22 @@ export const QUIZ_UNITS: QuizUnit[] = [
   ...SOCIAL_UNITS_B,
   ...SOCIAL_UNITS_C,
   ...HISTORY_UNITS_J2,
+  ...HISTORY_J2_MORE,
   ...GEOGRAPHY_UNITS_J2,
+  ...GEOGRAPHY_J2_MORE,
   ...JAPANESE_UNITS,
   ...JAPANESE_UNITS_J2,
   ...ENGLISH_UNITS,
   ...ENGLISH_UNITS_J2,
   ...SCIENCE_UNITS_J2D,
   ...HISTORY_UNITS_J2D,
+  ...HISTORY_J2D_MORE,
   ...GEOGRAPHY_UNITS_J2D,
+  ...GEOGRAPHY_J2D_MORE_A,
+  ...GEOGRAPHY_J2D_MORE_B,
   ...JAPANESE_UNITS_J2D,
   ...ENGLISH_UNITS_J2D,
-];
+]);
 
 /** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
 export const GRADE_ORDER: QuizGrade[] = [
