@@ -720,7 +720,7 @@ export const ENGLISH_J2_MORE: QuizUnit[] = [
         question: "「彼の夢は宇宙飛行士になることだ」を表す英文はどれ？",
         choices: [
           "His dream is to be an astronaut.",
-          "His dream is being an astronaut.",
+          "His dream is to been an astronaut.",
           "His dream is be an astronaut.",
           "His dream is to being an astronaut.",
         ],
@@ -729,7 +729,7 @@ export const ENGLISH_J2_MORE: QuizUnit[] = [
           "「〜すること」を表す名詞的用法の不定詞を使います。to be で「〜になること」を表し、to のあとは原形 be にします。",
         choiceHints: [
           null,
-          "is のあとに「〜すること」を表すには to + 原形を使います。being ではなく to be です。",
+          "to のあとは原形にします。been は過去分詞なので to been とはしません。to be が正しい形です。",
           "be だけでは「〜すること」になりません。to be にします。",
           "to のあとは原形にします。to being ではなく to be です。",
         ],
@@ -1030,7 +1030,7 @@ export const ENGLISH_J2_MORE: QuizUnit[] = [
     items: [
       {
         id: "j2e-conjunction-m1",
-        question: "She was happy ___ she got a good score on the test.（テストで高得点を取ったので、彼女は嬉しかった）",
+        question: "She cried ___ she lost her wallet.（財布をなくしたので、彼女は泣いた）",
         choices: ["when", "if", "that", "because"],
         answerIndex: 3,
         explanation:
@@ -1058,29 +1058,29 @@ export const ENGLISH_J2_MORE: QuizUnit[] = [
       },
       {
         id: "j2e-conjunction-m3",
-        question: "___ you study hard, you will pass the exam.（一生懸命勉強すれば、試験に合格するだろう）",
+        question: "___ it snows tomorrow, school will be closed.（もし明日雪が降れば、学校は休みになるだろう）",
         choices: ["Because", "When", "That", "If"],
         answerIndex: 3,
         explanation:
-          "「もし〜なら」と条件を表すのは if です。",
+          "「もし〜なら」と仮定・条件を表すのは if です。",
         choiceHints: [
           "because は「〜だから」です。条件を表すのは if です。",
-          "when は「〜のとき」です。「もし〜なら」は if です。",
+          "when は「〜のとき（確実な出来事）」です。不確かな条件を表すのは if です。",
           "that は「〜ということ」です。条件を表すのは if です。",
           null,
         ],
       },
       {
         id: "j2e-conjunction-m4",
-        question: "Please call me ___ you arrive at the station.（駅に着いたら電話してください）",
+        question: "I always feel tired ___ I stay up late.（夜更かしをするといつも疲れを感じる）",
         choices: ["because", "that", "if", "when"],
         answerIndex: 3,
         explanation:
-          "「〜したとき・〜したら」と時を表すのは when です。",
+          "「〜するとき（いつも）」と時を表すのは when です。",
         choiceHints: [
-          "because は「〜だから」です。「〜したとき」は when です。",
-          "that は「〜ということ」です。「〜したとき」は when です。",
-          "if は「もし〜なら」です。ここは確実に起きることなので when を使います。",
+          "because は「〜だから」です。「〜するとき」は when です。",
+          "that は「〜ということ」です。「〜するとき」は when です。",
+          "if は「もし〜なら（不確かな条件）」です。always と組み合わせて繰り返す状況を表すのは when です。",
           null,
         ],
       },
@@ -1100,7 +1100,7 @@ export const ENGLISH_J2_MORE: QuizUnit[] = [
       },
       {
         id: "j2e-conjunction-m6",
-        question: "I was sad ___ my dog was sick.（私は犬が病気だったので悲しかった）",
+        question: "He was late ___ he missed the bus.（バスに乗り遅れたので、彼は遅刻した）",
         choices: ["when", "that", "if", "because"],
         answerIndex: 3,
         explanation:
@@ -1128,7 +1128,7 @@ export const ENGLISH_J2_MORE: QuizUnit[] = [
       },
       {
         id: "j2e-conjunction-m8",
-        question: "Do you know ___ Tom lives in this town?（トムがこの町に住んでいるって知っていますか）",
+        question: "I know ___ she is a very kind person.（彼女がとても親切な人だということを私は知っている）",
         choices: ["when", "because", "if", "that"],
         answerIndex: 3,
         explanation:
@@ -1136,7 +1136,7 @@ export const ENGLISH_J2_MORE: QuizUnit[] = [
         choiceHints: [
           "when は「〜のとき」です。「〜ということ」を表すのは that です。",
           "because は「〜だから」です。「〜ということ」を表すのは that です。",
-          "if は「〜かどうか」という間接疑問にも使いますが、この文では that が自然です。",
+          "if は「〜かどうか」という間接疑問で使いますが、ここは「〜ということ（事実）」なので that を使います。",
           null,
         ],
       },
