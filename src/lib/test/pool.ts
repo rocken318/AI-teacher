@@ -17,6 +17,7 @@ import type { Subject } from "@/lib/quiz";
 export const TEST_SUBJECTS = [
   "math",
   "science",
+  "social",
   "history",
   "geography",
   "japanese",
@@ -44,7 +45,11 @@ export function subjectPool(subject: string, grade: string): string[] {
   if (subjectKind(subject) === "math") {
     return UNITS.filter((u) => u.grade === (grade as Grade)).map((u) => u.id);
   }
-  return unitsFor(subject as Subject, grade as never).map((u) => u.id);
+  // 出題可能（問題を1問以上持つ）単元だけをプールに含める。
+  // 空単元が混ざると「全単元ランダム」で count 未満になり得るのを防ぐ。
+  return unitsFor(subject as Subject, grade as never)
+    .filter((u) => u.items.length > 0)
+    .map((u) => u.id);
 }
 
 /**
