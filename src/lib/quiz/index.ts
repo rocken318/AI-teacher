@@ -24,6 +24,11 @@ import { JAPANESE_UNITS } from "./japanese";
 import { JAPANESE_UNITS_J2 } from "./japanese_j2";
 import { ENGLISH_UNITS } from "./english";
 import { ENGLISH_UNITS_J2 } from "./english_j2";
+import { SCIENCE_UNITS_J2D } from "./science_j2d";
+import { HISTORY_UNITS_J2D } from "./history_j2d";
+import { GEOGRAPHY_UNITS_J2D } from "./geography_j2d";
+import { JAPANESE_UNITS_J2D } from "./japanese_j2d";
+import { ENGLISH_UNITS_J2D } from "./english_j2d";
 
 export type {
   Subject,
@@ -47,6 +52,11 @@ export const QUIZ_UNITS: QuizUnit[] = [
   ...JAPANESE_UNITS_J2,
   ...ENGLISH_UNITS,
   ...ENGLISH_UNITS_J2,
+  ...SCIENCE_UNITS_J2D,
+  ...HISTORY_UNITS_J2D,
+  ...GEOGRAPHY_UNITS_J2D,
+  ...JAPANESE_UNITS_J2D,
+  ...ENGLISH_UNITS_J2D,
 ];
 
 /** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
