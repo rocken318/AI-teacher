@@ -58,17 +58,31 @@ export function logMessage(
   return id;
 }
 
-/** 学習履歴（1回の解答）を保存する。進捗集計・見守り用。 */
+/** 学習履歴（1回の解答）を保存する。source は "practice"（既定）/ "test"。 */
 export function logAttempt(
   childId: string,
   subject: string,
   unitId: string,
   correct: boolean,
+  source: string = "practice",
 ): void {
   const id = randomUUID();
   runAfterResponse(() =>
-    getStore().recordAttempt(id, childId, subject, unitId, correct),
+    getStore().recordAttempt(id, childId, subject, unitId, correct, source),
   );
+}
+
+/** テスト結果（1回分）を保存する。 */
+export function logTestResult(input: {
+  childId: string;
+  subject: string;
+  unitIds: string;
+  testKey: string;
+  total: number;
+  score: number;
+}): void {
+  const id = randomUUID();
+  runAfterResponse(() => getStore().recordTestResult({ id, ...input }));
 }
 
 export function logModeration(params: {

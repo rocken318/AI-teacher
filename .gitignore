@@ -20,3 +20,6 @@ next-env.d.ts
 # misc
 *.tsbuildinfo
 .DS_Store
+
+# 設計ブレスト用（ローカルのみ）
+.superpowers/
