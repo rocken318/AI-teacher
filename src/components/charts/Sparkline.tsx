@@ -17,9 +17,10 @@ export function Sparkline({
     return <svg width={width} height={height} aria-hidden="true" />;
   }
   if (pts.length === 1) {
+    const cx = Math.max(2.5, Math.min(pts[0].x + 2, width - 2.5));
     return (
       <svg width={width} height={height} role="img" aria-label="推移データ1件">
-        <circle cx={pts[0].x + 2} cy={pts[0].y} r={2.5} fill={color} />
+        <circle cx={cx} cy={pts[0].y} r={2.5} fill={color} />
       </svg>
     );
   }

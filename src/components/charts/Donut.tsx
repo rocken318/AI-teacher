@@ -23,7 +23,7 @@ export function Donut({
 }) {
   const p = clampPercent(percent);
   const r = (size - stroke) / 2;
-  const { circumference, dash } = donutDash(p, r);
+  const { circumference, dash, gap } = donutDash(p, r);
   const c = size / 2;
   return (
     <div className="inline-flex flex-col items-center">
@@ -32,13 +32,12 @@ export function Donut({
         <circle cx={c} cy={c} r={r} fill="none" stroke={track} strokeWidth={stroke} />
         <circle
           cx={c} cy={c} r={r} fill="none" stroke={color} strokeWidth={stroke}
-          strokeDasharray={`${dash} ${circumference - dash}`}
-          strokeDashoffset={circumference / 4} /* 12時開始 */
+          strokeDasharray={`${dash} ${gap}`}
           strokeLinecap="round"
           transform={`rotate(-90 ${c} ${c})`}
         />
         <text x={c} y={c} textAnchor="middle" dominantBaseline="central"
-          className="fill-ink font-serif" style={{ fontSize: size * 0.26 }}>
+          className="font-serif" style={{ fill: "rgb(var(--c-ink))", fontSize: size * 0.26 }}>
           {p}%
         </text>
       </svg>

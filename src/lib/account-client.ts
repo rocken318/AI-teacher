@@ -35,7 +35,7 @@ export async function logout(): Promise<void> {
 export async function fetchChildren(): Promise<Child[] | null> {
   const res = await fetch("/api/children", { credentials: "same-origin" });
   if (res.status === 401) return null;
-  if (!res.ok) return [];
+  if (!res.ok) return null;
   const j = await res.json();
   return (j.children ?? []) as Child[];
 }

@@ -18,6 +18,7 @@ test("donutDash は円周に対する dash 長を返す（percentに比例）", 
   expect(d100.dash).toBeCloseTo(circ);
   expect(d50.dash).toBeCloseTo(circ / 2);
   expect(d50.circumference).toBeCloseTo(circ);
+  expect(d50.dash + d50.gap).toBeCloseTo(d50.circumference);
 });
 
 test("sparklinePoints は 0..1 の系列を w×h 内の座標へ写像（左→右、上下反転）", () => {
