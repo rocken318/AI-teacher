@@ -5,6 +5,7 @@ import Link from "next/link";
 import { fetchToday } from "@/lib/account-client";
 import type { TodayResponse } from "@/lib/progress-client-types";
 import { getChildId } from "@/lib/progress";
+import { apiSubjectLabel } from "@/lib/progress-view";
 
 export default function TodayPage() {
   const router = useRouter();
@@ -12,13 +13,16 @@ export default function TodayPage() {
   const [data, setData] = useState<TodayResponse | null | "loading">("loading");
 
   useEffect(() => {
+    let alive = true;
     setMounted(true);
     const id = getChildId();
-    if (!id) { setData(null); return; }
+    if (!id) { router.replace("/login"); return; }
     fetchToday(id).then((d) => {
+      if (!alive) return;
       if (d === null) { router.replace("/login"); return; }
       setData(d);
     });
+    return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -53,7 +57,7 @@ export default function TodayPage() {
           {Object.entries(data.bySubject).map(([subj, v]) => (
             <div key={subj} className="rounded-xl border border-line bg-white/60 p-3">
               <div className="flex justify-between text-sm text-ink">
-                <span>{subj}</span><span>{v.correct}/{v.attempts}</span>
+                <span>{apiSubjectLabel(subj)}</span><span>{v.correct}/{v.attempts}</span>
               </div>
               <div className="mt-1 h-2 overflow-hidden rounded-full bg-paper2">
                 <div className="h-full rounded-full bg-sky"
@@ -64,7 +68,7 @@ export default function TodayPage() {
         </section>
         {data.testCount > 0 && (
           <p className="mt-6 text-sm text-ink-soft">きょうは テストを {data.testCount}回。
-            {data.tests.map((t, i) => <span key={i} className="ml-2 text-terra">{t.score}/{t.total}</span>)}
+            {data.tests.map((t, i) => <span key={`${t.subject}-${i}`} className="ml-2 text-terra">{t.score}/{t.total}</span>)}
           </p>
         )}
       </div>

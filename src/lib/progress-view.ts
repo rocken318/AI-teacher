@@ -62,3 +62,12 @@ export function groupSubjects(
 export function displaySubjectMeta(key: string): DisplaySubject {
   return DISPLAY_SUBJECTS.find((d) => d.key === key) ?? DISPLAY_SUBJECTS[0];
 }
+
+/** API 教科キー → 日本語ラベル（今日の教科別バーなど素の教科表示用）。 */
+export const API_SUBJECT_LABELS: Record<string, string> = {
+  math: "算数", science: "理科", social: "社会", history: "歴史",
+  geography: "地理", japanese: "国語", english: "英語",
+};
+export function apiSubjectLabel(key: string): string {
+  return API_SUBJECT_LABELS[key] ?? key;
+}

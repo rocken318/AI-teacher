@@ -15,18 +15,24 @@ export default function ProgressPage() {
   const [data, setData] = useState<OverallResponse | null | "loading">("loading");
 
   useEffect(() => {
+    let alive = true;
     setMounted(true);
     const id = getChildId();
-    if (!id) { setData(null); return; }
+    if (!id) { router.replace("/login"); return; }
     fetchOverall(id).then((d) => {
+      if (!alive) return;
       if (d === null) { router.replace("/login"); return; }
       setData(d);
     });
+    return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!mounted || data === "loading" || data === null) return <div className="min-h-[50vh]" />;
   const groups = groupSubjects(data.bySubject);
+  const mastered = data.overall.masteredUnits;
+  const target = data.overall.targetUnits;
+  const overallSublabel = target === 0 ? "まだ記録なし" : `${mastered}/${target} 単元 制覇`;
 
   return (
     <main className="min-h-screen bg-paper text-ink">
@@ -41,7 +47,7 @@ export default function ProgressPage() {
         <h1 className="font-serif text-2xl text-ink">全体の進捗</h1>
         <div className="mt-6 flex justify-center">
           <Donut percent={data.overall.percent} size={180} stroke={20}
-            sublabel={`${data.overall.masteredUnits}/${data.overall.targetUnits} 単元 制覇`} />
+            sublabel={overallSublabel} />
         </div>
         <div className="mt-8 grid grid-cols-5 gap-2">
           {groups.map((g) => (

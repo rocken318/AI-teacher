@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { groupSubjects, DISPLAY_SUBJECTS, displaySubjectMeta } from "@/lib/progress-view";
+import { groupSubjects, DISPLAY_SUBJECTS, displaySubjectMeta, apiSubjectLabel } from "@/lib/progress-view";
 
 type Share = { masteredUnits: number; targetUnits: number; percent: number };
 
@@ -32,4 +32,9 @@ test("groupSubjects は常に5バケットを DISPLAY_SUBJECTS の順で返す",
 test("displaySubjectMeta はラベル/絵文字を返す", () => {
   expect(displaySubjectMeta("math").label).toBe("算数");
   expect(displaySubjectMeta("social").label).toBe("社会");
+});
+
+test("apiSubjectLabel は API教科キーを日本語に", () => {
+  expect(apiSubjectLabel("history")).toBe("歴史");
+  expect(apiSubjectLabel("unknown")).toBe("unknown");
 });
