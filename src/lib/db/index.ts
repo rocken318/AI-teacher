@@ -484,7 +484,7 @@ class PostgresStore implements Store {
              (EXTRACT(EPOCH FROM created_at) * 1000)::bigint AS created_ms
       FROM attempts
       WHERE child_id = ${childId}
-      ORDER BY created_at ASC
+      ORDER BY created_at ASC, id ASC
     `;
     return (rows as any[]).map((r) => ({
       subject: String(r.subject),
@@ -501,7 +501,7 @@ class PostgresStore implements Store {
              (EXTRACT(EPOCH FROM taken_at) * 1000)::bigint AS taken_ms
       FROM test_results
       WHERE child_id = ${childId}
-      ORDER BY taken_at ASC
+      ORDER BY taken_at ASC, id ASC
     `;
     return (rows as any[]).map((r) => ({
       subject: String(r.subject),

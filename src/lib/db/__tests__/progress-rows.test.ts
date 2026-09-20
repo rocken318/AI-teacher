@@ -27,6 +27,11 @@ test("listAttempts は childId の attempts を UTC エポックms 付きで返�
   expect(r0.correct).toBe(true);
   expect(typeof r0.createdAtMs).toBe("number");
   expect(r0.createdAtMs).toBeGreaterThan(0);
+  // false 行が正しくラウンドトリップする
+  const rSci = rows.find((r) => r.subject === "science")!;
+  expect(rSci.correct).toBe(false);
+  // 結果が時刻昇順になっている
+  expect(rows[0].createdAtMs <= rows[1].createdAtMs).toBe(true);
   // 別 child のデータは混ざらない
   expect(rows.every((r) => r.subject !== undefined)).toBe(true);
 });
