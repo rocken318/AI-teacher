@@ -48,6 +48,19 @@ test("不正な subject は 400", async () => {
   expect(res.status).toBe(400);
 });
 
+test("他人の子は 403", async () => {
+  const { getStore } = await import("@/lib/db");
+  const s = getStore();
+  await s.createAccount("acc-me", "me@example.com", "h");
+  await s.createAccount("acc-other", "other@example.com", "h");
+  await s.createChild("kid-other", "acc-other", "こ", "elementary");
+  const { signSession, SESSION_TTL_MS } = await import("@/lib/auth/session");
+  const token = signSession("acc-me", SESSION_TTL_MS);
+  const { GET } = await import("../subject/route");
+  const res = await GET(await reqFor("kid-other", "math", token));
+  expect(res.status).toBe(403);
+});
+
 test("自分の子・妥当な教科は 200 で単元一覧を返す", async () => {
   const token = await seedMe();
   const { getStore } = await import("@/lib/db");

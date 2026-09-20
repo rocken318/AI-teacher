@@ -18,11 +18,11 @@ export async function GET(req: NextRequest) {
   if (!childId) {
     return NextResponse.json({ error: "childId required" }, { status: 400 });
   }
-  if (!subject || !isTestSubject(subject)) {
-    return NextResponse.json({ error: "invalid subject" }, { status: 400 });
-  }
   if (!(await ownsChild(accountId, childId))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (!subject || !isTestSubject(subject)) {
+    return NextResponse.json({ error: "invalid subject" }, { status: 400 });
   }
   const child = await getChild(childId);
   const stage = (child?.stage ?? "elementary") as Stage;

@@ -32,6 +32,19 @@ test("未ログインは 401", async () => {
   expect(res.status).toBe(401);
 });
 
+test("他人の子は 403", async () => {
+  const { getStore } = await import("@/lib/db");
+  const s = getStore();
+  await s.createAccount("acc-me", "me@example.com", "h");
+  await s.createAccount("acc-other", "other@example.com", "h");
+  await s.createChild("kid-other", "acc-other", "こ", "elementary");
+  const { signSession, SESSION_TTL_MS } = await import("@/lib/auth/session");
+  const token = signSession("acc-me", SESSION_TTL_MS);
+  const { GET } = await import("../today/route");
+  const res = await GET(await reqFor("kid-other", token));
+  expect(res.status).toBe(403);
+});
+
 test("自分の子は 200・今日解いた分が total に入る", async () => {
   const { getStore } = await import("@/lib/db");
   const s = getStore();
