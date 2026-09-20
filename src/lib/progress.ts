@@ -26,6 +26,7 @@ export type Progress = {
 const PROGRESS_KEY = "ai-sensei-progress-v1";
 const PARENT_MSG_KEY = "ai-sensei-parent-message-v1";
 const CHILD_ID_KEY = "ai-sensei-child-id-v1";
+const ACTIVE_CHILD_KEY = "ai-sensei-active-child-v1";
 
 /** 保護者の一言が未設定のときの、あたたかい既定メッセージ。 */
 export const DEFAULT_PARENT_MESSAGE =
@@ -114,9 +115,34 @@ export function getProgress(): Progress {
  * サーバーの進捗保存・見守りでの集計キーに使う（同一端末で本人と保護者が使う前提）。
  * SSR では "" を返す。
  */
+export function getActiveChild(): string {
+  const s = storage();
+  if (!s) return "";
+  try {
+    return s.getItem(ACTIVE_CHILD_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+export function setActiveChild(childId: string): void {
+  const s = storage();
+  if (!s) return;
+  try {
+    if (childId) s.setItem(ACTIVE_CHILD_KEY, childId);
+    else s.removeItem(ACTIVE_CHILD_KEY);
+  } catch {
+    /* noop */
+  }
+}
+export function clearActiveChild(): void {
+  setActiveChild("");
+}
+
 export function getChildId(): string {
   const s = storage();
   if (!s) return "";
+  const active = getActiveChild();
+  if (active) return active;
   try {
     let id = s.getItem(CHILD_ID_KEY);
     if (!id) {
