@@ -49,3 +49,22 @@ test("unitTrend は試行が少なくても壊れない", () => {
   expect(trend.spark.length).toBeGreaterThan(0);
   expect(trend.direction).toBe("flat");
 });
+
+test("unitTrend は下降パターンで direction:down", () => {
+  const pattern = [true, true, true, true, true, false, false, false, false, false];
+  const trend = unitTrend(recs("math", "u", pattern));
+  expect(trend.spark[0]).toBe(1);
+  expect(trend.spark[4]).toBe(0);
+  expect(trend.direction).toBe("down");
+});
+
+test("subjectStats は他教科の記録を数えない（教科間分離）", () => {
+  const t = stageTargetUnits("elementary");
+  const mathUnit = t.bySubject["math"][0];
+  // science 教科の記録を、たまたま同じ unitId 文字列で与えても math には混ざらない
+  const foreign = recs("science", mathUnit, [true, true, true, true, true]);
+  const r = subjectStats(foreign, "math", "elementary");
+  const row = r.units.find((u) => u.unitId === mathUnit)!;
+  expect(row.attempts).toBe(0);
+  expect(r.masteredUnits).toBe(0);
+});

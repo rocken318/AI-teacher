@@ -24,6 +24,7 @@ test("todayStats は JST 今日の attempts のみ集計（教科別内訳つき
   expect(r.correct).toBe(2);
   expect(r.bySubject["math"]).toEqual({ attempts: 2, correct: 1 });
   expect(r.bySubject["science"]).toEqual({ attempts: 1, correct: 1 });
+  expect(r.rate).toBeCloseTo(2 / 3);
 });
 
 test("todayStats は今日のテスト回数を数える", () => {
