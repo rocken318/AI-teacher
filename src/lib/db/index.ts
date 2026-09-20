@@ -980,6 +980,7 @@ class SqliteStore implements Store {
 
   async listAttempts(childId: string): Promise<AttemptRow[]> {
     await this.ready;
+    // strftime('%s') は UTC 秒（小数切り捨て）。日付バケット/並び順には十分（同秒の並びは rowid で確定）。
     const rows = this.withDb(
       (db) =>
         db
@@ -1002,6 +1003,7 @@ class SqliteStore implements Store {
 
   async listTestResults(childId: string): Promise<TestResultFullRow[]> {
     await this.ready;
+    // strftime('%s') は UTC 秒（小数切り捨て）。日付バケット/並び順には十分（同秒の並びは rowid で確定）。
     const rows = this.withDb(
       (db) =>
         db

@@ -34,6 +34,7 @@ test("todayStats は今日のテスト回数を数える", () => {
   ];
   const r = todayStats([], tests, TODAY);
   expect(r.testCount).toBe(1);
+  expect(r.tests).toEqual([{ subject: "math", total: 5, score: 4 }]);
 });
 
 test("何もしていない日は total0・rate0", () => {

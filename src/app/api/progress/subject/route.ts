@@ -4,7 +4,7 @@ import { currentAccountId, ownsChild, getChild } from "@/lib/auth/accounts";
 import { listAttempts } from "@/lib/db/read";
 import { subjectStats } from "@/lib/progress-stats";
 import { isTestSubject } from "@/lib/test/pool";
-import type { Stage } from "@/lib/stage";
+import { isStage, type Stage } from "@/lib/stage";
 
 export const runtime = "nodejs";
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "invalid subject" }, { status: 400 });
   }
   const child = await getChild(childId);
-  const stage = (child?.stage ?? "elementary") as Stage;
+  const stage: Stage = isStage(child?.stage) ? child.stage : "elementary";
   const attempts = await listAttempts(childId);
   return NextResponse.json(subjectStats(attempts, subject, stage));
 }

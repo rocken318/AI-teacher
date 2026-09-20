@@ -9,6 +9,8 @@ export interface TodayStats {
   rate: number; // 0..1
   bySubject: Record<string, { attempts: number; correct: number }>;
   testCount: number;
+  /** 今日のテスト明細・点数つき */
+  tests: { subject: string; total: number; score: number }[];
 }
 
 /**
@@ -33,14 +35,15 @@ export function todayStats(
     bySubject[r.subject] = cur;
   }
   const total = today.length;
-  const testCount = tests.filter(
+  const todayTests = tests.filter(
     (t) => toJstDateKey(t.takenAtMs) === todayKey,
-  ).length;
+  );
   return {
     total,
     correct,
     rate: total > 0 ? correct / total : 0,
     bySubject,
-    testCount,
+    testCount: todayTests.length,
+    tests: todayTests.map((t) => ({ subject: t.subject, total: t.total, score: t.score })),
   };
 }
