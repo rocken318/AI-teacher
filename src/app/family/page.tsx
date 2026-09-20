@@ -17,6 +17,8 @@ export default function FamilyPage() {
   const [inherit, setInherit] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Fix 5: notice state for non-blocking claim failure message
+  const [notice, setNotice] = useState<string | null>(null);
   const active = mounted ? getActiveChild() : "";
 
   async function load() {
@@ -28,9 +30,21 @@ export default function FamilyPage() {
     setChildren(list);
   }
 
+  // Fix 6: guard mount load against unmount
   useEffect(() => {
+    let cancelled = false;
     setMounted(true);
-    void load();
+    fetchChildren().then((list) => {
+      if (cancelled) return;
+      if (list === null) {
+        router.replace("/login");
+        return;
+      }
+      setChildren(list);
+    });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -46,16 +60,25 @@ export default function FamilyPage() {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    // Fix 5: clear notice at start
+    setNotice(null);
+    // Fix 4: snapshot values before first await
+    const trimmedName = name.trim();
+    const chosenStage = stage;
     // 引き継ぎ用に、現在の（アクティブ未設定なら匿名）childId を控える。
     const prevAnon = getActiveChild() ? "" : localStorageAnonId();
-    const r = await createChild(name.trim(), stage);
+    const r = await createChild(trimmedName, chosenStage);
     if (r.error || !r.id) {
       setBusy(false);
       setError(r.error ?? "作成に失敗しました。");
       return;
     }
     if (inherit && prevAnon) {
-      await claim(prevAnon, r.id);
+      // Fix 5: capture claim result and surface failure
+      const claimed = await claim(prevAnon, r.id);
+      if (!claimed) {
+        setNotice("記録の引き継ぎに失敗しました。あとで再試行できます。");
+      }
     }
     setActiveChild(r.id);
     setBusy(false);
@@ -76,7 +99,8 @@ export default function FamilyPage() {
     <main className="min-h-screen bg-paper text-ink">
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
         <Link href="/" className="font-serif text-lg text-ink">AI先生</Link>
-        <button onClick={onLogout} className="text-sm text-ink-soft underline">ログアウト</button>
+        {/* Fix 1: explicit type="button" on logout */}
+        <button type="button" onClick={onLogout} className="text-sm text-ink-soft underline">ログアウト</button>
       </header>
       <div className="mx-auto max-w-md px-4 py-8">
         <h1 className="font-serif text-2xl text-ink">おうちの人のページ</h1>
@@ -91,9 +115,11 @@ export default function FamilyPage() {
                 <div className="text-xs text-faint">{stageLabel(c.stage)}</div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => choose(c)} className="rounded-lg bg-sky px-3 py-1.5 text-sm text-white">この子で学習</button>
-                <Link href="/today" onClick={() => setActiveChild(c.id)} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">今日</Link>
-                <Link href="/progress" onClick={() => setActiveChild(c.id)} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">全体</Link>
+                {/* Fix 1: explicit type="button" */}
+                <button type="button" onClick={() => choose(c)} className="rounded-lg bg-sky px-3 py-1.5 text-sm text-white">この子で学習</button>
+                {/* Fix 2: replace Link+onClick with button that sets-then-navigates */}
+                <button type="button" onClick={() => { setActiveChild(c.id); router.push("/today"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">今日</button>
+                <button type="button" onClick={() => { setActiveChild(c.id); router.push("/progress"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">全体</button>
               </div>
             </div>
           ))}
@@ -101,17 +127,30 @@ export default function FamilyPage() {
 
         <form onSubmit={onAdd} className="mt-8 space-y-3 rounded-2xl border border-line bg-white/70 p-5 shadow-card">
           <h2 className="font-serif text-lg text-ink">プロフィールを追加</h2>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="なまえ（20文字まで）"
-            required maxLength={20} className="w-full rounded-lg border border-line bg-paper px-3 py-2 text-ink" />
-          <select value={stage} onChange={(e) => setStageSel(e.target.value)}
-            className="w-full rounded-lg border border-line bg-paper px-3 py-2 text-ink">
-            {STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}（{s.range}）</option>)}
-          </select>
+          {/* Fix 3: wrap inputs in labels with visible text */}
+          <label className="block">
+            <span className="text-sm text-ink-soft">なまえ（20文字まで）</span>
+            {/* Fix 4: disabled={busy} added */}
+            <input value={name} onChange={(e) => setName(e.target.value)}
+              required maxLength={20} disabled={busy}
+              className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-ink" />
+          </label>
+          <label className="block">
+            <span className="text-sm text-ink-soft">学齢</span>
+            {/* Fix 4: disabled={busy} added */}
+            <select value={stage} onChange={(e) => setStageSel(e.target.value)} disabled={busy}
+              className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-ink">
+              {STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}（{s.range}）</option>)}
+            </select>
+          </label>
           <label className="flex items-center gap-2 text-sm text-ink-soft">
-            <input type="checkbox" checked={inherit} onChange={(e) => setInherit(e.target.checked)} />
+            {/* Fix 4: disabled={busy} added to checkbox */}
+            <input type="checkbox" checked={inherit} onChange={(e) => setInherit(e.target.checked)} disabled={busy} />
             この端末のこれまでの記録を引き継ぐ
           </label>
           {error && <p className="text-sm text-terra">{error}</p>}
+          {/* Fix 5: render notice near error line */}
+          {notice && <p className="text-sm text-terra">{notice}</p>}
           <button type="submit" disabled={busy} className="w-full rounded-lg bg-sky px-4 py-2 text-white disabled:opacity-60">
             {busy ? "追加中…" : "追加する"}
           </button>
