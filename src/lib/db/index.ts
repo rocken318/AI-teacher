@@ -54,6 +54,23 @@ export interface ProgressSummary {
   bySubject: Record<string, { attempts: number; correct: number }>;
 }
 
+/** アカウント（保護者）行。 */
+export interface AccountRow {
+  id: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+}
+
+/** 子ども行。 */
+export interface ChildRow {
+  id: string;
+  accountId: string;
+  name: string;
+  stage: string;
+  createdAt: string;
+}
+
 /** テスト結果の保存入力。 */
 export interface TestResultInput {
   id: string;
@@ -74,6 +91,23 @@ export interface TestResultRow {
   total: number;
   score: number;
   takenAt: string;
+}
+
+/** attempts 1 行（進捗集計用・created_at は UTC エポックms）。 */
+export interface AttemptRow {
+  subject: string;
+  unitId: string;
+  correct: boolean;
+  createdAtMs: number;
+}
+
+/** test_results 1 行（進捗集計用・taken_at は UTC エポックms）。 */
+export interface TestResultFullRow {
+  subject: string;
+  testKey: string;
+  total: number;
+  score: number;
+  takenAtMs: number;
 }
 
 export interface Store {
@@ -108,6 +142,10 @@ export interface Store {
     source: string,
   ): Promise<void>;
   getChildProgress(childId: string): Promise<ProgressSummary>;
+  /** 進捗集計用: その子の全 attempts（created_at 昇順・UTC エポックms）。 */
+  listAttempts(childId: string): Promise<AttemptRow[]>;
+  /** 進捗集計用: その子の全 test_results（taken_at 昇順・UTC エポックms）。 */
+  listTestResults(childId: string): Promise<TestResultFullRow[]>;
 
   /* --- テスト結果（テストモード） --- */
   recordTestResult(input: TestResultInput): Promise<void>;
@@ -117,9 +155,25 @@ export interface Store {
     limit: number,
   ): Promise<TestResultRow[]>;
 
+  /* --- 学習記録の付け替え（引き継ぎ） --- */
+  reassignChildData(fromChildId: string, toChildId: string): Promise<void>;
+
   /* --- 設定（key/value）。見守りパスコードのハッシュ保存などに使う --- */
   getConfig(key: string): Promise<string | null>;
   setConfig(key: string, value: string): Promise<void>;
+
+  /* --- アカウント／子ども --- */
+  createAccount(id: string, email: string, passwordHash: string): Promise<void>;
+  getAccountByEmail(email: string): Promise<AccountRow | null>;
+  getAccountById(id: string): Promise<AccountRow | null>;
+  createChild(
+    id: string,
+    accountId: string,
+    name: string,
+    stage: string,
+  ): Promise<void>;
+  listChildren(accountId: string): Promise<ChildRow[]>;
+  getChild(id: string): Promise<ChildRow | null>;
 
   /* --- 読み取り（見守りダッシュボード用） --- */
   listSessions(limit: number): Promise<SessionSummary[]>;
@@ -231,6 +285,106 @@ class PostgresStore implements Store {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `;
+    await this.sql`CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`;
+    await this.sql`CREATE TABLE IF NOT EXISTS children (id TEXT PRIMARY KEY, account_id TEXT NOT NULL, name TEXT NOT NULL, stage TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`;
+    await this.sql`CREATE INDEX IF NOT EXISTS children_account_idx ON children (account_id)`;
+  }
+
+  async createAccount(
+    id: string,
+    email: string,
+    passwordHash: string,
+  ): Promise<void> {
+    await this.ready;
+    await this.sql`
+      INSERT INTO accounts (id, email, password_hash)
+      VALUES (${id}, ${email}, ${passwordHash})
+    `;
+  }
+
+  async getAccountByEmail(email: string): Promise<AccountRow | null> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT id, email, password_hash, created_at
+      FROM accounts
+      WHERE email = ${email}
+      LIMIT 1
+    `;
+    const r = (rows as any[])[0];
+    if (!r) return null;
+    return {
+      id: String(r.id),
+      email: String(r.email),
+      passwordHash: String(r.password_hash),
+      createdAt: r.created_at == null ? "" : String(r.created_at),
+    };
+  }
+
+  async getAccountById(id: string): Promise<AccountRow | null> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT id, email, password_hash, created_at
+      FROM accounts
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+    const r = (rows as any[])[0];
+    if (!r) return null;
+    return {
+      id: String(r.id),
+      email: String(r.email),
+      passwordHash: String(r.password_hash),
+      createdAt: r.created_at == null ? "" : String(r.created_at),
+    };
+  }
+
+  async createChild(
+    id: string,
+    accountId: string,
+    name: string,
+    stage: string,
+  ): Promise<void> {
+    await this.ready;
+    await this.sql`
+      INSERT INTO children (id, account_id, name, stage)
+      VALUES (${id}, ${accountId}, ${name}, ${stage})
+    `;
+  }
+
+  async listChildren(accountId: string): Promise<ChildRow[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT id, account_id, name, stage, created_at
+      FROM children
+      WHERE account_id = ${accountId}
+      ORDER BY created_at ASC
+    `;
+    return (rows as any[]).map((r) => ({
+      id: String(r.id),
+      accountId: String(r.account_id),
+      name: String(r.name),
+      stage: String(r.stage),
+      createdAt: r.created_at == null ? "" : String(r.created_at),
+    }));
+  }
+
+  async getChild(id: string): Promise<ChildRow | null> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT id, account_id, name, stage, created_at
+      FROM children
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+    const r = (rows as any[])[0];
+    if (!r) return null;
+    return {
+      id: String(r.id),
+      accountId: String(r.account_id),
+      name: String(r.name),
+      stage: String(r.stage),
+      createdAt: r.created_at == null ? "" : String(r.created_at),
+    };
   }
 
   async getConfig(key: string): Promise<string | null> {
@@ -298,6 +452,12 @@ class PostgresStore implements Store {
     }));
   }
 
+  async reassignChildData(fromChildId: string, toChildId: string): Promise<void> {
+    await this.ready;
+    await this.sql`UPDATE attempts SET child_id = ${toChildId} WHERE child_id = ${fromChildId}`;
+    await this.sql`UPDATE test_results SET child_id = ${toChildId} WHERE child_id = ${fromChildId}`;
+  }
+
   async getChildProgress(childId: string): Promise<ProgressSummary> {
     await this.ready;
     const rows = await this.sql`
@@ -315,6 +475,41 @@ class PostgresStore implements Store {
         correct: Number(r.correct ?? 0),
       })),
     );
+  }
+
+  async listAttempts(childId: string): Promise<AttemptRow[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT subject, unit_id, correct,
+             (EXTRACT(EPOCH FROM created_at) * 1000)::bigint AS created_ms
+      FROM attempts
+      WHERE child_id = ${childId}
+      ORDER BY created_at ASC, id ASC
+    `;
+    return (rows as any[]).map((r) => ({
+      subject: String(r.subject),
+      unitId: String(r.unit_id),
+      correct: Boolean(r.correct),
+      createdAtMs: Number(r.created_ms ?? 0),
+    }));
+  }
+
+  async listTestResults(childId: string): Promise<TestResultFullRow[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT subject, test_key, total, score,
+             (EXTRACT(EPOCH FROM taken_at) * 1000)::bigint AS taken_ms
+      FROM test_results
+      WHERE child_id = ${childId}
+      ORDER BY taken_at ASC, id ASC
+    `;
+    return (rows as any[]).map((r) => ({
+      subject: String(r.subject),
+      testKey: String(r.test_key),
+      total: Number(r.total ?? 0),
+      score: Number(r.score ?? 0),
+      takenAtMs: Number(r.taken_ms ?? 0),
+    }));
   }
 
   async createSession(
@@ -538,6 +733,9 @@ class SqliteStore implements Store {
         taken_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
       );
       CREATE INDEX IF NOT EXISTS test_results_key_idx ON test_results (child_id, test_key, taken_at);
+      CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP));
+      CREATE TABLE IF NOT EXISTS children (id TEXT PRIMARY KEY, account_id TEXT NOT NULL, name TEXT NOT NULL, stage TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP));
+      CREATE INDEX IF NOT EXISTS children_account_idx ON children (account_id);
     `);
 
     // 既存DB（source 列が無い）への冪等マイグレーション（レガシーDB用なので別 exec）。
@@ -572,6 +770,114 @@ class SqliteStore implements Store {
         )
         .run(key, value),
     );
+  }
+
+  async createAccount(
+    id: string,
+    email: string,
+    passwordHash: string,
+  ): Promise<void> {
+    await this.ready;
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO accounts (id, email, password_hash) VALUES (?, ?, ?)",
+        )
+        .run(id, email, passwordHash),
+    );
+  }
+
+  async getAccountByEmail(email: string): Promise<AccountRow | null> {
+    await this.ready;
+    return this.withDb((db) => {
+      const r = db
+        .prepare(
+          "SELECT id, email, password_hash, created_at FROM accounts WHERE email = ? LIMIT 1",
+        )
+        .get(email) as any;
+      if (!r) return null;
+      return {
+        id: String(r.id),
+        email: String(r.email),
+        passwordHash: String(r.password_hash),
+        createdAt: r.created_at == null ? "" : String(r.created_at),
+      };
+    });
+  }
+
+  async getAccountById(id: string): Promise<AccountRow | null> {
+    await this.ready;
+    return this.withDb((db) => {
+      const r = db
+        .prepare(
+          "SELECT id, email, password_hash, created_at FROM accounts WHERE id = ? LIMIT 1",
+        )
+        .get(id) as any;
+      if (!r) return null;
+      return {
+        id: String(r.id),
+        email: String(r.email),
+        passwordHash: String(r.password_hash),
+        createdAt: r.created_at == null ? "" : String(r.created_at),
+      };
+    });
+  }
+
+  async createChild(
+    id: string,
+    accountId: string,
+    name: string,
+    stage: string,
+  ): Promise<void> {
+    await this.ready;
+    this.withDb((db) =>
+      db
+        .prepare(
+          "INSERT INTO children (id, account_id, name, stage) VALUES (?, ?, ?, ?)",
+        )
+        .run(id, accountId, name, stage),
+    );
+  }
+
+  async listChildren(accountId: string): Promise<ChildRow[]> {
+    await this.ready;
+    const rows = this.withDb(
+      (db) =>
+        db
+          .prepare(
+            `SELECT id, account_id, name, stage, created_at
+             FROM children
+             WHERE account_id = ?
+             ORDER BY created_at ASC, rowid ASC`,
+          )
+          .all(accountId) as any[],
+    );
+    return rows.map((r) => ({
+      id: String(r.id),
+      accountId: String(r.account_id),
+      name: String(r.name),
+      stage: String(r.stage),
+      createdAt: r.created_at == null ? "" : String(r.created_at),
+    }));
+  }
+
+  async getChild(id: string): Promise<ChildRow | null> {
+    await this.ready;
+    return this.withDb((db) => {
+      const r = db
+        .prepare(
+          "SELECT id, account_id, name, stage, created_at FROM children WHERE id = ? LIMIT 1",
+        )
+        .get(id) as any;
+      if (!r) return null;
+      return {
+        id: String(r.id),
+        accountId: String(r.account_id),
+        name: String(r.name),
+        stage: String(r.stage),
+        createdAt: r.created_at == null ? "" : String(r.created_at),
+      };
+    });
   }
 
   async recordAttempt(
@@ -640,6 +946,20 @@ class SqliteStore implements Store {
     }));
   }
 
+  async reassignChildData(fromChildId: string, toChildId: string): Promise<void> {
+    await this.ready;
+    this.withDb((db) => {
+      db.prepare("UPDATE attempts SET child_id = ? WHERE child_id = ?").run(
+        toChildId,
+        fromChildId,
+      );
+      db.prepare("UPDATE test_results SET child_id = ? WHERE child_id = ?").run(
+        toChildId,
+        fromChildId,
+      );
+    });
+  }
+
   async getChildProgress(childId: string): Promise<ProgressSummary> {
     await this.ready;
     const rows = this.withDb((db) =>
@@ -656,6 +976,53 @@ class SqliteStore implements Store {
         correct: Number(r.correct ?? 0),
       })),
     );
+  }
+
+  async listAttempts(childId: string): Promise<AttemptRow[]> {
+    await this.ready;
+    // strftime('%s') は UTC 秒（小数切り捨て）。日付バケット/並び順には十分（同秒の並びは rowid で確定）。
+    const rows = this.withDb(
+      (db) =>
+        db
+          .prepare(
+            `SELECT subject, unit_id, correct,
+                    CAST(strftime('%s', created_at) AS INTEGER) * 1000 AS created_ms
+             FROM attempts
+             WHERE child_id = ?
+             ORDER BY created_at ASC, rowid ASC`,
+          )
+          .all(childId) as any[],
+    );
+    return rows.map((r) => ({
+      subject: String(r.subject),
+      unitId: String(r.unit_id),
+      correct: Number(r.correct) === 1,
+      createdAtMs: Number(r.created_ms ?? 0),
+    }));
+  }
+
+  async listTestResults(childId: string): Promise<TestResultFullRow[]> {
+    await this.ready;
+    // strftime('%s') は UTC 秒（小数切り捨て）。日付バケット/並び順には十分（同秒の並びは rowid で確定）。
+    const rows = this.withDb(
+      (db) =>
+        db
+          .prepare(
+            `SELECT subject, test_key, total, score,
+                    CAST(strftime('%s', taken_at) AS INTEGER) * 1000 AS taken_ms
+             FROM test_results
+             WHERE child_id = ?
+             ORDER BY taken_at ASC, rowid ASC`,
+          )
+          .all(childId) as any[],
+    );
+    return rows.map((r) => ({
+      subject: String(r.subject),
+      testKey: String(r.test_key),
+      total: Number(r.total ?? 0),
+      score: Number(r.score ?? 0),
+      takenAtMs: Number(r.taken_ms ?? 0),
+    }));
   }
 
   async createSession(
@@ -872,8 +1239,18 @@ class NoopStore implements Store {
     return [];
   }
 
+  async reassignChildData(): Promise<void> {}
+
   async getChildProgress(_childId: string): Promise<ProgressSummary> {
     return { total: 0, correct: 0, bySubject: {} };
+  }
+
+  async listAttempts(_childId: string): Promise<AttemptRow[]> {
+    return [];
+  }
+
+  async listTestResults(_childId: string): Promise<TestResultFullRow[]> {
+    return [];
   }
 
   async getConfig(_key: string): Promise<string | null> {
@@ -883,6 +1260,39 @@ class NoopStore implements Store {
   async setConfig(_key: string, _value: string): Promise<void> {
     // 保存先が無い（Vercel で DATABASE_URL 未設定）。設定は保持できない。
     throw new Error("no-store");
+  }
+
+  async createAccount(
+    id: string,
+    email: string,
+    _passwordHash: string,
+  ): Promise<void> {
+    console.debug("[db:noop] createAccount", { id, email });
+  }
+
+  async getAccountByEmail(_email: string): Promise<AccountRow | null> {
+    return null;
+  }
+
+  async getAccountById(_id: string): Promise<AccountRow | null> {
+    return null;
+  }
+
+  async createChild(
+    id: string,
+    accountId: string,
+    name: string,
+    stage: string,
+  ): Promise<void> {
+    console.debug("[db:noop] createChild", { id, accountId, name, stage });
+  }
+
+  async listChildren(_accountId: string): Promise<ChildRow[]> {
+    return [];
+  }
+
+  async getChild(_id: string): Promise<ChildRow | null> {
+    return null;
   }
 
   async listSessions(_limit: number): Promise<SessionSummary[]> {

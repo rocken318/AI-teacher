@@ -187,25 +187,18 @@ export default function ForParentsPage() {
         {/* ===== 4. 見守り（保護者ダッシュボード） ===== */}
         <section className="mb-10 sm:mb-12">
           <h2 className="mb-1 font-serif text-2xl font-extrabold text-ink">
-            見守り
+            がんばり見える化
           </h2>
           <p className="mb-5 text-[13px] text-faint">
-            保護者ダッシュボードで、お子さんの様子を確認できます。
+            アカウントでログインして、お子さんのがんばりをいつでも確認できます。
           </p>
           <div className="rounded-[1.5rem] border border-line bg-white/70 p-6 shadow-card sm:p-8">
             <ul className="space-y-4 text-[14px] leading-relaxed text-ink-soft">
               <li>
-                <a href="/guardian" className="font-semibold text-sky hover:underline">
-                  /guardian
-                </a>{" "}
-                で、お子さんの探究の会話や学習の様子を確認できます。
+                アカウントを作るとお子さんのプロフィールを登録でき、学習記録がどの端末からでも見られます。
               </li>
               <li>
-                パスコードを設定している場合は{" "}
-                <code className="rounded bg-paper2 px-1.5 py-0.5 text-[13px] text-ink">
-                  /guardian?code=…
-                </code>{" "}
-                で開きます。安全のため、本人と保護者だけに限定されます。
+                「今日の頑張り」「全体の進捗」「教科ごとの進捗」を確認できます。
               </li>
               <li>
                 トップの
@@ -254,10 +247,10 @@ export default function ForParentsPage() {
               トップへ戻る
             </a>
             <a
-              href="/guardian"
+              href="/login"
               className="inline-flex items-center justify-center rounded-2xl border border-sky/30 bg-sky/10 px-6 py-3 text-[14px] font-semibold text-sky shadow-soft transition hover:bg-sky/20"
             >
-              見守りを開く
+              ログインしてがんばりを見る
             </a>
           </div>
           <p className="mt-8 text-center text-[11px] text-faint">

@@ -93,7 +93,7 @@ export function clearGrade(): void {
   }
 }
 
-function isStage(v: unknown): v is Stage {
+export function isStage(v: unknown): v is Stage {
   return v === "elementary" || v === "junior" || v === "senior";
 }
 

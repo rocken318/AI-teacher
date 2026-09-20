@@ -85,6 +85,11 @@ export function logTestResult(input: {
   runAfterResponse(() => getStore().recordTestResult({ id, ...input }));
 }
 
+/** 学習記録の付け替え（引き継ぎ）。即時 await 用に直呼び。 */
+export async function reassignChildData(fromChildId: string, toChildId: string): Promise<void> {
+  await getStore().reassignChildData(fromChildId, toChildId);
+}
+
 export function logModeration(params: {
   sessionId: string;
   messageId?: string;
