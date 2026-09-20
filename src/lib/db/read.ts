@@ -22,6 +22,8 @@ export type {
   SessionDetail,
   ProgressSummary,
   TestResultRow,
+  AttemptRow,
+  TestResultFullRow,
   DbBackend,
 } from "./index";
 
@@ -69,6 +71,30 @@ export async function getTestHistory(
     return await getStore().getTestHistory(childId, testKey, limit);
   } catch (err) {
     console.error("[db:read] getTestHistory failed:", err);
+    return [];
+  }
+}
+
+/** その子の全 attempts（進捗集計用）。失敗時は空配列。 */
+export async function listAttempts(
+  childId: string,
+): Promise<import("./index").AttemptRow[]> {
+  try {
+    return await getStore().listAttempts(childId);
+  } catch (err) {
+    console.error("[db:read] listAttempts failed:", err);
+    return [];
+  }
+}
+
+/** その子の全 test_results（進捗集計用）。失敗時は空配列。 */
+export async function listTestResults(
+  childId: string,
+): Promise<import("./index").TestResultFullRow[]> {
+  try {
+    return await getStore().listTestResults(childId);
+  } catch (err) {
+    console.error("[db:read] listTestResults failed:", err);
     return [];
   }
 }

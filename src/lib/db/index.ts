@@ -93,6 +93,23 @@ export interface TestResultRow {
   takenAt: string;
 }
 
+/** attempts 1 行（進捗集計用・created_at は UTC エポックms）。 */
+export interface AttemptRow {
+  subject: string;
+  unitId: string;
+  correct: boolean;
+  createdAtMs: number;
+}
+
+/** test_results 1 行（進捗集計用・taken_at は UTC エポックms）。 */
+export interface TestResultFullRow {
+  subject: string;
+  testKey: string;
+  total: number;
+  score: number;
+  takenAtMs: number;
+}
+
 export interface Store {
   createSession(
     id: string,
@@ -125,6 +142,10 @@ export interface Store {
     source: string,
   ): Promise<void>;
   getChildProgress(childId: string): Promise<ProgressSummary>;
+  /** 進捗集計用: その子の全 attempts（created_at 昇順・UTC エポックms）。 */
+  listAttempts(childId: string): Promise<AttemptRow[]>;
+  /** 進捗集計用: その子の全 test_results（taken_at 昇順・UTC エポックms）。 */
+  listTestResults(childId: string): Promise<TestResultFullRow[]>;
 
   /* --- テスト結果（テストモード） --- */
   recordTestResult(input: TestResultInput): Promise<void>;
@@ -454,6 +475,41 @@ class PostgresStore implements Store {
         correct: Number(r.correct ?? 0),
       })),
     );
+  }
+
+  async listAttempts(childId: string): Promise<AttemptRow[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT subject, unit_id, correct,
+             (EXTRACT(EPOCH FROM created_at) * 1000)::bigint AS created_ms
+      FROM attempts
+      WHERE child_id = ${childId}
+      ORDER BY created_at ASC
+    `;
+    return (rows as any[]).map((r) => ({
+      subject: String(r.subject),
+      unitId: String(r.unit_id),
+      correct: Boolean(r.correct),
+      createdAtMs: Number(r.created_ms ?? 0),
+    }));
+  }
+
+  async listTestResults(childId: string): Promise<TestResultFullRow[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT subject, test_key, total, score,
+             (EXTRACT(EPOCH FROM taken_at) * 1000)::bigint AS taken_ms
+      FROM test_results
+      WHERE child_id = ${childId}
+      ORDER BY taken_at ASC
+    `;
+    return (rows as any[]).map((r) => ({
+      subject: String(r.subject),
+      testKey: String(r.test_key),
+      total: Number(r.total ?? 0),
+      score: Number(r.score ?? 0),
+      takenAtMs: Number(r.taken_ms ?? 0),
+    }));
   }
 
   async createSession(
@@ -922,6 +978,51 @@ class SqliteStore implements Store {
     );
   }
 
+  async listAttempts(childId: string): Promise<AttemptRow[]> {
+    await this.ready;
+    const rows = this.withDb(
+      (db) =>
+        db
+          .prepare(
+            `SELECT subject, unit_id, correct,
+                    CAST(strftime('%s', created_at) AS INTEGER) * 1000 AS created_ms
+             FROM attempts
+             WHERE child_id = ?
+             ORDER BY created_at ASC, rowid ASC`,
+          )
+          .all(childId) as any[],
+    );
+    return rows.map((r) => ({
+      subject: String(r.subject),
+      unitId: String(r.unit_id),
+      correct: Number(r.correct) === 1,
+      createdAtMs: Number(r.created_ms ?? 0),
+    }));
+  }
+
+  async listTestResults(childId: string): Promise<TestResultFullRow[]> {
+    await this.ready;
+    const rows = this.withDb(
+      (db) =>
+        db
+          .prepare(
+            `SELECT subject, test_key, total, score,
+                    CAST(strftime('%s', taken_at) AS INTEGER) * 1000 AS taken_ms
+             FROM test_results
+             WHERE child_id = ?
+             ORDER BY taken_at ASC, rowid ASC`,
+          )
+          .all(childId) as any[],
+    );
+    return rows.map((r) => ({
+      subject: String(r.subject),
+      testKey: String(r.test_key),
+      total: Number(r.total ?? 0),
+      score: Number(r.score ?? 0),
+      takenAtMs: Number(r.taken_ms ?? 0),
+    }));
+  }
+
   async createSession(
     id: string,
     topic: string,
@@ -1140,6 +1241,14 @@ class NoopStore implements Store {
 
   async getChildProgress(_childId: string): Promise<ProgressSummary> {
     return { total: 0, correct: 0, bySubject: {} };
+  }
+
+  async listAttempts(_childId: string): Promise<AttemptRow[]> {
+    return [];
+  }
+
+  async listTestResults(_childId: string): Promise<TestResultFullRow[]> {
+    return [];
   }
 
   async getConfig(_key: string): Promise<string | null> {
