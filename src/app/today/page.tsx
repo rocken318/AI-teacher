@@ -19,7 +19,8 @@ export default function TodayPage() {
     if (!id) { router.replace("/login"); return; }
     fetchToday(id).then((d) => {
       if (!alive) return;
-      if (d === null) { router.replace("/login"); return; }
+      if (d === "unauth") { router.replace("/login"); return; }
+      if (d === "forbidden") { router.replace("/family"); return; }
       setData(d);
     });
     return () => { alive = false; };

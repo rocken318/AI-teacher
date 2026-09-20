@@ -21,7 +21,8 @@ export default function ProgressPage() {
     if (!id) { router.replace("/login"); return; }
     fetchOverall(id).then((d) => {
       if (!alive) return;
-      if (d === null) { router.replace("/login"); return; }
+      if (d === "unauth") { router.replace("/login"); return; }
+      if (d === "forbidden") { router.replace("/family"); return; }
       setData(d);
     });
     return () => { alive = false; };

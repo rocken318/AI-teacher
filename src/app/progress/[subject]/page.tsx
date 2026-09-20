@@ -29,8 +29,9 @@ export default function SubjectProgressPage() {
     const sources = displaySubjectMeta(rawSubject).sources;
     Promise.all(sources.map((s) => fetchSubject(id, s))).then((results) => {
       if (!alive) return;
-      if (results.some((r) => r === null)) { router.replace("/login"); return; }
-      const ok = results.filter((r): r is SubjectResponse => !!r);
+      if (results.some((r) => r === "unauth")) { router.replace("/login"); return; }
+      if (results.some((r) => r === "forbidden")) { router.replace("/family"); return; }
+      const ok = results.filter((r): r is SubjectResponse => typeof r === "object" && r !== null);
       setUnits(ok.flatMap((r) => r.units));
       setMastered(ok.reduce((n, r) => n + r.masteredUnits, 0));
       setTarget(ok.reduce((n, r) => n + r.targetUnits, 0));

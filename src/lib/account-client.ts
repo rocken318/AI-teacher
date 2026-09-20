@@ -53,21 +53,22 @@ export async function claim(fromChildId: string, toChildId: string): Promise<boo
   return res.ok;
 }
 
-/** 進捗系。401 は null（→ /login 誘導）。 */
-async function getProgress<T>(url: string): Promise<T | null> {
+/** 進捗系。401→"unauth"、403→"forbidden"、その他エラー→"unauth"。 */
+async function getProgress<T>(url: string): Promise<T | "unauth" | "forbidden"> {
   const res = await fetch(url, { credentials: "same-origin" });
-  if (res.status === 401) return null;
-  if (!res.ok) return null;
+  if (res.status === 401) return "unauth";
+  if (res.status === 403) return "forbidden";
+  if (!res.ok) return "unauth";
   return (await res.json()) as T;
 }
 
-export function fetchToday(childId: string) {
+export function fetchToday(childId: string): Promise<TodayResponse | "unauth" | "forbidden"> {
   return getProgress<TodayResponse>(`/api/progress/today?childId=${encodeURIComponent(childId)}`);
 }
-export function fetchOverall(childId: string) {
+export function fetchOverall(childId: string): Promise<OverallResponse | "unauth" | "forbidden"> {
   return getProgress<OverallResponse>(`/api/progress/overall?childId=${encodeURIComponent(childId)}`);
 }
-export function fetchSubject(childId: string, subject: string) {
+export function fetchSubject(childId: string, subject: string): Promise<SubjectResponse | "unauth" | "forbidden"> {
   return getProgress<SubjectResponse>(
     `/api/progress/subject?childId=${encodeURIComponent(childId)}&subject=${encodeURIComponent(subject)}`,
   );
