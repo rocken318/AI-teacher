@@ -579,13 +579,14 @@ export function overallStats(
   nowMs: number = Date.now(),
 ): OverallStats {
   const target = stageTargetUnits(stage);
-  const agg = aggregateByUnit(records);
-  // 制覇した単元 id の集合（対象内外を問わず）。
-  const masteredIds = new Set(agg.filter(isMastered).map((a) => a.unitId));
 
   const bySubject: Record<string, MasteryShare> = {};
   let overallMastered = 0;
   for (const [subject, unitIds] of Object.entries(target.bySubject)) {
+    // その教科の記録だけを集約する。単元 id が教科をまたいで衝突しても
+    // 集約が混ざらない（教科横断で unitId 単独キーにしない）。
+    const agg = aggregateByUnit(records.filter((r) => r.subject === subject));
+    const masteredIds = new Set(agg.filter(isMastered).map((a) => a.unitId));
     const m = unitIds.filter((id) => masteredIds.has(id)).length; // 対象単元のみ数える
     bySubject[subject] = share(m, unitIds.length);
     overallMastered += m;
