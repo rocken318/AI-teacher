@@ -134,6 +134,9 @@ export interface Store {
     limit: number,
   ): Promise<TestResultRow[]>;
 
+  /* --- 学習記録の付け替え（引き継ぎ） --- */
+  reassignChildData(fromChildId: string, toChildId: string): Promise<void>;
+
   /* --- 設定（key/value）。見守りパスコードのハッシュ保存などに使う --- */
   getConfig(key: string): Promise<string | null>;
   setConfig(key: string, value: string): Promise<void>;
@@ -426,6 +429,12 @@ class PostgresStore implements Store {
       score: Number(r.score ?? 0),
       takenAt: r.taken_at == null ? "" : String(r.taken_at),
     }));
+  }
+
+  async reassignChildData(fromChildId: string, toChildId: string): Promise<void> {
+    await this.ready;
+    await this.sql`UPDATE attempts SET child_id = ${toChildId} WHERE child_id = ${fromChildId}`;
+    await this.sql`UPDATE test_results SET child_id = ${toChildId} WHERE child_id = ${fromChildId}`;
   }
 
   async getChildProgress(childId: string): Promise<ProgressSummary> {
@@ -881,6 +890,20 @@ class SqliteStore implements Store {
     }));
   }
 
+  async reassignChildData(fromChildId: string, toChildId: string): Promise<void> {
+    await this.ready;
+    this.withDb((db) => {
+      db.prepare("UPDATE attempts SET child_id = ? WHERE child_id = ?").run(
+        toChildId,
+        fromChildId,
+      );
+      db.prepare("UPDATE test_results SET child_id = ? WHERE child_id = ?").run(
+        toChildId,
+        fromChildId,
+      );
+    });
+  }
+
   async getChildProgress(childId: string): Promise<ProgressSummary> {
     await this.ready;
     const rows = this.withDb((db) =>
@@ -1112,6 +1135,8 @@ class NoopStore implements Store {
   ): Promise<TestResultRow[]> {
     return [];
   }
+
+  async reassignChildData(): Promise<void> {}
 
   async getChildProgress(_childId: string): Promise<ProgressSummary> {
     return { total: 0, correct: 0, bySubject: {} };
