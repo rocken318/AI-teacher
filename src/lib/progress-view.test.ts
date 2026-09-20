@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { groupSubjects, DISPLAY_SUBJECTS, displaySubjectMeta, apiSubjectLabel } from "@/lib/progress-view";
+import { groupSubjects, DISPLAY_SUBJECTS, displaySubjectMeta, apiSubjectLabel, groupTodayBySubject } from "@/lib/progress-view";
 
 type Share = { masteredUnits: number; targetUnits: number; percent: number };
 
@@ -37,4 +37,25 @@ test("displaySubjectMeta はラベル/絵文字を返す", () => {
 test("apiSubjectLabel は API教科キーを日本語に", () => {
   expect(apiSubjectLabel("history")).toBe("歴史");
   expect(apiSubjectLabel("unknown")).toBe("unknown");
+});
+
+test("groupTodayBySubject は今日の内訳を5教科へ合算し、0問の教科は除く", () => {
+  const bySubject = {
+    math: { attempts: 3, correct: 2 },
+    history: { attempts: 2, correct: 2 },
+    geography: { attempts: 1, correct: 0 },
+    english: { attempts: 4, correct: 4 },
+  };
+  const g = groupTodayBySubject(bySubject);
+  // social = history(2/2) + geography(1/0) = 3/2
+  const social = g.find((x) => x.key === "social")!;
+  expect(social.attempts).toBe(3);
+  expect(social.correct).toBe(2);
+  expect(social.label).toBe("社会");
+  // 出たのは math / social / english のみ（理科・国語は0問で除外）
+  expect(g.map((x) => x.key)).toEqual(["math", "social", "english"]);
+});
+
+test("groupTodayBySubject は空なら空配列", () => {
+  expect(groupTodayBySubject({})).toEqual([]);
 });

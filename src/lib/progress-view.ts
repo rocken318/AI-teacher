@@ -63,6 +63,37 @@ export function displaySubjectMeta(key: string): DisplaySubject {
   return DISPLAY_SUBJECTS.find((d) => d.key === key) ?? DISPLAY_SUBJECTS[0];
 }
 
+/** 今日の教科別内訳（attempts/correct）を表示5教科へ合算した1行。 */
+export interface GroupedCount {
+  key: DisplaySubject["key"];
+  label: string;
+  emoji: string;
+  attempts: number;
+  correct: number;
+}
+
+/**
+ * 今日の bySubject（API7教科の {attempts,correct}）を表示5教科へ集約する。
+ * social=social+history+geography を合算。今日 1 問も解いていない教科（attempts=0）は除く。
+ * 全体ページの 5 教科表示と同じ括りに揃えるための純関数。
+ */
+export function groupTodayBySubject(
+  bySubject: Record<string, { attempts: number; correct: number }>,
+): GroupedCount[] {
+  return DISPLAY_SUBJECTS.map((d) => {
+    let attempts = 0;
+    let correct = 0;
+    for (const src of d.sources) {
+      const s = bySubject[src];
+      if (s) {
+        attempts += s.attempts;
+        correct += s.correct;
+      }
+    }
+    return { key: d.key, label: d.label, emoji: d.emoji, attempts, correct };
+  }).filter((g) => g.attempts > 0);
+}
+
 /** API 教科キー → 日本語ラベル（今日の教科別バーなど素の教科表示用）。 */
 export const API_SUBJECT_LABELS: Record<string, string> = {
   math: "算数", science: "理科", social: "社会", history: "歴史",
