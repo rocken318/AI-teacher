@@ -808,10 +808,10 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
           保護者の方へ・使い方ガイド
         </a>
         <a
-          href="/guardian"
+          href="/family"
           className="rounded-full border border-line bg-white/70 px-5 py-2 text-[13px] font-bold text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:text-ink hover:shadow-card"
         >
-          見守りダッシュボード
+          おうちの人のページ
         </a>
       </footer>
     </div>

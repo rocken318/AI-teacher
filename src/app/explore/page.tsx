@@ -30,8 +30,8 @@ export default function ExplorePage() {
             <a href="/math" className="hover:text-ink">
               算数をまなぶ
             </a>
-            <a href="/guardian" className="hover:text-ink">
-              みまもり
+            <a href="/family" className="hover:text-ink">
+              おうちの人
             </a>
           </nav>
         </div>

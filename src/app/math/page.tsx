@@ -83,8 +83,8 @@ export default async function MathPage({
             <a href="/test" className="hover:text-ink">
               テスト
             </a>
-            <a href="/guardian" className="hover:text-ink">
-              みまもり
+            <a href="/family" className="hover:text-ink">
+              おうちの人
             </a>
           </nav>
         </div>

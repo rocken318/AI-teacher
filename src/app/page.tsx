@@ -30,8 +30,8 @@ export default function Home() {
             <a href="/explore" className="hover:text-ink">
               探究
             </a>
-            <a href="/guardian" className="hover:text-ink">
-              みまもり
+            <a href="/family" className="hover:text-ink">
+              おうちの人
             </a>
           </nav>
         </div>
