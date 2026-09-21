@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       mistakeId: m.id,
       kind: "quiz",
+      subject: m.subject,
       unitId: m.unitId,
       question: item.question,
       choices: item.choices,
@@ -63,6 +64,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     mistakeId: m.id,
     kind: "math",
+    subject: m.subject,
     unitId: m.unitId,
     prompt,
     answerToken,

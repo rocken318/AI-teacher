@@ -16,8 +16,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "childId required" }, { status: 400 });
   }
 
+  // count は全件数（真の合計）。一覧は実用上十分な上限で取り、通常は count と一致する。
   const [mistakes, count] = await Promise.all([
-    listMistakes(childId),
+    listMistakes(childId, 1000),
     countMistakes(childId),
   ]);
 

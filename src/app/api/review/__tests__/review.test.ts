@@ -120,3 +120,19 @@ test("math まちがいの next は prompt と answerToken を返す（answer �
   expect(body.answer).toBeUndefined(); // 答え非露出
   expect(body.mistakeId).toBe("m2");
 });
+
+test("remove は他人の childId では消えない（所有スコープ）", async () => {
+  const { getStore } = await import("@/lib/db");
+  await getStore().addMistake({ id: "m9", childId: "c1", subject: "science", unitId: "u1", kind: "quiz", itemId: "i1", problem: null });
+  const { NextRequest } = await import("next/server");
+  const removeRoute = await import("../remove/route");
+  const res = await removeRoute.POST(
+    new NextRequest(`http://localhost/api/review/remove`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ childId: "c2", mistakeId: "m9" }), // 他人が消そうとする
+    }),
+  );
+  expect(res.status).toBe(200);
+  expect(await getStore().countMistakes("c1")).toBe(1); // 消えていない
+});
