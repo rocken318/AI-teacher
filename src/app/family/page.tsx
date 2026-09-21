@@ -56,6 +56,26 @@ export default function FamilyPage() {
     router.push("/");
   }
 
+  /** この端末の匿名IDに溜まった記録を、既存の子プロフィールへ引き継ぐ。 */
+  async function inheritTo(c: Child) {
+    setNotice(null);
+    const anon = localStorageAnonId();
+    if (!anon) {
+      setNotice("この端末に引き継げる記録が見つかりません。");
+      return;
+    }
+    setBusy(true);
+    const ok = await claim(anon, c.id);
+    setActiveChild(c.id); // 以後の学習はこの子に紐付く
+    setBusy(false);
+    setNotice(
+      ok
+        ? `${c.name}に この端末の記録を引き継ぎました。`
+        : "引き継ぎに失敗しました。あとで再試行できます。",
+    );
+    await load();
+  }
+
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -114,15 +134,19 @@ export default function FamilyPage() {
                 <div className="font-serif text-lg text-ink">{c.name}</div>
                 <div className="text-xs text-faint">{stageLabel(c.stage)}</div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 {/* Fix 1: explicit type="button" */}
                 <button type="button" onClick={() => choose(c)} className="rounded-lg bg-sky px-3 py-1.5 text-sm text-white">この子で学習</button>
                 {/* Fix 2: replace Link+onClick with button that sets-then-navigates */}
                 <button type="button" onClick={() => { setActiveChild(c.id); router.push("/today"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">今日</button>
                 <button type="button" onClick={() => { setActiveChild(c.id); router.push("/progress"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">全体</button>
+                <button type="button" onClick={() => inheritTo(c)} disabled={busy} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft disabled:opacity-60">記録を引き継ぐ</button>
               </div>
             </div>
           ))}
+          {children.length > 0 && (
+            <p className="text-xs text-faint">「記録を引き継ぐ」＝この端末で（子を選ばずに）学習した記録を、その子のアカウント進捗へ移します。以後は「この子で学習」を選んでおくと、どの端末でも進捗が同期します。</p>
+          )}
         </section>
 
         <form onSubmit={onAdd} className="mt-8 space-y-3 rounded-2xl border border-line bg-white/70 p-5 shadow-card">

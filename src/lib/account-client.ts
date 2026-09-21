@@ -2,6 +2,15 @@
 import type {
   OverallResponse, TodayResponse, SubjectResponse, Child,
 } from "@/lib/progress-client-types";
+import { setActiveChild } from "@/lib/progress";
+import { setStage, isStage } from "@/lib/stage";
+
+/** サーバー集計（教科別 attempts/correct＋合計）。ホームのカード/レベル用。 */
+export interface ProgressSummaryResponse {
+  total: number;
+  correct: number;
+  bySubject: Record<string, { attempts: number; correct: number }>;
+}
 
 async function postJson(url: string, body: unknown): Promise<Response> {
   return fetch(url, {
@@ -72,4 +81,27 @@ export function fetchSubject(childId: string, subject: string): Promise<SubjectR
   return getProgress<SubjectResponse>(
     `/api/progress/subject?childId=${encodeURIComponent(childId)}&subject=${encodeURIComponent(subject)}`,
   );
+}
+/** ホーム用の教科別集計（サーバー）。401/403 は sentinel。 */
+export function fetchSummary(childId: string): Promise<ProgressSummaryResponse | "unauth" | "forbidden"> {
+  return getProgress<ProgressSummaryResponse>(
+    `/api/progress/summary?childId=${encodeURIComponent(childId)}`,
+  );
+}
+
+/**
+ * ログイン/新規登録の成功後に呼ぶ。
+ * 子が1人ならその子を自動で「学習中」にして学齢テーマも合わせ、行き先 "/" を返す。
+ * 子が0人/複数なら "/family"（選択・追加）を返す。
+ * これにより「ログインしたのに子を選ばず学習→匿名IDに記録」を防ぐ。
+ */
+export async function pickPostAuthDestination(): Promise<string> {
+  const children = await fetchChildren();
+  if (children && children.length === 1) {
+    const c = children[0];
+    setActiveChild(c.id);
+    if (isStage(c.stage)) setStage(c.stage);
+    return "/";
+  }
+  return "/family";
 }
