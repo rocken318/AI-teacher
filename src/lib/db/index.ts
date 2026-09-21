@@ -110,6 +110,28 @@ export interface TestResultFullRow {
   takenAtMs: number;
 }
 
+/** まちがいノート 1件の保存入力。 */
+export interface MistakeInput {
+  id: string;
+  childId: string;
+  subject: string;
+  unitId: string;
+  kind: "quiz" | "math";
+  itemId: string | null; // quiz のとき item id
+  problem: string | null; // math のとき問題JSON（{prompt,answer,answerType,meta}）
+}
+
+/** まちがいノート 1件の行。 */
+export interface MistakeRow {
+  id: string;
+  subject: string;
+  unitId: string;
+  kind: "quiz" | "math";
+  itemId: string | null;
+  problem: string | null;
+  createdAt: string;
+}
+
 export interface Store {
   createSession(
     id: string,
@@ -146,6 +168,12 @@ export interface Store {
   listAttempts(childId: string): Promise<AttemptRow[]>;
   /** 進捗集計用: その子の全 test_results（taken_at 昇順・UTC エポックms）。 */
   listTestResults(childId: string): Promise<TestResultFullRow[]>;
+
+  /* --- まちがいノート --- */
+  addMistake(input: MistakeInput): Promise<void>;
+  listMistakes(childId: string, limit: number): Promise<MistakeRow[]>;
+  countMistakes(childId: string): Promise<number>;
+  removeMistake(childId: string, mistakeId: string): Promise<void>;
 
   /* --- テスト結果（テストモード） --- */
   recordTestResult(input: TestResultInput): Promise<void>;
@@ -288,6 +316,19 @@ class PostgresStore implements Store {
     await this.sql`CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`;
     await this.sql`CREATE TABLE IF NOT EXISTS children (id TEXT PRIMARY KEY, account_id TEXT NOT NULL, name TEXT NOT NULL, stage TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`;
     await this.sql`CREATE INDEX IF NOT EXISTS children_account_idx ON children (account_id)`;
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS mistakes (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        item_id TEXT,
+        problem TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `;
+    await this.sql`CREATE INDEX IF NOT EXISTS mistakes_child_idx ON mistakes (child_id)`;
   }
 
   async createAccount(
@@ -510,6 +551,48 @@ class PostgresStore implements Store {
       score: Number(r.score ?? 0),
       takenAtMs: Number(r.taken_ms ?? 0),
     }));
+  }
+
+  async addMistake(input: MistakeInput): Promise<void> {
+    await this.ready;
+    // 重複防止: quiz は (child, unit, item)、math は (child, unit, problem)。
+    const dup = input.kind === "quiz"
+      ? await this.sql`SELECT 1 FROM mistakes WHERE child_id=${input.childId} AND unit_id=${input.unitId} AND kind='quiz' AND item_id=${input.itemId} LIMIT 1`
+      : await this.sql`SELECT 1 FROM mistakes WHERE child_id=${input.childId} AND unit_id=${input.unitId} AND kind='math' AND problem=${input.problem} LIMIT 1`;
+    if ((dup as any[]).length > 0) return;
+    await this.sql`
+      INSERT INTO mistakes (id, child_id, subject, unit_id, kind, item_id, problem)
+      VALUES (${input.id}, ${input.childId}, ${input.subject}, ${input.unitId}, ${input.kind}, ${input.itemId}, ${input.problem})
+    `;
+  }
+
+  async listMistakes(childId: string, limit: number): Promise<MistakeRow[]> {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT id, subject, unit_id, kind, item_id, problem, created_at
+      FROM mistakes WHERE child_id = ${childId}
+      ORDER BY created_at DESC LIMIT ${limit}
+    `;
+    return (rows as any[]).map((r) => ({
+      id: String(r.id),
+      subject: String(r.subject),
+      unitId: String(r.unit_id),
+      kind: (String(r.kind) === "math" ? "math" : "quiz") as "quiz" | "math",
+      itemId: r.item_id == null ? null : String(r.item_id),
+      problem: r.problem == null ? null : String(r.problem),
+      createdAt: r.created_at == null ? "" : String(r.created_at),
+    }));
+  }
+
+  async countMistakes(childId: string): Promise<number> {
+    await this.ready;
+    const rows = await this.sql`SELECT COUNT(*) AS n FROM mistakes WHERE child_id = ${childId}`;
+    return Number((rows as any[])[0]?.n ?? 0);
+  }
+
+  async removeMistake(childId: string, mistakeId: string): Promise<void> {
+    await this.ready;
+    await this.sql`DELETE FROM mistakes WHERE id = ${mistakeId} AND child_id = ${childId}`;
   }
 
   async createSession(
@@ -736,6 +819,17 @@ class SqliteStore implements Store {
       CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP));
       CREATE TABLE IF NOT EXISTS children (id TEXT PRIMARY KEY, account_id TEXT NOT NULL, name TEXT NOT NULL, stage TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP));
       CREATE INDEX IF NOT EXISTS children_account_idx ON children (account_id);
+      CREATE TABLE IF NOT EXISTS mistakes (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        item_id TEXT,
+        problem TEXT,
+        created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+      );
+      CREATE INDEX IF NOT EXISTS mistakes_child_idx ON mistakes (child_id);
     `);
 
     // 既存DB（source 列が無い）への冪等マイグレーション（レガシーDB用なので別 exec）。
@@ -1025,6 +1119,45 @@ class SqliteStore implements Store {
     }));
   }
 
+  async addMistake(input: MistakeInput): Promise<void> {
+    await this.ready;
+    this.withDb((db) => {
+      const dup = input.kind === "quiz"
+        ? db.prepare("SELECT 1 FROM mistakes WHERE child_id=? AND unit_id=? AND kind='quiz' AND item_id=? LIMIT 1").get(input.childId, input.unitId, input.itemId)
+        : db.prepare("SELECT 1 FROM mistakes WHERE child_id=? AND unit_id=? AND kind='math' AND problem=? LIMIT 1").get(input.childId, input.unitId, input.problem);
+      if (dup) return;
+      db.prepare("INSERT INTO mistakes (id, child_id, subject, unit_id, kind, item_id, problem) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .run(input.id, input.childId, input.subject, input.unitId, input.kind, input.itemId, input.problem);
+    });
+  }
+
+  async listMistakes(childId: string, limit: number): Promise<MistakeRow[]> {
+    await this.ready;
+    const rows = this.withDb((db) =>
+      db.prepare(`SELECT id, subject, unit_id, kind, item_id, problem, created_at FROM mistakes WHERE child_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?`).all(childId, limit) as any[],
+    );
+    return rows.map((r) => ({
+      id: String(r.id),
+      subject: String(r.subject),
+      unitId: String(r.unit_id),
+      kind: (String(r.kind) === "math" ? "math" : "quiz") as "quiz" | "math",
+      itemId: r.item_id == null ? null : String(r.item_id),
+      problem: r.problem == null ? null : String(r.problem),
+      createdAt: r.created_at == null ? "" : String(r.created_at),
+    }));
+  }
+
+  async countMistakes(childId: string): Promise<number> {
+    await this.ready;
+    const r = this.withDb((db) => db.prepare("SELECT COUNT(*) AS n FROM mistakes WHERE child_id = ?").get(childId) as any);
+    return Number(r?.n ?? 0);
+  }
+
+  async removeMistake(childId: string, mistakeId: string): Promise<void> {
+    await this.ready;
+    this.withDb((db) => db.prepare("DELETE FROM mistakes WHERE id = ? AND child_id = ?").run(mistakeId, childId));
+  }
+
   async createSession(
     id: string,
     topic: string,
@@ -1252,6 +1385,11 @@ class NoopStore implements Store {
   async listTestResults(_childId: string): Promise<TestResultFullRow[]> {
     return [];
   }
+
+  async addMistake(_input: MistakeInput): Promise<void> {}
+  async listMistakes(_childId: string, _limit: number): Promise<MistakeRow[]> { return []; }
+  async countMistakes(_childId: string): Promise<number> { return 0; }
+  async removeMistake(_childId: string, _mistakeId: string): Promise<void> {}
 
   async getConfig(_key: string): Promise<string | null> {
     return null;
