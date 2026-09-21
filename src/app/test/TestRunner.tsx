@@ -113,6 +113,7 @@ export function TestRunner({
   const [phase, setPhase] = useState<Phase>("setup");
   const [items, setItems] = useState<ItemDTO[]>([]);
   const [inputs, setInputs] = useState<string[]>([]); // math: テキスト / quiz: choiceIndex(文字列)
+  const [unknowns, setUnknowns] = useState<boolean[]>([]); // わからない フラグ（項目単位）
   const [cursor, setCursor] = useState(0);
   const [result, setResult] = useState<GradeDTO | null>(null);
   const [busy, setBusy] = useState(false);
@@ -134,6 +135,7 @@ export function TestRunner({
     setPhase("setup");
     setItems([]);
     setInputs([]);
+    setUnknowns([]);
     setCursor(0);
     setResult(null);
     setError("");
@@ -200,6 +202,7 @@ export function TestRunner({
         const data = (await res.json()) as { items: ItemDTO[] };
         setItems(data.items);
         setInputs(new Array(data.items.length).fill(""));
+        setUnknowns(new Array(data.items.length).fill(false));
         setCursor(0);
         setSentSelection({
           random: opts.random,
@@ -241,11 +244,27 @@ export function TestRunner({
     });
   }, []);
 
+  /** わからない を現在の問題にセットし、入力をクリア＋次へ進む（または採点へ）。 */
+  const markUnknownAt = useCallback((i: number) => {
+    setUnknowns((prev) => {
+      const next = [...prev];
+      next[i] = true;
+      return next;
+    });
+    // 入力もクリアする（quiz: 選択解除、math: 空）。
+    setInputs((prev) => {
+      const next = [...prev];
+      next[i] = "";
+      return next;
+    });
+  }, []);
+
   const finish = useCallback(async () => {
     setBusy(true);
     setError("");
     try {
       const answers = items.map((it, i) => {
+        const isUnknown = unknowns[i] === true;
         if (isQuizItem(it)) {
           const raw = inputs[i];
           const choiceIndex = raw === "" || raw == null ? -1 : Number(raw);
@@ -254,6 +273,7 @@ export function TestRunner({
             itemId: it.itemId,
             token: it.token,
             choiceIndex,
+            ...(isUnknown ? { unknown: true } : {}),
           };
         }
         return {
@@ -261,6 +281,7 @@ export function TestRunner({
           answerToken: it.answerToken,
           userInput: inputs[i] ?? "",
           prompt: it.prompt,
+          ...(isUnknown ? { unknown: true } : {}),
         };
       });
       const selectionBody = sentSelection.random
@@ -284,7 +305,7 @@ export function TestRunner({
     } finally {
       setBusy(false);
     }
-  }, [items, inputs, activeSubject, sentSelection]);
+  }, [items, inputs, unknowns, activeSubject, sentSelection]);
 
   const restart = useCallback(
     (onlyWrongUnits?: string[]) => {
@@ -294,6 +315,7 @@ export function TestRunner({
       setPhase("setup");
       setItems([]);
       setInputs([]);
+      setUnknowns([]);
       setCursor(0);
       setResult(null);
       setError("");
@@ -496,6 +518,30 @@ export function TestRunner({
                 else setCursor((c) => c + 1);
               }}
             />
+          )}
+
+          {/* わからない ボタン（この問題に未フラグのときのみ） */}
+          {!unknowns[cursor] && (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  markUnknownAt(cursor);
+                  if (!isLast) setCursor((c) => c + 1);
+                }}
+                disabled={busy}
+                className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:border-terra/50 hover:text-terra disabled:opacity-50"
+              >
+                わからない
+              </button>
+            </div>
+          )}
+          {unknowns[cursor] && (
+            <div className="mt-3 flex justify-end">
+              <span className="rounded-lg border border-terra/40 bg-terra/5 px-3 py-1.5 text-sm text-terra">
+                わからない 済
+              </span>
+            </div>
           )}
 
           <div className="mt-4 flex justify-between gap-2">

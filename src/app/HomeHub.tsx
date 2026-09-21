@@ -6,6 +6,7 @@ import {
   getParentMessage,
   setParentMessage,
   getActiveChild,
+  getChildId,
   type Progress,
 } from "@/lib/progress";
 import { fetchSummary } from "@/lib/account-client";
@@ -518,8 +519,11 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
-  // ひとこと（やさしく入れ替わる“動き”）
+  // ひとこと（やさしく入れ替わる「動き」）
   const [msgIdx, setMsgIdx] = useState(0);
+
+  // まちがいノート件数
+  const [mistakeCount, setMistakeCount] = useState<number | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -545,6 +549,19 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
         });
       });
     }
+
+    // まちがいノート件数（childId があれば常に取得）。
+    const cid = getChildId();
+    if (cid) {
+      fetch(`/api/review/list?childId=${encodeURIComponent(cid)}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((d: { count?: number } | null) => {
+          if (!alive) return;
+          if (d && typeof d.count === "number") setMistakeCount(d.count);
+        })
+        .catch(() => { /* サイレント失敗 */ });
+    }
+
     return () => {
       alive = false;
     };
@@ -771,6 +788,46 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
             tagline={c.taglineEikaiwa}
             copy={c}
           />
+
+          {/* まちがいノート: 全学齢共通・独立トラック */}
+          {mistakeCount !== null && (
+            <a
+              href="/review"
+              className="group flex h-full flex-col rounded-2xl border border-line bg-white/70 p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-sky/50 hover:shadow-card"
+              style={{ borderTopColor: "#f59e0b", borderTopWidth: 3 }}
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
+                  style={{ background: "#f59e0b22" }}
+                >
+                  📒
+                </span>
+                <div className="min-w-0">
+                  <p className="font-serif text-lg font-extrabold text-ink group-hover:text-sky">
+                    まちがいノート
+                    {mistakeCount > 0 && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-terra/10 px-2 py-0.5 text-[12px] font-bold text-terra">
+                        {mistakeCount}問
+                      </span>
+                    )}
+                  </p>
+                  <p className="truncate text-[12px] text-ink-soft">
+                    {mistakeCount === 0
+                      ? "まちがいはありません"
+                      : "まちがえた もんだいを やり直せる"}
+                  </p>
+                </div>
+              </div>
+              <span
+                className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-terra"
+                aria-hidden="true"
+              >
+                {mistakeCount === 0 ? "みる →" : "やり直す →"}
+              </span>
+            </a>
+          )}
 
           {/* 探究（豆知識）: 全学齢で使える（学年は対話内でえらべる） */}
           <CourseCard

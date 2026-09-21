@@ -7,6 +7,7 @@ import type {
   TestResultRow,
   AttemptRow,
   TestResultFullRow,
+  MistakeRow,
 } from "./index";
 
 /**
@@ -26,6 +27,7 @@ export type {
   TestResultRow,
   AttemptRow,
   TestResultFullRow,
+  MistakeRow,
   DbBackend,
 } from "./index";
 
@@ -99,4 +101,15 @@ export async function listTestResults(
     console.error("[db:read] listTestResults failed:", err);
     return [];
   }
+}
+
+/** その子のまちがい一覧。失敗時は空配列。 */
+export async function listMistakes(childId: string, limit = 200): Promise<MistakeRow[]> {
+  try { return await getStore().listMistakes(childId, limit); }
+  catch (err) { console.error("[db:read] listMistakes failed:", err); return []; }
+}
+/** その子のまちがい件数。失敗時は 0。 */
+export async function countMistakes(childId: string): Promise<number> {
+  try { return await getStore().countMistakes(childId); }
+  catch (err) { console.error("[db:read] countMistakes failed:", err); return 0; }
 }

@@ -257,6 +257,44 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
     fetchAiFeedback,
   ]);
 
+  /** わからない → userInput="", unknown:true で採点し、不正解として表示する。 */
+  const submitUnknown = useCallback(async () => {
+    if (!selectedUnit || !problem || !answerToken) return;
+    if (phase === "graded" || grading) return;
+    const gradeUnitId = currentUnitId || selectedUnit.id;
+    setGrading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/math/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: gradeUnitId,
+          answerToken,
+          userInput: "",
+          unknown: true,
+          prompt: problem.prompt,
+          childId: getChildId(),
+        }),
+      });
+      if (!res.ok) throw new Error(`grade ${res.status}`);
+      const data = (await res.json()) as GradeDTO;
+      setResult(data);
+      setPhase("graded");
+      setAttemptCount((n) => n + 1);
+      // わからない = 不正解扱い（正解数には加算しない）。
+      try {
+        recordAttempt("math", gradeUnitId, false);
+      } catch {
+        /* noop */
+      }
+    } catch {
+      setError("さいてんに しっぱいしました。もういちど ためしてね。");
+    } finally {
+      setGrading(false);
+    }
+  }, [selectedUnit, problem, answerToken, currentUnitId, phase, grading]);
+
   /** ヒント表示（静的・生成AI不使用。problem API が返した固定文を出す）。 */
   const toggleHint = useCallback(() => {
     setShowHint((v) => !v);
@@ -511,6 +549,14 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
                   className="rounded-full border border-line bg-paper px-5 py-2 text-sm font-bold text-ink-soft transition hover:text-ink disabled:opacity-50"
                 >
                   {showHint ? "ヒントを かくす" : "ヒント"}
+                </button>
+                <button
+                  type="button"
+                  onClick={submitUnknown}
+                  disabled={grading}
+                  className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:border-terra/50 hover:text-terra disabled:opacity-50"
+                >
+                  わからない
                 </button>
               </div>
             ) : (
