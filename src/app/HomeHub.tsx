@@ -236,6 +236,7 @@ function StagePicker({ onPick, onPickTrack }: { onPick: (s: Stage) => void; onPi
           </button>
         ))}
         <button
+          type="button"
           onClick={onPickTrack}
           className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-paper p-5 text-center transition hover:-translate-y-0.5 hover:border-sky hover:shadow-soft"
         >
@@ -583,11 +584,11 @@ function EikaiwaHome({
                 <span className="text-faint"> 問</span>{" "}
                 <span className="text-faint">のべ問題数</span>
               </span>
-              <span className="font-bold" style={{ color: "#06b6d4" }}>
+              <span className="font-bold" style={{ color: accentColor("cyan") }}>
                 正答率 {ratio}%
               </span>
             </div>
-            <Bar ratio={ratio} color="#06b6d4" />
+            <Bar ratio={ratio} color={accentColor("cyan")} />
           </div>
         )}
       </section>
@@ -600,12 +601,12 @@ function EikaiwaHome({
         <a
           href="/learn/eikaiwa?grade=TOEIC500"
           className="group flex items-center gap-3 rounded-2xl border border-line bg-white/70 p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-sky/50 hover:shadow-card"
-          style={{ borderTopColor: "#06b6d4", borderTopWidth: 3 }}
+          style={{ borderTopColor: accentColor("cyan"), borderTopWidth: 3 }}
         >
           <span
             aria-hidden="true"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
-            style={{ background: "#06b6d422" }}
+            style={{ background: `${accentColor("cyan")}22` }}
           >
             🗣️
           </span>
