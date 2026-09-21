@@ -7,6 +7,7 @@ import type {
   TestResultRow,
   AttemptRow,
   TestResultFullRow,
+  MistakeRow,
 } from "./index";
 
 /**
@@ -103,7 +104,7 @@ export async function listTestResults(
 }
 
 /** その子のまちがい一覧。失敗時は空配列。 */
-export async function listMistakes(childId: string, limit = 200): Promise<import("./index").MistakeRow[]> {
+export async function listMistakes(childId: string, limit = 200): Promise<MistakeRow[]> {
   try { return await getStore().listMistakes(childId, limit); }
   catch (err) { console.error("[db:read] listMistakes failed:", err); return []; }
 }

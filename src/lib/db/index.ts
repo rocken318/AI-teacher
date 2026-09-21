@@ -571,7 +571,7 @@ class PostgresStore implements Store {
     const rows = await this.sql`
       SELECT id, subject, unit_id, kind, item_id, problem, created_at
       FROM mistakes WHERE child_id = ${childId}
-      ORDER BY created_at DESC LIMIT ${limit}
+      ORDER BY created_at DESC, id DESC LIMIT ${limit}
     `;
     return (rows as any[]).map((r) => ({
       id: String(r.id),
