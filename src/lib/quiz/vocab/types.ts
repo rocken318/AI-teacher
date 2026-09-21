@@ -10,8 +10,8 @@ import type { QuizGrade, Subject } from "@/lib/quiz/types";
 export interface VocabEntry {
   /** 英単語（見出し語）。例 "achieve"。 */
   word: string;
-  /** 品詞ラベル（表示用）。例 "動" "名" "形"。 */
-  pos: string;
+  /** 品詞ラベル（表示用）。例 "動" "名" "形"。自動生成パックでは省略可。 */
+  pos?: string;
   /** 日本語の意味（1義）。これが正解の選択肢になる。例 "達成する"。 */
   ja: string;
   /** 短い例文・コロケーション（任意）。例 "achieve a goal（目標を達成する）"。 */
