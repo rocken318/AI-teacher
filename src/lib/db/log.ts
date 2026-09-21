@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { getStore, getDbBackend } from "./index";
+import type { MistakeInput } from "./index";
 
 /**
  * ログ保存ヘルパー（安全パイプラインの [ログ保存] 段）。
@@ -70,6 +71,16 @@ export function logAttempt(
   runAfterResponse(() =>
     getStore().recordAttempt(id, childId, subject, unitId, correct, source),
   );
+}
+
+/** まちがいを保存する（after 経由・ベストエフォート）。 */
+export function logMistake(input: Omit<MistakeInput, "id">): void {
+  const id = randomUUID();
+  runAfterResponse(() => getStore().addMistake({ id, ...input }));
+}
+/** まちがいを削除する（即 await 用・解き直し正解/もう覚えた）。 */
+export async function removeMistakeNow(childId: string, mistakeId: string): Promise<void> {
+  await getStore().removeMistake(childId, mistakeId);
 }
 
 /** テスト結果（1回分）を保存する。 */
