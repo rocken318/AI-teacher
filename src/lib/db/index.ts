@@ -497,6 +497,7 @@ class PostgresStore implements Store {
     await this.ready;
     await this.sql`UPDATE attempts SET child_id = ${toChildId} WHERE child_id = ${fromChildId}`;
     await this.sql`UPDATE test_results SET child_id = ${toChildId} WHERE child_id = ${fromChildId}`;
+    await this.sql`UPDATE mistakes SET child_id = ${toChildId} WHERE child_id = ${fromChildId}`;
   }
 
   async getChildProgress(childId: string): Promise<ProgressSummary> {
@@ -1048,6 +1049,10 @@ class SqliteStore implements Store {
         fromChildId,
       );
       db.prepare("UPDATE test_results SET child_id = ? WHERE child_id = ?").run(
+        toChildId,
+        fromChildId,
+      );
+      db.prepare("UPDATE mistakes SET child_id = ? WHERE child_id = ?").run(
         toChildId,
         fromChildId,
       );

@@ -29,3 +29,15 @@ test("匿名idの attempts/test_results をプロフィールidへ付け替え�
   const hist = await s.getTestHistory("prof-1", "math|u1", 50);
   expect(hist.length).toBe(1);
 });
+
+test("まちがいノートも付け替える（引き継ぎでノートが消えない）", async () => {
+  const { getStore } = await import("@/lib/db");
+  const s = getStore();
+  await s.addMistake({ id: "m1", childId: "anon", subject: "science", unitId: "u1", kind: "quiz", itemId: "i1", problem: null });
+  await s.addMistake({ id: "m2", childId: "anon", subject: "math", unitId: "div-basic", kind: "math", itemId: null, problem: '{"prompt":"1+1","answer":"2"}' });
+
+  await s.reassignChildData("anon", "prof-1");
+
+  expect(await s.countMistakes("anon")).toBe(0);
+  expect(await s.countMistakes("prof-1")).toBe(2);
+});
