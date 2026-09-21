@@ -21,6 +21,7 @@ import {
   setGrade as persistGrade,
   clearGrade,
 } from "@/lib/stage";
+import { getTrack, setTrack, clearTrack } from "@/lib/track";
 // マスコット（Sensei）は一旦オフ。復活できるようコンポーネントは残置。
 // import { Sensei } from "@/components/Sensei";
 
@@ -208,7 +209,7 @@ function CourseCard({
 }
 
 /** 初回に学齢を選ぶゲート。 */
-function StagePicker({ onPick }: { onPick: (s: Stage) => void }) {
+function StagePicker({ onPick, onPickTrack }: { onPick: (s: Stage) => void; onPickTrack: () => void }) {
   return (
     <div className="rounded-[1.5rem] border border-line bg-white/70 p-6 shadow-card sm:p-8">
       <h2 className="text-center font-serif text-xl font-extrabold text-ink sm:text-2xl">
@@ -217,7 +218,7 @@ function StagePicker({ onPick }: { onPick: (s: Stage) => void }) {
       <p className="mt-2 text-center text-[13px] text-ink-soft">
         学年に合わせて、見た目と内容が変わります（あとで変更できます）。
       </p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {STAGES.map((s) => (
           <button
             key={s.key}
@@ -234,6 +235,20 @@ function StagePicker({ onPick }: { onPick: (s: Stage) => void }) {
             <span className="mt-1 text-[12px] text-ink-soft">{s.tagline}</span>
           </button>
         ))}
+        <button
+          type="button"
+          onClick={onPickTrack}
+          className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-paper p-5 text-center transition hover:-translate-y-0.5 hover:border-sky hover:shadow-soft"
+        >
+          <span aria-hidden="true" className="text-4xl">
+            🗣️
+          </span>
+          <span className="font-serif text-lg font-extrabold text-ink">
+            実用英語
+          </span>
+          <span className="text-[12px] text-faint">TOEIC</span>
+          <span className="mt-1 text-[12px] text-ink-soft">TOEIC語彙を4択で</span>
+        </button>
       </div>
     </div>
   );
@@ -509,9 +524,116 @@ const COPY: Record<Stage, Copy> = {
   },
 };
 
+/** 実用英語モードのホーム（TOEICバンド導線＋専用進捗）。5教科カードは出さない。 */
+function EikaiwaHome({
+  progress,
+  onBackToSchool,
+}: {
+  progress: Progress | null;
+  onBackToSchool: () => void;
+}) {
+  const eikaiwa = progress?.bySubject["eikaiwa"] ?? { attempts: 0, correct: 0 };
+  const { attempts, correct } = eikaiwa;
+  const ratio = pct(correct, attempts);
+
+  return (
+    <div className="space-y-8">
+      {/* ヒーロー */}
+      <section className="anim-in text-center">
+        <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-terra">
+          実用英語トラック
+        </span>
+        <h1 className="mt-3 font-serif text-3xl font-extrabold leading-tight text-ink sm:text-4xl">
+          <span aria-hidden="true">🗣️</span>{" "}
+          <span className="relative inline-block text-sky">
+            実用英語
+            <span
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-1 -z-10 h-[6px] rounded bg-terra/80"
+            />
+          </span>
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-ink-soft">
+          TOEIC語彙を4択でおぼえる
+        </p>
+      </section>
+
+      {/* 学校の学習に戻るボタン */}
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={onBackToSchool}
+          className="rounded-full border border-line bg-paper px-5 py-2 text-[13px] font-bold text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:text-ink hover:shadow-card"
+        >
+          ← 学校の学習にもどる
+        </button>
+      </div>
+
+      {/* 実用英語の進捗カード */}
+      <section className="rounded-[1.5rem] border border-line bg-white/70 p-5 shadow-card sm:p-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-terra">
+          実用英語の進捗
+        </p>
+        {attempts === 0 ? (
+          <p className="mt-3 text-[14px] text-faint">まだ挑戦していません</p>
+        ) : (
+          <div className="mt-3">
+            <div className="mb-1 flex items-baseline justify-between text-[12px]">
+              <span className="font-bold text-ink-soft">
+                <span className="font-serif text-ink">{attempts}</span>
+                <span className="text-faint"> 問</span>{" "}
+                <span className="text-faint">のべ問題数</span>
+              </span>
+              <span className="font-bold" style={{ color: accentColor("cyan") }}>
+                正答率 {ratio}%
+              </span>
+            </div>
+            <Bar ratio={ratio} color={accentColor("cyan")} />
+          </div>
+        )}
+      </section>
+
+      {/* TOEICバンド導線 */}
+      <section>
+        <h2 className="mb-3 font-serif text-lg font-extrabold text-ink">
+          コースを選ぶ
+        </h2>
+        <a
+          href="/learn/eikaiwa?grade=TOEIC500"
+          className="group flex items-center gap-3 rounded-2xl border border-line bg-white/70 p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-sky/50 hover:shadow-card"
+          style={{ borderTopColor: accentColor("cyan"), borderTopWidth: 3 }}
+        >
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
+            style={{ background: `${accentColor("cyan")}22` }}
+          >
+            🗣️
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-serif text-lg font-extrabold text-ink group-hover:text-sky">
+              TOEIC500 の語彙を練習する
+            </p>
+            <p className="truncate text-[12px] text-ink-soft">
+              4択クイズで TOEIC500 レベルの英単語を習得
+            </p>
+          </div>
+          <span
+            className="shrink-0 text-[12px] font-bold text-terra"
+            aria-hidden="true"
+          >
+            始める →
+          </span>
+        </a>
+      </section>
+    </div>
+  );
+}
+
 export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   // SSR 安全: マウント後に localStorage を読む
   const [mounted, setMounted] = useState(false);
+  const [track, setTrackState] = useState<"eikaiwa" | null>(null);
   const [stage, setStageState] = useState<Stage | null>(null);
   const [grade, setGradeState] = useState<string | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
@@ -528,6 +650,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   useEffect(() => {
     let alive = true;
     setMounted(true);
+    setTrackState(getTrack());
     const s = getStage();
     setStageState(s);
     // 学年は、記憶した学齢と一致するときだけ採用する。
@@ -582,6 +705,11 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
     setGradeState(null);
   };
 
+  const pickTrack = () => {
+    setTrack("eikaiwa");
+    setTrackState("eikaiwa");
+  };
+
   const pickGrade = (g: string) => {
     persistGrade(g);
     setGradeState(g);
@@ -598,9 +726,19 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
     return <div className="min-h-[40vh]" />;
   }
 
+  // 実用英語トラックが選ばれていたら専用ホームへ
+  if (track === "eikaiwa") {
+    return (
+      <EikaiwaHome
+        progress={progress}
+        onBackToSchool={() => { clearTrack(); setTrackState(null); }}
+      />
+    );
+  }
+
   // 初回（未選択）は学齢ピッカー → つぎに学年ピッカー
   if (stage === null) {
-    return <StagePicker onPick={pickStage} />;
+    return <StagePicker onPick={pickStage} onPickTrack={pickTrack} />;
   }
   if (grade === null) {
     return <GradePicker stage={stage} onPick={pickGrade} onBack={backToStage} />;
