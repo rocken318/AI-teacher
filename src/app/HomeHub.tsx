@@ -825,6 +825,14 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
             onChange={pickGrade}
             chooseLabel="学年："
           />
+          {/* 実用英語モードへの入口（再訪ユーザーは学齢ピッカーを通らないため常設）。 */}
+          <button
+            type="button"
+            onClick={pickTrack}
+            className="rounded-full border border-line bg-white/60 px-3 py-1 text-[12px] font-bold text-ink-soft transition hover:-translate-y-0.5 hover:border-sky hover:text-sky"
+          >
+            🗣️ 実用英語へ
+          </button>
         </div>
       </div>
 
