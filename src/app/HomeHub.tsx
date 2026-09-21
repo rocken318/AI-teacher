@@ -397,6 +397,8 @@ type Copy = {
   taglineQuiz: string;
   taglineExplore: string;
   exploreLabel: string;
+  taglineEikaiwa: string;
+  eikaiwaLabel: string;
   comingSoonBadge: string;
   comingSoonBody: string;
   notTried: string;
@@ -428,6 +430,8 @@ const COPY: Record<Stage, Copy> = {
     taglineQuiz: "クイズで まなぶ",
     taglineExplore: "AIと いっしょに かんがえる",
     exploreLabel: "探究（豆知識）",
+    taglineEikaiwa: "英単語を 4たくで おぼえる",
+    eikaiwaLabel: "英会話（英単語）",
     comingSoonBadge: "準備中",
     comingSoonBody: "この学年の もんだいは もうすぐ とうじょう します。",
     notTried: "まだ ちょうせんしていないよ",
@@ -457,6 +461,8 @@ const COPY: Record<Stage, Copy> = {
     taglineQuiz: "一問一答で確認",
     taglineExplore: "AIと考えを深める探究",
     exploreLabel: "探究",
+    taglineEikaiwa: "TOEIC語彙を4択でおぼえる",
+    eikaiwaLabel: "英会話（英単語）",
     comingSoonBadge: "準備中",
     comingSoonBody: "この学年の問題は近日公開予定です。",
     notTried: "まだ挑戦していません",
@@ -486,6 +492,8 @@ const COPY: Record<Stage, Copy> = {
     taglineQuiz: "一問一答で知識を確認",
     taglineExplore: "AIとの対話で思考を深める",
     exploreLabel: "探究",
+    taglineEikaiwa: "TOEIC語彙を4択で強化",
+    eikaiwaLabel: "英会話（TOEIC語彙）",
     comingSoonBadge: "準備中",
     comingSoonBody: "この学年の問題は近日公開予定です。",
     notTried: "未挑戦",
@@ -585,6 +593,8 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
 
   // 算数の進捗（別枠カード）
   const math = bySubject["math"] ?? { attempts: 0, correct: 0 };
+  // 英会話（英単語）の進捗。学齢に依存しない独立トラック。
+  const eikaiwa = bySubject["eikaiwa"] ?? { attempts: 0, correct: 0 };
 
   const startEdit = () => {
     setDraft(parentMsg);
@@ -729,6 +739,18 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
               />
             );
           })}
+
+          {/* 英会話（英単語）: 学齢に依存しない独立トラック（TOEICバンドで段階化） */}
+          <CourseCard
+            href="/learn/eikaiwa"
+            emoji="🗣️"
+            label={c.eikaiwaLabel}
+            accent={accentColor("cyan")}
+            attempts={eikaiwa.attempts}
+            correct={eikaiwa.correct}
+            tagline={c.taglineEikaiwa}
+            copy={c}
+          />
 
           {/* 探究（豆知識）: 全学齢で使える（学年は対話内でえらべる） */}
           <CourseCard

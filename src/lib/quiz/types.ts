@@ -5,16 +5,23 @@
 //
 // バンク（別チーム）と学習UI（ハブ）はこのファイルの export だけに依存する。
 
-/** 対象教科。中学は社会を「歴史」「地理」に分ける。 */
+/**
+ * 対象教科。中学は社会を「歴史」「地理」に分ける。
+ * eikaiwa（英会話）は学齢に依存しない独立トラック（TOEICバンドで段階化）。
+ */
 export type Subject =
   | "science"
   | "social"
   | "history"
   | "geography"
   | "japanese"
-  | "english";
+  | "english"
+  | "eikaiwa";
 
-/** 対象学年（小4〜高3）。 */
+/**
+ * レベル。小4〜高3の学年に加え、英会話（eikaiwa）は学年ではなく
+ * TOEICバンド文字列を流用する（将来 "TOEIC600" 等を追加）。
+ */
 export type QuizGrade =
   | "小4"
   | "小5"
@@ -24,7 +31,8 @@ export type QuizGrade =
   | "中3"
   | "高1"
   | "高2"
-  | "高3";
+  | "高3"
+  | "TOEIC500";
 
 /**
  * 1問（4択などの選択式）。

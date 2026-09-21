@@ -57,6 +57,7 @@ import { SCIENCE_H1_PHYS1 } from "./science_h1_phys1";
 import { SCIENCE_H1_PHYS2 } from "./science_h1_phys2";
 import { SCIENCE_H1_EARTH1 } from "./science_h1_earth1";
 import { SCIENCE_H1_EARTH2 } from "./science_h1_earth2";
+import { EIKAIWA_UNITS } from "./eikaiwa";
 
 export type {
   Subject,
@@ -140,9 +141,15 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...SCIENCE_H1_PHYS2,
   ...SCIENCE_H1_EARTH1,
   ...SCIENCE_H1_EARTH2,
+  // 英会話（TOEIC語彙）: 学齢に依存しない独立トラック。
+  ...EIKAIWA_UNITS,
 ]);
 
-/** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
+/**
+ * 学年の並び順（小→高）。UIのタブ順やソートに使う。
+ * 末尾に英会話の TOEIC バンドを置く（学齢トラックとは別軸だが、subjectGrades が
+ * この順序で絞り込むため、eikaiwa の学年タブを出すには一覧に含める必要がある）。
+ */
 export const GRADE_ORDER: QuizGrade[] = [
   "小4",
   "小5",
@@ -153,6 +160,7 @@ export const GRADE_ORDER: QuizGrade[] = [
   "高1",
   "高2",
   "高3",
+  "TOEIC500",
 ];
 
 /** 対象学年の一覧（後方互換）。 */
@@ -170,6 +178,7 @@ export const SUBJECTS: SubjectMeta[] = [
   { key: "geography", label: "地理", emoji: "🌏", accent: "teal" },
   { key: "japanese", label: "国語", emoji: "✍️", accent: "rose" },
   { key: "english", label: "英語", emoji: "🔤", accent: "sky" },
+  { key: "eikaiwa", label: "英会話", emoji: "🗣️", accent: "cyan" },
 ];
 
 /** 内部検索用マップ。 */
