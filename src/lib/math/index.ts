@@ -13,6 +13,7 @@ import { UNIT_DEFS_B } from "./units_b";
 import { UNIT_DEFS_C } from "./units_c";
 import { UNIT_DEFS_J2 } from "./units_j2";
 import { UNIT_DEFS_J2D } from "./units_j2d";
+import { UNIT_DEFS_H1 } from "./units_h1";
 
 export type { Grade, AnswerType, Problem, Unit, GradeResult } from "./types";
 
@@ -27,6 +28,7 @@ const ALL_DEFS: UnitDef[] = [
   ...UNIT_DEFS_C,
   ...UNIT_DEFS_J2,
   ...UNIT_DEFS_J2D,
+  ...UNIT_DEFS_H1,
 ];
 
 /** 全単元（メタ情報のみ。ジェネレータは公開しない）。 */
