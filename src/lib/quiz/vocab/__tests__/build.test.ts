@@ -10,19 +10,33 @@ import {
   TOEIC500_C_UNITS,
   TOEIC500_C_VOCAB,
 } from "@/lib/quiz/vocab/pack_toeic500_c";
+import {
+  TOEIC500_D_UNITS,
+  TOEIC500_D_VOCAB,
+} from "@/lib/quiz/vocab/pack_toeic500_d";
 
 /**
  * 語彙ジェネレーターの不変条件。
  * 生成AIを使わず決定的に4択を作るため、構造の健全性と「同じ入力→同じ出力」を担保する。
  */
 
-const ALL_VOCAB = [...TOEIC500_VOCAB, ...TOEIC500_B_VOCAB, ...TOEIC500_C_VOCAB];
+const ALL_VOCAB = [
+  ...TOEIC500_VOCAB,
+  ...TOEIC500_B_VOCAB,
+  ...TOEIC500_C_VOCAB,
+  ...TOEIC500_D_VOCAB,
+];
 
 const PACK = {
   subject: "eikaiwa" as const,
   grade: "TOEIC500" as const,
   idPrefix: "eikaiwa-500",
-  units: [...TOEIC500_UNITS, ...TOEIC500_B_UNITS, ...TOEIC500_C_UNITS],
+  units: [
+    ...TOEIC500_UNITS,
+    ...TOEIC500_B_UNITS,
+    ...TOEIC500_C_UNITS,
+    ...TOEIC500_D_UNITS,
+  ],
   vocab: ALL_VOCAB,
 };
 
@@ -31,9 +45,9 @@ describe("buildVocabUnits（TOEIC500）", () => {
   const items = units.flatMap((u) => u.items);
 
   test("メタどおりの単元数・id・教科・バンド", () => {
-    // A(1-3)+B(4-6)+C(7-16) の16単元。
+    // A(1-3)+B(4-6)+C(7-16)+D(17-27) の27単元。
     expect(units.map((u) => u.id)).toEqual(
-      Array.from({ length: 16 }, (_, i) => `eikaiwa-500-${i + 1}`),
+      Array.from({ length: 27 }, (_, i) => `eikaiwa-500-${i + 1}`),
     );
     for (const u of units) {
       expect(u.subject).toBe("eikaiwa");

@@ -10,6 +10,7 @@ import { buildVocabUnits } from "./vocab/build";
 import { TOEIC500_UNITS, TOEIC500_VOCAB } from "./vocab/pack_toeic500";
 import { TOEIC500_B_UNITS, TOEIC500_B_VOCAB } from "./vocab/pack_toeic500_b";
 import { TOEIC500_C_UNITS, TOEIC500_C_VOCAB } from "./vocab/pack_toeic500_c";
+import { TOEIC500_D_UNITS, TOEIC500_D_VOCAB } from "./vocab/pack_toeic500_d";
 import { TOEIC600_UNITS, TOEIC600_VOCAB } from "./vocab/pack_toeic600";
 import { TOEIC730_UNITS, TOEIC730_VOCAB } from "./vocab/pack_toeic730";
 
@@ -50,13 +51,13 @@ function buildBand(
   return [...forward, ...reverse];
 }
 
-// TOEIC500: 手作り(1〜3)＋ejdict中級由来(4〜6)＋並列キュレーションの頻出基礎語(7〜16)。
+// TOEIC500: 手作り(1〜3)＋ejdict中級(4〜6)＋並列キュレーションの頻出基礎語(7〜16, 17〜27)。
 const TOEIC500_BAND = buildBand(
   "TOEIC500",
   "eikaiwa-500",
   "TOEIC500",
-  [...TOEIC500_UNITS, ...TOEIC500_B_UNITS, ...TOEIC500_C_UNITS],
-  [...TOEIC500_VOCAB, ...TOEIC500_B_VOCAB, ...TOEIC500_C_VOCAB],
+  [...TOEIC500_UNITS, ...TOEIC500_B_UNITS, ...TOEIC500_C_UNITS, ...TOEIC500_D_UNITS],
+  [...TOEIC500_VOCAB, ...TOEIC500_B_VOCAB, ...TOEIC500_C_VOCAB, ...TOEIC500_D_VOCAB],
 );
 
 // TOEIC600: 中級100語（ejdict取込→キュレーション）。
