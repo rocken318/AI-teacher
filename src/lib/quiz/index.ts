@@ -43,6 +43,12 @@ import { SCIENCE_J2D_MORE_B } from "./science_j2d_more_b";
 import { ENGLISH_J2_MORE } from "./english_j2_more";
 import { ENGLISH_J2D_MORE_A } from "./english_j2d_more_a";
 import { ENGLISH_J2D_MORE_B } from "./english_j2d_more_b";
+import { HISTORY_H1_1 } from "./history_h1_1";
+import { HISTORY_H1_2 } from "./history_h1_2";
+import { HISTORY_H1_3 } from "./history_h1_3";
+import { HISTORY_H1_4 } from "./history_h1_4";
+import { HISTORY_H1_5 } from "./history_h1_5";
+import { HISTORY_H1_6 } from "./history_h1_6";
 
 export type {
   Subject,
@@ -112,6 +118,12 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...SCIENCE_J2_MORE,
   ...SCIENCE_J2D_MORE_A,
   ...SCIENCE_J2D_MORE_B,
+  ...HISTORY_H1_1,
+  ...HISTORY_H1_2,
+  ...HISTORY_H1_3,
+  ...HISTORY_H1_4,
+  ...HISTORY_H1_5,
+  ...HISTORY_H1_6,
 ]);
 
 /** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
