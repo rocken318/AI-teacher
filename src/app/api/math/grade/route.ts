@@ -87,7 +87,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const diagnosis = correct ? null : diagnose(unitId, problem, userInput);
+  // 「わからない」(unknown) は入力が無いので診断もしない（correct 済みも同様）。
+  const diagnosis = correct || isUnknown ? null : diagnose(unitId, problem, userInput);
 
   return NextResponse.json({
     correct,

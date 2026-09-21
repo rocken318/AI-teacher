@@ -35,3 +35,14 @@ test("わからない(unknown)は correct:false で記録し、answerIndex/expla
   const { getStore } = await import("@/lib/db");
   expect(await getStore().countMistakes("c1")).toBe(1);
 });
+
+test("不正解でまちがいが1件入り、同じ問題は重複しない", async () => {
+  const { unitId, item } = firstItem();
+  const token = encodeQuizToken({ unitId, itemId: item.id, answerIndex: item.answerIndex });
+  const wrong = (item.answerIndex + 1) % item.choices.length; // 正解でない選択肢
+  const { POST } = await import("../grade/route");
+  await POST(req({ token, choiceIndex: wrong, childId: "c1" }) as never);
+  await POST(req({ token, choiceIndex: wrong, childId: "c1" }) as never);
+  const { getStore } = await import("@/lib/db");
+  expect(await getStore().countMistakes("c1")).toBe(1);
+});

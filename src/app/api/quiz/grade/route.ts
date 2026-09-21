@@ -8,11 +8,12 @@ export const runtime = "nodejs";
 /**
  * 採点 API。
  *
- * リクエスト: { token: string, choiceIndex: number }
+ * リクエスト: { token: string, choiceIndex: number, unknown?: boolean, childId?: string }
  * レスポンス: { correct: boolean, answerIndex: number, explanation: string, hint: string | null }
  *
  * token を復号して { unitId, itemId, answerIndex } を取り出し、
  * gradeQuiz(unitId, itemId, choiceIndex) で採点する（正解はサーバー内で確定）。
+ * unknown=true（「わからない」）は correct:false 扱い（answerIndex/解説は返す・choiceIndex は不要）。
  * 壊れた／改ざんされたトークンは 400。
  * 解説は gradeQuiz が返すバンクの authored 文言（AIは使わない）。
  */
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
   }
   const payload = decodeQuizToken(token);
   if (!payload) return NextResponse.json({ error: "invalid token" }, { status: 400 });
+  // unknown 時は範囲外の -1 を渡す（不正解になり、choiceHints[-1] は無いので hint は null）。
   const graded = gradeQuiz(payload.unitId, payload.itemId, isUnknown ? -1 : (choiceIndex as number));
   if (!graded) return NextResponse.json({ error: "invalid token" }, { status: 400 });
   const correct = isUnknown ? false : graded.correct;
