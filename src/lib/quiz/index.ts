@@ -24,6 +24,7 @@ import { GEOGRAPHY_UNITS_J2 } from "./geography_j2";
 import { GEOGRAPHY_J2_MORE } from "./geography_j2_more";
 import { JAPANESE_UNITS } from "./japanese";
 import { JAPANESE_UNITS_J2 } from "./japanese_j2";
+import { JAPANESE_J2_MORE } from "./japanese_j2_more";
 import { ENGLISH_UNITS } from "./english";
 import { ENGLISH_UNITS_J2 } from "./english_j2";
 import { SCIENCE_UNITS_J2D } from "./science_j2d";
@@ -33,6 +34,8 @@ import { GEOGRAPHY_UNITS_J2D } from "./geography_j2d";
 import { GEOGRAPHY_J2D_MORE_A } from "./geography_j2d_more_a";
 import { GEOGRAPHY_J2D_MORE_B } from "./geography_j2d_more_b";
 import { JAPANESE_UNITS_J2D } from "./japanese_j2d";
+import { JAPANESE_J2D_MORE_A } from "./japanese_j2d_more_a";
+import { JAPANESE_J2D_MORE_B } from "./japanese_j2d_more_b";
 import { ENGLISH_UNITS_J2D } from "./english_j2d";
 import { SCIENCE_J2_MORE } from "./science_j2_more";
 import { SCIENCE_J2D_MORE_A } from "./science_j2d_more_a";
@@ -90,6 +93,7 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...GEOGRAPHY_J2_MORE,
   ...JAPANESE_UNITS,
   ...JAPANESE_UNITS_J2,
+  ...JAPANESE_J2_MORE,
   ...ENGLISH_UNITS,
   ...ENGLISH_UNITS_J2,
   ...SCIENCE_UNITS_J2D,
@@ -99,6 +103,8 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...GEOGRAPHY_J2D_MORE_A,
   ...GEOGRAPHY_J2D_MORE_B,
   ...JAPANESE_UNITS_J2D,
+  ...JAPANESE_J2D_MORE_A,
+  ...JAPANESE_J2D_MORE_B,
   ...ENGLISH_UNITS_J2D,
   ...ENGLISH_J2_MORE,
   ...ENGLISH_J2D_MORE_A,
