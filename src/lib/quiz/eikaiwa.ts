@@ -1,44 +1,69 @@
 // 英会話（TOEIC語彙）トラックの単元。
 //
 // 学齢（小中高）に依存しない独立トラック。レベルは学年ではなく TOEIC バンド。
-// 単元は語彙パックから決定的に生成する（生成AIは使わない）。将来 TOEIC600 等は
-// 別パックを buildVocabUnits して spread するだけで増やせる。
+// 単元は語彙パックから決定的に生成する（生成AIは使わない）。新しいバンドは
+// パックを足して buildBand を1行呼ぶだけで増やせる。
 
-import type { QuizUnit } from "./types";
-import type { VocabUnitMeta } from "./vocab/types";
+import type { QuizGrade, QuizUnit } from "./types";
+import type { VocabEntry, VocabUnitMeta } from "./vocab/types";
 import { buildVocabUnits } from "./vocab/build";
 import { TOEIC500_UNITS, TOEIC500_VOCAB } from "./vocab/pack_toeic500";
 import { TOEIC500_B_UNITS, TOEIC500_B_VOCAB } from "./vocab/pack_toeic500_b";
+import { TOEIC600_UNITS, TOEIC600_VOCAB } from "./vocab/pack_toeic600";
 
-// 手作りパック(1〜3)＋ ejdict取込→キュレーション済みパック(4〜6) を1バンドに統合。
-// 誤答はバンド全体（全語）から選ぶため、両パックの vocab を合わせて渡す。
-const TOEIC500_ALL_UNITS = [...TOEIC500_UNITS, ...TOEIC500_B_UNITS];
-const TOEIC500_ALL_VOCAB = [...TOEIC500_VOCAB, ...TOEIC500_B_VOCAB];
+/**
+ * 1バンドを「英→日（認識）」＋「日→英（産出）」の両方向で生成する。
+ * - 誤答はバンド全体（全語）から選ぶため vocab をまとめて渡す。
+ * - 逆方向はデータ流用（追加0）。単元 id は接頭辞に "r" を足して衝突を避ける。
+ * - 逆方向のタイトルは順方向を流用し「英語で言う：…（日→英・…）」に変換。
+ */
+function buildBand(
+  grade: QuizGrade,
+  idPrefix: string,
+  bandTag: string,
+  units: VocabUnitMeta[],
+  vocab: VocabEntry[],
+): QuizUnit[] {
+  const forward = buildVocabUnits({
+    subject: "eikaiwa",
+    grade,
+    idPrefix,
+    units,
+    vocab,
+  });
+  const reverseMeta: VocabUnitMeta[] = units.map((m) => ({
+    unit: m.unit,
+    title: `英語で言う：${m.title.replace(`（${bandTag}`, "（日→英")}`,
+    lesson:
+      "日本語を見て英語を選ぶ練習。意味をおぼえたら、今度は自分で英語にできるか試そう。",
+  }));
+  const reverse = buildVocabUnits({
+    subject: "eikaiwa",
+    grade,
+    idPrefix: `${idPrefix}r`,
+    units: reverseMeta,
+    vocab,
+    direction: "ja2en",
+  });
+  return [...forward, ...reverse];
+}
 
-// 英→日（意味を知る＝認識）。まずはこちらで意味をおぼえる。
-const FORWARD_UNITS: QuizUnit[] = buildVocabUnits({
-  subject: "eikaiwa",
-  grade: "TOEIC500",
-  idPrefix: "eikaiwa-500",
-  units: TOEIC500_ALL_UNITS,
-  vocab: TOEIC500_ALL_VOCAB,
-});
+// TOEIC500: 手作りパック(1〜3)＋ ejdict取込→キュレーション済みパック(4〜6)。
+const TOEIC500_BAND = buildBand(
+  "TOEIC500",
+  "eikaiwa-500",
+  "TOEIC500",
+  [...TOEIC500_UNITS, ...TOEIC500_B_UNITS],
+  [...TOEIC500_VOCAB, ...TOEIC500_B_VOCAB],
+);
 
-// 日→英（自分で英語にする＝産出）。同じ語を逆向きに出題し、想起で定着させる。
-// データは同じパックを流用（追加0）。単元 id は接頭辞を変えて衝突を避ける。
-const REVERSE_META: VocabUnitMeta[] = TOEIC500_ALL_UNITS.map((m) => ({
-  unit: m.unit,
-  title: `英語で言う：${m.title.replace("（TOEIC500・", "（日→英・")}`,
-  lesson:
-    "日本語を見て英語を選ぶ練習。意味をおぼえたら、今度は自分で英語にできるか試そう。",
-}));
-const REVERSE_UNITS: QuizUnit[] = buildVocabUnits({
-  subject: "eikaiwa",
-  grade: "TOEIC500",
-  idPrefix: "eikaiwa-500r",
-  units: REVERSE_META,
-  vocab: TOEIC500_ALL_VOCAB,
-  direction: "ja2en",
-});
+// TOEIC600: 中級100語（ejdict取込→キュレーション）。
+const TOEIC600_BAND = buildBand(
+  "TOEIC600",
+  "eikaiwa-600",
+  "TOEIC600",
+  TOEIC600_UNITS,
+  TOEIC600_VOCAB,
+);
 
-export const EIKAIWA_UNITS: QuizUnit[] = [...FORWARD_UNITS, ...REVERSE_UNITS];
+export const EIKAIWA_UNITS: QuizUnit[] = [...TOEIC500_BAND, ...TOEIC600_BAND];

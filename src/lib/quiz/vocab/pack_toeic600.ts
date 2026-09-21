@@ -1,0 +1,130 @@
+// 語彙パック: TOEIC600 バンド（中級・約100語 / 5単元）。
+//
+// 作り方は TOEIC500 追加分と同じ: ejdict-hand(CC0) を頻度リストで取り込み
+//（scripts/vocab/ingest-ejdict.mjs）、下書きに人手キュレーションを通した確定データ。
+// 辞書の第一義が学習者の語義とズレる箇所を是正し（fair=公平な／effect=効果／
+// feed=エサを与える／dismiss=解雇する 等）、機能語・紛らわしい語を除き、例文・品詞を補った。
+//
+// 同一バンド内で ja（意味）は全て一意。TOEIC500 の120語とも単語が重複しないよう選定。
+
+import type { VocabEntry, VocabUnitMeta } from "./types";
+
+export const TOEIC600_UNITS: VocabUnitMeta[] = [
+  { unit: 1, title: "中級動詞（TOEIC600・その1）", lesson: "中級レベルの動詞を20語。英語→日本語の4択でおぼえよう。" },
+  { unit: 2, title: "中級動詞（TOEIC600・その2）", lesson: "中級動詞をさらに20語。似た意味の語とのちがいに注意。" },
+  { unit: 3, title: "中級名詞（TOEIC600・その1）", lesson: "ビジネス・学習で出る中級名詞を20語。" },
+  { unit: 4, title: "中級名詞（TOEIC600・その2）", lesson: "中級名詞をさらに20語。" },
+  { unit: 5, title: "中級形容詞（TOEIC600）", lesson: "様子や程度を表す中級形容詞を20語。" },
+];
+
+export const TOEIC600_VOCAB: VocabEntry[] = [
+  // ===== ユニット1: 中級動詞 =====
+  { word: "discover", pos: "動", ja: "発見する", example: "discover a new fact（新しい事実を発見する）", unit: 1 },
+  { word: "discuss", pos: "動", ja: "話し合う", example: "discuss the plan（計画を話し合う）", unit: 1 },
+  { word: "distinguish", pos: "動", ja: "区別する", example: "distinguish right from wrong（善悪を区別する）", unit: 1 },
+  { word: "divide", pos: "動", ja: "分ける", example: "divide into groups（グループに分ける）", unit: 1 },
+  { word: "disturb", pos: "動", ja: "邪魔する", example: "disturb a meeting（会議の邪魔をする）", unit: 1 },
+  { word: "earn", pos: "動", ja: "稼ぐ", example: "earn money（お金を稼ぐ）", unit: 1 },
+  { word: "educate", pos: "動", ja: "教育する", example: "educate children（子どもを教育する）", unit: 1 },
+  { word: "elect", pos: "動", ja: "選出する", example: "elect a leader（指導者を選出する）", unit: 1 },
+  { word: "employ", pos: "動", ja: "雇う", example: "employ workers（従業員を雇う）", unit: 1 },
+  { word: "encourage", pos: "動", ja: "励ます", example: "encourage students（生徒を励ます）", unit: 1 },
+  { word: "enter", pos: "動", ja: "入る", example: "enter the room（部屋に入る）", unit: 1 },
+  { word: "escape", pos: "動", ja: "逃げる", example: "escape from danger（危険から逃げる）", unit: 1 },
+  { word: "examine", pos: "動", ja: "調べる", example: "examine the data（データを調べる）", unit: 1 },
+  { word: "exchange", pos: "動", ja: "交換する", example: "exchange gifts（贈り物を交換する）", unit: 1 },
+  { word: "exist", pos: "動", ja: "存在する", example: "Life exists.（生命が存在する）", unit: 1 },
+  { word: "expect", pos: "動", ja: "予期する", example: "expect rain（雨を予期する）", unit: 1 },
+  { word: "explore", pos: "動", ja: "探検する", example: "explore the cave（洞窟を探検する）", unit: 1 },
+  { word: "express", pos: "動", ja: "表現する", example: "express feelings（気持ちを表現する）", unit: 1 },
+  { word: "extend", pos: "動", ja: "延ばす", example: "extend the deadline（締め切りを延ばす）", unit: 1 },
+  { word: "fail", pos: "動", ja: "失敗する", example: "fail the exam（試験に失敗する）", unit: 1 },
+
+  // ===== ユニット2: 中級動詞 =====
+  { word: "feed", pos: "動", ja: "エサを与える", example: "feed the dog（犬にエサを与える）", unit: 2 },
+  { word: "fix", pos: "動", ja: "修理する", example: "fix a car（車を修理する）", unit: 2 },
+  { word: "follow", pos: "動", ja: "従う", example: "follow the rules（規則に従う）", unit: 2 },
+  { word: "forbid", pos: "動", ja: "禁じる", example: "forbid smoking（喫煙を禁じる）", unit: 2 },
+  { word: "freeze", pos: "動", ja: "凍る", example: "Water freezes.（水が凍る）", unit: 2 },
+  { word: "gain", pos: "動", ja: "得る", example: "gain experience（経験を得る）", unit: 2 },
+  { word: "gather", pos: "動", ja: "集める", example: "gather information（情報を集める）", unit: 2 },
+  { word: "disappoint", pos: "動", ja: "がっかりさせる", example: "be disappointed（がっかりする）", unit: 2 },
+  { word: "dismiss", pos: "動", ja: "解雇する", example: "dismiss an employee（従業員を解雇する）", unit: 2 },
+  { word: "explode", pos: "動", ja: "爆発する", example: "The bomb explodes.（爆弾が爆発する）", unit: 2 },
+  { word: "excite", pos: "動", ja: "興奮させる", example: "excite the crowd（観衆を興奮させる）", unit: 2 },
+  { word: "frighten", pos: "動", ja: "怖がらせる", example: "frighten children（子どもを怖がらせる）", unit: 2 },
+  { word: "fade", pos: "動", ja: "色あせる", example: "The color fades.（色があせる）", unit: 2 },
+  { word: "furnish", pos: "動", ja: "家具を備え付ける", example: "furnish a room（部屋に家具を備え付ける）", unit: 2 },
+  { word: "float", pos: "動", ja: "浮かぶ", example: "float on water（水に浮かぶ）", unit: 2 },
+  { word: "flow", pos: "動", ja: "流れる", example: "The river flows.（川が流れる）", unit: 2 },
+  { word: "fold", pos: "動", ja: "折る", example: "fold the paper（紙を折る）", unit: 2 },
+  { word: "fill", pos: "動", ja: "満たす", example: "fill the glass（グラスを満たす）", unit: 2 },
+  { word: "finish", pos: "動", ja: "終える", example: "finish the work（仕事を終える）", unit: 2 },
+  { word: "draw", pos: "動", ja: "描く", example: "draw a picture（絵を描く）", unit: 2 },
+
+  // ===== ユニット3: 中級名詞 =====
+  { word: "discipline", pos: "名", ja: "規律", example: "strict discipline（厳しい規律）", unit: 3 },
+  { word: "discovery", pos: "名", ja: "発見", example: "an important discovery（重要な発見）", unit: 3 },
+  { word: "discussion", pos: "名", ja: "議論", example: "a long discussion（長い議論）", unit: 3 },
+  { word: "disease", pos: "名", ja: "病気", example: "a serious disease（重い病気）", unit: 3 },
+  { word: "distance", pos: "名", ja: "距離", example: "a long distance（長い距離）", unit: 3 },
+  { word: "district", pos: "名", ja: "地区", example: "a business district（商業地区）", unit: 3 },
+  { word: "division", pos: "名", ja: "部門", example: "the sales division（販売部門）", unit: 3 },
+  { word: "doubt", pos: "名", ja: "疑い", example: "have doubts（疑いを持つ）", unit: 3 },
+  { word: "duty", pos: "名", ja: "義務", example: "do your duty（義務を果たす）", unit: 3 },
+  { word: "education", pos: "名", ja: "教育", example: "higher education（高等教育）", unit: 3 },
+  { word: "effect", pos: "名", ja: "効果", example: "a side effect（副作用）", unit: 3 },
+  { word: "effort", pos: "名", ja: "努力", example: "make an effort（努力する）", unit: 3 },
+  { word: "election", pos: "名", ja: "選挙", example: "win an election（選挙に勝つ）", unit: 3 },
+  { word: "empire", pos: "名", ja: "帝国", example: "the Roman Empire（ローマ帝国）", unit: 3 },
+  { word: "enemy", pos: "名", ja: "敵", example: "defeat the enemy（敵を倒す）", unit: 3 },
+  { word: "engineer", pos: "名", ja: "技師", example: "a software engineer（ソフトウェア技師）", unit: 3 },
+  { word: "entrance", pos: "名", ja: "入り口", example: "the main entrance（正面入り口）", unit: 3 },
+  { word: "envelope", pos: "名", ja: "封筒", example: "seal the envelope（封筒を閉じる）", unit: 3 },
+  { word: "essence", pos: "名", ja: "本質", example: "the essence of the problem（問題の本質）", unit: 3 },
+  { word: "event", pos: "名", ja: "出来事", example: "a big event（大きな出来事）", unit: 3 },
+
+  // ===== ユニット4: 中級名詞 =====
+  { word: "exception", pos: "名", ja: "例外", example: "without exception（例外なく）", unit: 4 },
+  { word: "exercise", pos: "名", ja: "運動", example: "daily exercise（毎日の運動）", unit: 4 },
+  { word: "expense", pos: "名", ja: "支出", example: "travel expenses（旅費）", unit: 4 },
+  { word: "experiment", pos: "名", ja: "実験", example: "conduct an experiment（実験を行う）", unit: 4 },
+  { word: "expression", pos: "名", ja: "表現", example: "a facial expression（表情）", unit: 4 },
+  { word: "extent", pos: "名", ja: "程度", example: "to some extent（ある程度）", unit: 4 },
+  { word: "fact", pos: "名", ja: "事実", example: "a well-known fact（よく知られた事実）", unit: 4 },
+  { word: "factory", pos: "名", ja: "工場", example: "work in a factory（工場で働く）", unit: 4 },
+  { word: "failure", pos: "名", ja: "失敗", example: "end in failure（失敗に終わる）", unit: 4 },
+  { word: "faith", pos: "名", ja: "信仰", example: "have faith（信仰を持つ）", unit: 4 },
+  { word: "fame", pos: "名", ja: "名声", example: "gain fame（名声を得る）", unit: 4 },
+  { word: "fashion", pos: "名", ja: "流行", example: "the latest fashion（最新の流行）", unit: 4 },
+  { word: "fault", pos: "名", ja: "欠点", example: "a small fault（小さな欠点）", unit: 4 },
+  { word: "fear", pos: "名", ja: "恐れ", example: "overcome fear（恐れを克服する）", unit: 4 },
+  { word: "fever", pos: "名", ja: "熱", example: "have a fever（熱がある）", unit: 4 },
+  { word: "fortune", pos: "名", ja: "財産", example: "a great fortune（莫大な財産）", unit: 4 },
+  { word: "freedom", pos: "名", ja: "自由", example: "freedom of speech（言論の自由）", unit: 4 },
+  { word: "friendship", pos: "名", ja: "友情", example: "a lasting friendship（長く続く友情）", unit: 4 },
+  { word: "funeral", pos: "名", ja: "葬式", example: "attend a funeral（葬式に参列する）", unit: 4 },
+  { word: "furniture", pos: "名", ja: "家具", example: "buy furniture（家具を買う）", unit: 4 },
+
+  // ===== ユニット5: 中級形容詞 =====
+  { word: "distant", pos: "形", ja: "遠く離れた", example: "a distant country（遠く離れた国）", unit: 5 },
+  { word: "due", pos: "形", ja: "期限の", example: "The report is due today.（レポートは今日が期限だ）", unit: 5 },
+  { word: "eager", pos: "形", ja: "熱心な", example: "eager to learn（学ぶのに熱心な）", unit: 5 },
+  { word: "effective", pos: "形", ja: "効果的な", example: "an effective method（効果的な方法）", unit: 5 },
+  { word: "efficient", pos: "形", ja: "効率的な", example: "an efficient system（効率的なシステム）", unit: 5 },
+  { word: "empty", pos: "形", ja: "空の", example: "an empty box（空の箱）", unit: 5 },
+  { word: "entire", pos: "形", ja: "全体の", example: "the entire team（チーム全体）", unit: 5 },
+  { word: "equal", pos: "形", ja: "等しい", example: "equal rights（平等な権利）", unit: 5 },
+  { word: "essential", pos: "形", ja: "不可欠な", example: "an essential skill（不可欠な技能）", unit: 5 },
+  { word: "exact", pos: "形", ja: "正確な", example: "the exact time（正確な時刻）", unit: 5 },
+  { word: "excellent", pos: "形", ja: "優れた", example: "excellent work（優れた仕事）", unit: 5 },
+  { word: "excessive", pos: "形", ja: "過度の", example: "excessive spending（過度の支出）", unit: 5 },
+  { word: "extensive", pos: "形", ja: "広範囲の", example: "extensive research（広範囲の研究）", unit: 5 },
+  { word: "extraordinary", pos: "形", ja: "並外れた", example: "an extraordinary talent（並外れた才能）", unit: 5 },
+  { word: "extreme", pos: "形", ja: "極端な", example: "extreme weather（極端な天気）", unit: 5 },
+  { word: "false", pos: "形", ja: "誤った", example: "a false statement（誤った発言）", unit: 5 },
+  { word: "familiar", pos: "形", ja: "なじみのある", example: "a familiar face（なじみのある顔）", unit: 5 },
+  { word: "fair", pos: "形", ja: "公平な", example: "a fair decision（公平な決定）", unit: 5 },
+  { word: "formal", pos: "形", ja: "正式な", example: "a formal meeting（正式な会議）", unit: 5 },
+  { word: "generous", pos: "形", ja: "気前のよい", example: "a generous gift（気前のよい贈り物）", unit: 5 },
+];

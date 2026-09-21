@@ -141,6 +141,36 @@ describe("buildVocabUnits（TOEIC500）", () => {
     expect(a).toEqual(b);
   });
 
+  test("TOEIC600 パック: ja（意味）が一意・各問4択・双方向で生成できる", async () => {
+    const { TOEIC600_UNITS, TOEIC600_VOCAB } = await import(
+      "@/lib/quiz/vocab/pack_toeic600"
+    );
+    // 意味の一意性（別解回避の肝）
+    const jas = TOEIC600_VOCAB.map((e) => e.ja);
+    expect(jas.filter((j, i) => jas.indexOf(j) !== i)).toEqual([]);
+    // 英単語の一意性（ja2en の選択肢重複回避）
+    const words = TOEIC600_VOCAB.map((e) => e.word);
+    expect(words.filter((w, i) => words.indexOf(w) !== i)).toEqual([]);
+
+    const pack600 = {
+      subject: "eikaiwa" as const,
+      grade: "TOEIC600" as const,
+      idPrefix: "eikaiwa-600",
+      units: TOEIC600_UNITS,
+      vocab: TOEIC600_VOCAB,
+    };
+    for (const dir of ["en2ja", "ja2en"] as const) {
+      const items = buildVocabUnits({ ...pack600, direction: dir }).flatMap(
+        (u) => u.items,
+      );
+      expect(items.length).toBe(TOEIC600_VOCAB.length);
+      for (const it of items) {
+        expect(it.choices.length, it.id).toBe(4);
+        expect(new Set(it.choices).size, `${it.id} 重複`).toBe(4);
+      }
+    }
+  });
+
   test("誤答が3つ揃わないパックはエラーになる（作問ミス検知）", () => {
     const tiny: VocabEntry[] = [
       { word: "a", pos: "名", ja: "あ", unit: 1 },
