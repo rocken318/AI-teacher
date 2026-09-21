@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUnit, gradeAnswer, diagnose } from "@/lib/math";
 import type { Problem } from "@/lib/math";
 import { decodeToken } from "@/lib/math/token";
-import { gradeQuiz } from "@/lib/quiz";
+import { gradeQuiz, getQuizUnit } from "@/lib/quiz";
 import { decodeQuizToken } from "@/lib/quiz/token";
-import { logAttempt, logTestResult } from "@/lib/db/log";
+import { logAttempt, logTestResult, logMistake } from "@/lib/db/log";
 import { getTestHistory } from "@/lib/db/read";
 import {
   buildTestKey,
@@ -22,6 +22,7 @@ type MathAnswerIn = {
   answerToken?: string;
   userInput?: string;
   prompt?: string;
+  unknown?: boolean;
 };
 
 type QuizAnswerIn = {
@@ -29,6 +30,7 @@ type QuizAnswerIn = {
   itemId?: string;
   token?: string;
   choiceIndex?: number;
+  unknown?: boolean;
 };
 
 type AnswerIn = MathAnswerIn & QuizAnswerIn;
@@ -136,6 +138,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  /** まちがい記録用（childId がある場合に logMistake を呼ぶ）。 */
+  type MistakeData =
+    | { kind: "math"; unitId: string; problemJson: string }
+    | { kind: "quiz"; unitId: string; itemId: string; subject: string };
+  const mistakesToLog: MistakeData[] = [];
+
   const items: ResultItem[] = answers.map((a) => {
     const unitId = (a.unitId ?? "").toString().trim();
     if (kind === "math") {
@@ -163,12 +171,21 @@ export async function POST(req: NextRequest) {
         meta: payload.meta ?? {},
       };
       const r = gradeAnswer(unitId, problem, userInput);
-      const diagnosis = r.correct ? null : diagnose(unitId, problem, userInput);
+      const isUnknown = a.unknown === true;
+      const correct = isUnknown ? false : r.correct;
+      const diagnosis = correct ? null : diagnose(unitId, problem, userInput);
+      if (!correct) {
+        mistakesToLog.push({
+          kind: "math",
+          unitId,
+          problemJson: JSON.stringify({ prompt: payload.prompt, answer: payload.answer, answerType: unit.answerType, meta: payload.meta ?? {} }),
+        });
+      }
       return {
         unitId,
         prompt: payload.prompt,
         userInput,
-        correct: r.correct,
+        correct,
         expected: r.expected,
         diagnosis,
       };
@@ -176,7 +193,8 @@ export async function POST(req: NextRequest) {
 
     // quiz: トークンから answerIndex を復元し、改ざん/不一致は correct:false。
     const itemId = (a.itemId ?? "").toString().trim();
-    const choiceIndex = Number(a.choiceIndex);
+    const isUnknown = a.unknown === true;
+    const choiceIndex = isUnknown ? -1 : Number(a.choiceIndex);
     const token = (a.token ?? "").trim();
     const payload = decodeQuizToken(token);
     if (
@@ -204,11 +222,16 @@ export async function POST(req: NextRequest) {
         explanation: "",
       };
     }
+    const correct = isUnknown ? false : graded.correct;
+    if (!correct) {
+      const subj = getQuizUnit(unitId)?.subject ?? "quiz";
+      mistakesToLog.push({ kind: "quiz", unitId, itemId, subject: subj });
+    }
     return {
       unitId,
       itemId,
       choiceIndex: Number.isFinite(choiceIndex) ? choiceIndex : -1,
-      correct: graded.correct,
+      correct,
       answerIndex: graded.answerIndex,
       explanation: graded.explanation,
     };
@@ -253,6 +276,14 @@ export async function POST(req: NextRequest) {
     logTestResult({ childId, subject, unitIds: unitCsv, testKey, total, score });
     for (const it of items) {
       logAttempt(childId, subject, it.unitId, it.correct, "test");
+    }
+    // まちがい記録（不正解または「わからない」の各項目）。
+    for (const m of mistakesToLog) {
+      if (m.kind === "math") {
+        logMistake({ childId, subject: "math", unitId: m.unitId, kind: "math", itemId: null, problem: m.problemJson });
+      } else {
+        logMistake({ childId, subject: m.subject, unitId: m.unitId, kind: "quiz", itemId: m.itemId, problem: null });
+      }
     }
   }
 
