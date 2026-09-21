@@ -178,6 +178,41 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     [selectedUnit, question, phase, grading, subject, currentUnitId],
   );
 
+  /** わからない → choiceIndex=-1, unknown:true で採点し、不正解として表示する。 */
+  const submitUnknown = useCallback(async () => {
+    if (!selectedUnit || !question || phase === "graded" || grading) return;
+    setChosen(null);
+    setGrading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/quiz/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: question.token,
+          choiceIndex: -1,
+          unknown: true,
+          childId: getChildId(),
+        }),
+      });
+      if (!res.ok) throw new Error(`grade ${res.status}`);
+      const data = (await res.json()) as GradeDTO;
+      setResult(data);
+      setPhase("graded");
+      setAttemptCount((n) => n + 1);
+      // わからない = 不正解扱い（正解数には加算しない）。
+      try {
+        recordAttempt(subject, currentUnitId || selectedUnit.id, false);
+      } catch {
+        /* noop */
+      }
+    } catch {
+      setError("さいてんに しっぱいしました。もういちど ためしてね。");
+    } finally {
+      setGrading(false);
+    }
+  }, [selectedUnit, question, phase, grading, subject, currentUnitId]);
+
   /** つぎのもんだい。ランダムモードでは また別のランダム単元を出す。 */
   const next = useCallback(() => {
     if (!selectedUnit) return;
@@ -401,6 +436,20 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
                 );
               })}
             </ul>
+
+            {/* わからない ボタン（answering フェーズのみ） */}
+            {phase === "answering" && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={submitUnknown}
+                  disabled={grading}
+                  className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:border-terra/50 hover:text-terra disabled:opacity-50"
+                >
+                  わからない
+                </button>
+              </div>
+            )}
 
             {/* 採点結果 + 解説 */}
             {phase === "graded" && result && (
