@@ -2,18 +2,24 @@ import { describe, expect, test } from "vitest";
 import { buildVocabUnits } from "@/lib/quiz/vocab/build";
 import type { VocabEntry, VocabUnitMeta } from "@/lib/quiz/vocab/types";
 import { TOEIC500_UNITS, TOEIC500_VOCAB } from "@/lib/quiz/vocab/pack_toeic500";
+import {
+  TOEIC500_B_UNITS,
+  TOEIC500_B_VOCAB,
+} from "@/lib/quiz/vocab/pack_toeic500_b";
 
 /**
  * 語彙ジェネレーターの不変条件。
  * 生成AIを使わず決定的に4択を作るため、構造の健全性と「同じ入力→同じ出力」を担保する。
  */
 
+const ALL_VOCAB = [...TOEIC500_VOCAB, ...TOEIC500_B_VOCAB];
+
 const PACK = {
   subject: "eikaiwa" as const,
   grade: "TOEIC500" as const,
   idPrefix: "eikaiwa-500",
-  units: TOEIC500_UNITS,
-  vocab: TOEIC500_VOCAB,
+  units: [...TOEIC500_UNITS, ...TOEIC500_B_UNITS],
+  vocab: ALL_VOCAB,
 };
 
 describe("buildVocabUnits（TOEIC500）", () => {
@@ -25,6 +31,9 @@ describe("buildVocabUnits（TOEIC500）", () => {
       "eikaiwa-500-1",
       "eikaiwa-500-2",
       "eikaiwa-500-3",
+      "eikaiwa-500-4",
+      "eikaiwa-500-5",
+      "eikaiwa-500-6",
     ]);
     for (const u of units) {
       expect(u.subject).toBe("eikaiwa");
@@ -33,8 +42,8 @@ describe("buildVocabUnits（TOEIC500）", () => {
     }
   });
 
-  test("各語が1問になっている（60語→60問）", () => {
-    expect(items.length).toBe(TOEIC500_VOCAB.length);
+  test("各語が1問になっている（全語→同数の問題）", () => {
+    expect(items.length).toBe(ALL_VOCAB.length);
   });
 
   test("各問は4択・空文字なし・重複なし", () => {
@@ -46,7 +55,7 @@ describe("buildVocabUnits（TOEIC500）", () => {
   });
 
   test("answerIndex は範囲内で、正解の選択肢が語の意味と一致", () => {
-    const byWord = new Map(TOEIC500_VOCAB.map((e) => [e.word, e]));
+    const byWord = new Map(ALL_VOCAB.map((e) => [e.word, e]));
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       expect(it.answerIndex >= 0 && it.answerIndex < 4, it.id).toBe(true);
@@ -57,7 +66,7 @@ describe("buildVocabUnits（TOEIC500）", () => {
   });
 
   test("誤答に正解の意味が混ざらない（別解の即死回避）", () => {
-    const byWord = new Map(TOEIC500_VOCAB.map((e) => [e.word, e]));
+    const byWord = new Map(ALL_VOCAB.map((e) => [e.word, e]));
     for (const it of items) {
       const word = it.question.replace(" の意味は？", "");
       const entry = byWord.get(word)!;
@@ -97,7 +106,7 @@ describe("buildVocabUnits（TOEIC500）", () => {
   });
 
   test("同一バンド内で ja（意味）が一意（キュレーション健全性）", () => {
-    const jas = TOEIC500_VOCAB.map((e) => e.ja);
+    const jas = ALL_VOCAB.map((e) => e.ja);
     const dup = jas.filter((j, i) => jas.indexOf(j) !== i);
     expect(dup, `重複した意味: ${dup.join(",")}`).toEqual([]);
   });

@@ -7,11 +7,14 @@
 import type { QuizUnit } from "./types";
 import { buildVocabUnits } from "./vocab/build";
 import { TOEIC500_UNITS, TOEIC500_VOCAB } from "./vocab/pack_toeic500";
+import { TOEIC500_B_UNITS, TOEIC500_B_VOCAB } from "./vocab/pack_toeic500_b";
 
+// 手作りパック(1〜3)＋ ejdict取込→キュレーション済みパック(4〜6) を1バンドとして生成。
+// 誤答はバンド全体（全語）から選ぶため、両パックの vocab を合わせて渡す。
 export const EIKAIWA_UNITS: QuizUnit[] = buildVocabUnits({
   subject: "eikaiwa",
   grade: "TOEIC500",
   idPrefix: "eikaiwa-500",
-  units: TOEIC500_UNITS,
-  vocab: TOEIC500_VOCAB,
+  units: [...TOEIC500_UNITS, ...TOEIC500_B_UNITS],
+  vocab: [...TOEIC500_VOCAB, ...TOEIC500_B_VOCAB],
 });
