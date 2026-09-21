@@ -27,6 +27,13 @@ export interface VocabUnitMeta {
   lesson: string;
 }
 
+/**
+ * 出題方向。
+ * - "en2ja": 英単語→日本語の意味を選ぶ（認識・やさしい）。
+ * - "ja2en": 日本語→英単語を選ぶ（産出・想起の負荷が高く定着に効く）。
+ */
+export type VocabDirection = "en2ja" | "ja2en";
+
 /** buildVocabUnits の入力。 */
 export interface VocabPack {
   subject: Subject;
@@ -35,4 +42,6 @@ export interface VocabPack {
   idPrefix: string;
   units: VocabUnitMeta[];
   vocab: VocabEntry[];
+  /** 出題方向（既定は en2ja）。 */
+  direction?: VocabDirection;
 }

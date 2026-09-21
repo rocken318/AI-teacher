@@ -111,6 +111,36 @@ describe("buildVocabUnits（TOEIC500）", () => {
     expect(dup, `重複した意味: ${dup.join(",")}`).toEqual([]);
   });
 
+  test("ja2en（日→英）: 問題文は意味、選択肢は英単語、正解は語そのもの", () => {
+    const rev = buildVocabUnits({ ...PACK, idPrefix: "rev", direction: "ja2en" });
+    const revItems = rev.flatMap((u) => u.items);
+    expect(revItems.length).toBe(ALL_VOCAB.length);
+    const byJa = new Map(ALL_VOCAB.map((e) => [e.ja, e]));
+    for (const it of revItems) {
+      // 問題文は「〈意味〉の英語は？」の形
+      const ja = it.question.replace("」の英語は？", "").replace("「", "");
+      const entry = byJa.get(ja);
+      expect(entry, `${it.id} 問題文の意味が不明`).toBeTruthy();
+      if (!entry) continue;
+      // 4択・重複なし・空なし
+      expect(it.choices.length, it.id).toBe(4);
+      expect(new Set(it.choices).size, `${it.id} 重複`).toBe(4);
+      // 正解の選択肢は英単語そのもの
+      expect(it.choices[it.answerIndex], it.id).toBe(entry.word);
+      // すべての選択肢が英字（英単語）
+      expect(
+        it.choices.every((c) => /^[A-Za-z][A-Za-z-]*$/.test(c)),
+        `${it.id} 選択肢=${it.choices.join(",")}`,
+      ).toBe(true);
+    }
+  });
+
+  test("ja2en も決定的（二度生成で一致）", () => {
+    const a = buildVocabUnits({ ...PACK, idPrefix: "rev", direction: "ja2en" });
+    const b = buildVocabUnits({ ...PACK, idPrefix: "rev", direction: "ja2en" });
+    expect(a).toEqual(b);
+  });
+
   test("誤答が3つ揃わないパックはエラーになる（作問ミス検知）", () => {
     const tiny: VocabEntry[] = [
       { word: "a", pos: "名", ja: "あ", unit: 1 },
