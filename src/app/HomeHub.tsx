@@ -5,8 +5,10 @@ import {
   getProgress,
   getParentMessage,
   setParentMessage,
+  getActiveChild,
   type Progress,
 } from "@/lib/progress";
+import { fetchSummary } from "@/lib/account-client";
 import {
   type Stage,
   STAGES,
@@ -512,14 +514,32 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   const [msgIdx, setMsgIdx] = useState(0);
 
   useEffect(() => {
+    let alive = true;
     setMounted(true);
     const s = getStage();
     setStageState(s);
     // 学年は、記憶した学齢と一致するときだけ採用する。
     const g = getGrade();
     setGradeState(s && g && STAGE_GRADES[s].includes(g) ? g : null);
+    // まず端末ローカルの進捗で即描画（未ログインでも動く）。
     setProgress(getProgress());
     setParentMsg(getParentMessage());
+    // ログイン中（アクティブ子あり）はサーバー進捗で上書き＝別端末でも同期。
+    const active = getActiveChild();
+    if (active) {
+      fetchSummary(active).then((sum) => {
+        if (!alive) return;
+        if (sum === "unauth" || sum === "forbidden" || !sum) return;
+        setProgress({
+          bySubject: sum.bySubject,
+          totalAttempts: sum.total,
+          totalCorrect: sum.correct,
+        });
+      });
+    }
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {

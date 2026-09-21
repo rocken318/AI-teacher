@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signup } from "@/lib/account-client";
+import { signup, pickPostAuthDestination } from "@/lib/account-client";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -16,9 +16,14 @@ export default function SignupPage() {
     setBusy(true);
     setError(null);
     const r = await signup(email, password);
-    setBusy(false);
-    if (r.ok) router.push("/family");
-    else setError(r.error ?? "登録に失敗しました。");
+    if (r.ok) {
+      const dest = await pickPostAuthDestination();
+      setBusy(false);
+      router.push(dest);
+    } else {
+      setBusy(false);
+      setError(r.error ?? "登録に失敗しました。");
+    }
   }
 
   return (

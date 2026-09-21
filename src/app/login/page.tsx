@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login } from "@/lib/account-client";
+import { login, pickPostAuthDestination } from "@/lib/account-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,9 +16,14 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     const r = await login(email, password);
-    setBusy(false);
-    if (r.ok) router.push("/family");
-    else setError(r.error ?? "メールかパスワードが違います。");
+    if (r.ok) {
+      const dest = await pickPostAuthDestination();
+      setBusy(false);
+      router.push(dest);
+    } else {
+      setBusy(false);
+      setError(r.error ?? "メールかパスワードが違います。");
+    }
   }
 
   return (
