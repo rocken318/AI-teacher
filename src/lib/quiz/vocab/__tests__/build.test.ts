@@ -14,6 +14,10 @@ import {
   TOEIC500_D_UNITS,
   TOEIC500_D_VOCAB,
 } from "@/lib/quiz/vocab/pack_toeic500_d";
+import {
+  TOEIC500_E_UNITS,
+  TOEIC500_E_VOCAB,
+} from "@/lib/quiz/vocab/pack_toeic500_e";
 
 /**
  * 語彙ジェネレーターの不変条件。
@@ -25,6 +29,7 @@ const ALL_VOCAB = [
   ...TOEIC500_B_VOCAB,
   ...TOEIC500_C_VOCAB,
   ...TOEIC500_D_VOCAB,
+  ...TOEIC500_E_VOCAB,
 ];
 
 const PACK = {
@@ -36,6 +41,7 @@ const PACK = {
     ...TOEIC500_B_UNITS,
     ...TOEIC500_C_UNITS,
     ...TOEIC500_D_UNITS,
+    ...TOEIC500_E_UNITS,
   ],
   vocab: ALL_VOCAB,
 };
@@ -45,9 +51,9 @@ describe("buildVocabUnits（TOEIC500）", () => {
   const items = units.flatMap((u) => u.items);
 
   test("メタどおりの単元数・id・教科・バンド", () => {
-    // A(1-3)+B(4-6)+C(7-16)+D(17-27) の27単元。
+    // A(1-3)+B(4-6)+C(7-16)+D(17-27)+E(28-39) の39単元。
     expect(units.map((u) => u.id)).toEqual(
-      Array.from({ length: 27 }, (_, i) => `eikaiwa-500-${i + 1}`),
+      Array.from({ length: 39 }, (_, i) => `eikaiwa-500-${i + 1}`),
     );
     for (const u of units) {
       expect(u.subject).toBe("eikaiwa");
