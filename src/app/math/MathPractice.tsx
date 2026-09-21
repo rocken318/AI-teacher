@@ -260,6 +260,7 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   /** わからない → userInput="", unknown:true で採点し、不正解として表示する。 */
   const submitUnknown = useCallback(async () => {
     if (!selectedUnit || !problem || !answerToken) return;
+    if (phase === "graded" || grading) return;
     const gradeUnitId = currentUnitId || selectedUnit.id;
     setGrading(true);
     setError("");
@@ -292,7 +293,7 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
     } finally {
       setGrading(false);
     }
-  }, [selectedUnit, problem, answerToken, currentUnitId]);
+  }, [selectedUnit, problem, answerToken, currentUnitId, phase, grading]);
 
   /** ヒント表示（静的・生成AI不使用。problem API が返した固定文を出す）。 */
   const toggleHint = useCallback(() => {

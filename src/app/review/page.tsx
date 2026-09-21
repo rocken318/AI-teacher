@@ -214,13 +214,17 @@ export default function ReviewPage() {
 
         // 自力正解（わからない ではない）なら まちがいノートから削除して次へ自動進行。
         if (result.correct && !isUnknown) {
-          await fetch("/api/review/remove", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ childId, mistakeId: current.mistakeId }),
-          });
-          // 件数を1減らす（楽観的更新）。
+          // 件数を先に楽観的更新（remove 失敗でも採点結果はそのまま出す）。
           setCount((n) => Math.max(0, n - 1));
+          try {
+            await fetch("/api/review/remove", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ childId, mistakeId: current.mistakeId }),
+            });
+          } catch {
+            // remove 失敗は無視（まちがいが残るだけ。採点結果には影響しない）。
+          }
         }
       } catch {
         setError("さいてんに しっぱいしました。もういちど ためしてね。");
@@ -243,8 +247,9 @@ export default function ReviewPage() {
 
   // わからない
   const handleUnknown = useCallback(() => {
+    if (answered || grading) return;
     void gradeAndAdvance({ unknown: true });
-  }, [gradeAndAdvance]);
+  }, [answered, grading, gradeAndAdvance]);
 
   // 算数こたえあわせ
   const handleMathSubmit = useCallback(() => {
@@ -302,6 +307,7 @@ export default function ReviewPage() {
             まちがいはありません。全問 クリアです。
           </p>
           <button
+            type="button"
             onClick={() => { setMode("list"); void fetchList(); }}
             className="mt-4 rounded-full border border-line bg-paper px-5 py-2 text-sm font-bold text-ink-soft transition hover:text-ink"
           >
@@ -319,6 +325,7 @@ export default function ReviewPage() {
         {/* 残り件数バッジ */}
         <div className="flex items-center justify-between text-[13px] text-ink-soft">
           <button
+            type="button"
             onClick={() => { setMode("list"); void fetchList(); }}
             className="font-bold text-sky hover:underline"
           >
@@ -426,6 +433,7 @@ export default function ReviewPage() {
             <div className="mt-3 flex items-center justify-between gap-2">
               {isMath && (
                 <button
+                  type="button"
                   onClick={handleMathSubmit}
                   disabled={grading || !mathInput.trim()}
                   className="rounded-full bg-sky px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90 disabled:opacity-50"
@@ -496,6 +504,7 @@ export default function ReviewPage() {
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
+                  type="button"
                   onClick={handleNext}
                   className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"
                 >
@@ -570,6 +579,7 @@ export default function ReviewPage() {
                     {count} 問 ためています
                   </span>
                   <button
+                    type="button"
                     onClick={startRedo}
                     className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"
                   >

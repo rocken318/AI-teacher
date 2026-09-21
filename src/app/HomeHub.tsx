@@ -519,7 +519,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
-  // ひとこと（やさしく入れ替わる”動き”）
+  // ひとこと（やさしく入れ替わる「動き」）
   const [msgIdx, setMsgIdx] = useState(0);
 
   // まちがいノート件数
