@@ -33,7 +33,8 @@ export type QuizGrade =
   | "高2"
   | "高3"
   | "TOEIC500"
-  | "TOEIC600";
+  | "TOEIC600"
+  | "TOEIC730";
 
 /**
  * 1問（4択などの選択式）。

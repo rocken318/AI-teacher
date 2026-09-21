@@ -171,6 +171,35 @@ describe("buildVocabUnits（TOEIC500）", () => {
     }
   });
 
+  test("TOEIC730 パック: ja・word 一意で双方向に生成できる", async () => {
+    const { TOEIC730_UNITS, TOEIC730_VOCAB } = await import(
+      "@/lib/quiz/vocab/pack_toeic730"
+    );
+    const jas = TOEIC730_VOCAB.map((e) => e.ja);
+    expect(jas.filter((j, i) => jas.indexOf(j) !== i)).toEqual([]);
+    const words = TOEIC730_VOCAB.map((e) => e.word);
+    expect(words.filter((w, i) => words.indexOf(w) !== i)).toEqual([]);
+    expect(TOEIC730_VOCAB.length).toBe(100);
+
+    const pack730 = {
+      subject: "eikaiwa" as const,
+      grade: "TOEIC730" as const,
+      idPrefix: "eikaiwa-730",
+      units: TOEIC730_UNITS,
+      vocab: TOEIC730_VOCAB,
+    };
+    for (const dir of ["en2ja", "ja2en"] as const) {
+      const items = buildVocabUnits({ ...pack730, direction: dir }).flatMap(
+        (u) => u.items,
+      );
+      expect(items.length).toBe(100);
+      for (const it of items) {
+        expect(it.choices.length, it.id).toBe(4);
+        expect(new Set(it.choices).size, `${it.id} 重複`).toBe(4);
+      }
+    }
+  });
+
   test("誤答が3つ揃わないパックはエラーになる（作問ミス検知）", () => {
     const tiny: VocabEntry[] = [
       { word: "a", pos: "名", ja: "あ", unit: 1 },

@@ -10,6 +10,7 @@ import { buildVocabUnits } from "./vocab/build";
 import { TOEIC500_UNITS, TOEIC500_VOCAB } from "./vocab/pack_toeic500";
 import { TOEIC500_B_UNITS, TOEIC500_B_VOCAB } from "./vocab/pack_toeic500_b";
 import { TOEIC600_UNITS, TOEIC600_VOCAB } from "./vocab/pack_toeic600";
+import { TOEIC730_UNITS, TOEIC730_VOCAB } from "./vocab/pack_toeic730";
 
 /**
  * 1バンドを「英→日（認識）」＋「日→英（産出）」の両方向で生成する。
@@ -66,4 +67,17 @@ const TOEIC600_BAND = buildBand(
   TOEIC600_VOCAB,
 );
 
-export const EIKAIWA_UNITS: QuizUnit[] = [...TOEIC500_BAND, ...TOEIC600_BAND];
+// TOEIC730: 上級100語（基礎850の外側リングから選定→キュレーション）。
+const TOEIC730_BAND = buildBand(
+  "TOEIC730",
+  "eikaiwa-730",
+  "TOEIC730",
+  TOEIC730_UNITS,
+  TOEIC730_VOCAB,
+);
+
+export const EIKAIWA_UNITS: QuizUnit[] = [
+  ...TOEIC500_BAND,
+  ...TOEIC600_BAND,
+  ...TOEIC730_BAND,
+];

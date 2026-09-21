@@ -162,6 +162,7 @@ export const GRADE_ORDER: QuizGrade[] = [
   "高3",
   "TOEIC500",
   "TOEIC600",
+  "TOEIC730",
 ];
 
 /** 対象学年の一覧（後方互換）。 */
