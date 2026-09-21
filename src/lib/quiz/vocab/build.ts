@@ -13,7 +13,7 @@
 // 各誤答には「その意味はどの語のものか」を choiceHints で添える（学習効果）。
 
 import type { QuizItem, QuizUnit } from "@/lib/quiz/types";
-import type { VocabEntry, VocabPack } from "./types";
+import type { VocabDirection, VocabEntry, VocabPack } from "./types";
 
 /** FNV-1a 32bit ハッシュ（決定的・非負整数）。 */
 function hash32(s: string): number {
@@ -37,11 +37,14 @@ function buildItem(
   pool: VocabEntry[],
   unitId: string,
   n: number,
+  direction: VocabDirection,
 ): QuizItem {
   const answerJa = entry.ja;
 
   // 誤答候補: 別の語で、意味が正解と異なるもの。
   // this 単語を種にした決定的な順序に並べ、先頭から意味が重複しないよう3つ採る。
+  // 意味(ja)で弁別することで、en2ja では選択肢が、ja2en では正解英単語が
+  // それぞれ一意になり「別解成立」を避けられる。
   const ordered = pool
     .filter((e) => e.word !== entry.word && e.ja !== answerJa)
     .map((e) => ({ e, k: hash32(`${entry.word}|${e.word}`) }))
@@ -52,7 +55,7 @@ function buildItem(
   const usedJa = new Set<string>([answerJa]);
   for (const cand of ordered) {
     if (distractors.length >= 3) break;
-    if (usedJa.has(cand.ja)) continue; // 選択肢の重複を避ける
+    if (usedJa.has(cand.ja)) continue; // 意味が重複する誤答を避ける
     usedJa.add(cand.ja);
     distractors.push(cand);
   }
@@ -64,32 +67,44 @@ function buildItem(
     );
   }
 
-  // 正解位置を0〜3に分散（単語ごとに安定）。
-  const answerIndex = hash32(entry.word) % 4;
+  const reverse = direction === "ja2en";
+  // 正解位置を0〜3に分散（単語ごとに安定）。方向でシードを変え、英→日と日→英で
+  // 同じ語の正解位置がずれるようにする（丸暗記の位置ヒント化を防ぐ）。
+  const answerIndex = hash32(reverse ? `${entry.word}#r` : entry.word) % 4;
 
+  const posLabel = entry.pos ? `（${entry.pos}）` : "";
   const choices: string[] = [];
   const hints: (string | null)[] = [];
   let di = 0;
   for (let i = 0; i < 4; i++) {
     if (i === answerIndex) {
-      choices.push(answerJa);
+      choices.push(reverse ? entry.word : answerJa);
       hints.push(null);
     } else {
       const d = distractors[di++];
-      choices.push(d.ja);
-      // 「その意味はどの語か」を教える一言（誤答を選んだ子への学習ヒント）。
-      hints.push(`「${d.ja}」は ${d.word}。`);
+      if (reverse) {
+        choices.push(d.word);
+        // その英単語の意味を教える一言。
+        hints.push(`${d.word} は「${d.ja}」。`);
+      } else {
+        choices.push(d.ja);
+        // その意味はどの語のものかを教える一言。
+        hints.push(`「${d.ja}」は ${d.word}。`);
+      }
     }
   }
 
-  const posLabel = entry.pos ? `（${entry.pos}）` : "";
+  const question = reverse
+    ? `「${answerJa}」の英語は？`
+    : `${entry.word} の意味は？`;
+  const explanationHead = reverse ? entry.word : answerJa;
   const explanation = entry.example
-    ? `${answerJa}${posLabel}。例: ${entry.example}`
-    : `${answerJa}${posLabel}。`;
+    ? `${explanationHead}${posLabel}。例: ${entry.example}`
+    : `${explanationHead}${posLabel}。`;
 
   return {
     id: `${unitId}-${n}`,
-    question: `${entry.word} の意味は？`,
+    question,
     choices,
     answerIndex,
     explanation,
@@ -103,10 +118,13 @@ function buildItem(
  */
 export function buildVocabUnits(pack: VocabPack): QuizUnit[] {
   const pool = pack.vocab;
+  const direction = pack.direction ?? "en2ja";
   return pack.units.map((meta) => {
     const unitId = `${pack.idPrefix}-${meta.unit}`;
     const entries = pool.filter((e) => e.unit === meta.unit);
-    const items = entries.map((e, i) => buildItem(e, pool, unitId, i + 1));
+    const items = entries.map((e, i) =>
+      buildItem(e, pool, unitId, i + 1, direction),
+    );
     return {
       id: unitId,
       subject: pack.subject,
