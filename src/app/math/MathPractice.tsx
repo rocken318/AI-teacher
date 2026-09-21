@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AnswerType, Grade } from "@/lib/math";
-import { recordAttempt, getChildId } from "@/lib/progress";
+import {
+  recordAttempt,
+  getChildId,
+  getActiveChild,
+  getUnitProgress,
+} from "@/lib/progress";
+import { pickUnitStat, bumpUnit, type UnitStat } from "@/lib/unit-mastery";
+import { UnitMastery } from "@/components/UnitMastery";
 
 /** クライアントに渡す単元情報（answer は含まない）。 */
 type UnitInfo = {
@@ -97,6 +104,42 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
   const [loadingProblem, setLoadingProblem] = useState(false);
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState<string>("");
+
+  // 単元別マスター度（端末ローカル＋ログイン時はサーバーで上書き）。
+  const [mounted, setMounted] = useState(false);
+  const [localUnits, setLocalUnits] = useState<Record<string, UnitStat>>({});
+  const [serverUnits, setServerUnits] = useState<Record<string, UnitStat> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let alive = true;
+    setMounted(true);
+    setLocalUnits(getUnitProgress());
+    const active = getActiveChild();
+    if (active) {
+      fetch(`/api/progress/subject?childId=${encodeURIComponent(active)}&subject=math`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then(
+          (
+            d: { units?: { unitId: string; attempts: number; correct: number }[] } | null,
+          ) => {
+            if (!alive || !d?.units) return;
+            const m: Record<string, UnitStat> = {};
+            for (const u of d.units) {
+              m[u.unitId] = { attempts: u.attempts, correct: u.correct };
+            }
+            setServerUnits(m);
+          },
+        )
+        .catch(() => {
+          /* 静かにローカルのみ。 */
+        });
+    }
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const activeUnits =
     grades.find((g) => g.grade === activeGrade)?.units ?? [];
@@ -237,6 +280,12 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
       } catch {
         /* noop */
       }
+      if (gradeUnitId && gradeUnitId !== "__random__") {
+        setLocalUnits((prev) => bumpUnit(prev, gradeUnitId, data.correct));
+        setServerUnits((prev) =>
+          prev ? bumpUnit(prev, gradeUnitId, data.correct) : prev,
+        );
+      }
       if (data.correct) {
         setCorrectCount((n) => n + 1);
       } else {
@@ -287,6 +336,10 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
         recordAttempt("math", gradeUnitId, false);
       } catch {
         /* noop */
+      }
+      if (gradeUnitId && gradeUnitId !== "__random__") {
+        setLocalUnits((prev) => bumpUnit(prev, gradeUnitId, false));
+        setServerUnits((prev) => (prev ? bumpUnit(prev, gradeUnitId, false) : prev));
       }
     } catch {
       setError("さいてんに しっぱいしました。もういちど ためしてね。");
@@ -405,6 +458,9 @@ export function MathPractice({ grades, apiKeyConfigured, lockedGrade }: Props) {
                   <span className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-ink-soft">
                     {u.lesson}
                   </span>
+                  <UnitMastery
+                    stat={mounted ? pickUnitStat(u.id, localUnits, serverUnits) : null}
+                  />
                   <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-terra">
                     はじめる →
                   </span>

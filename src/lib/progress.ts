@@ -24,6 +24,7 @@ export type Progress = {
 };
 
 const PROGRESS_KEY = "ai-sensei-progress-v1";
+const UNIT_PROGRESS_KEY = "ai-sensei-unit-progress-v1";
 const PARENT_MSG_KEY = "ai-sensei-parent-message-v1";
 const CHILD_ID_KEY = "ai-sensei-child-id-v1";
 const ACTIVE_CHILD_KEY = "ai-sensei-active-child-v1";
@@ -42,12 +43,15 @@ function storage(): Storage | null {
   }
 }
 
-/** localStorage から進捗を読む（壊れていたら空を返す）。 */
-function readRaw(): Record<string, SubjectProgress> {
+/**
+ * localStorage の集計マップを読む（壊れていたら空を返す）。
+ * 教科別（PROGRESS_KEY）・単元別（UNIT_PROGRESS_KEY）で同じ形なので共用する。
+ */
+function readRaw(key: string = PROGRESS_KEY): Record<string, SubjectProgress> {
   const s = storage();
   if (!s) return {};
   try {
-    const raw = s.getItem(PROGRESS_KEY);
+    const raw = s.getItem(key);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object") return {};
@@ -66,12 +70,15 @@ function readRaw(): Record<string, SubjectProgress> {
   }
 }
 
-/** 集計を localStorage に書く。 */
-function writeRaw(data: Record<string, SubjectProgress>): void {
+/** 集計マップを localStorage に書く。 */
+function writeRaw(
+  data: Record<string, SubjectProgress>,
+  key: string = PROGRESS_KEY,
+): void {
   const s = storage();
   if (!s) return;
   try {
-    s.setItem(PROGRESS_KEY, JSON.stringify(data));
+    s.setItem(key, JSON.stringify(data));
   } catch {
     // 容量不足などは黙って無視（進捗は補助的機能）。
   }
@@ -79,8 +86,10 @@ function writeRaw(data: Record<string, SubjectProgress>): void {
 
 /**
  * 1回の挑戦を記録する。
+ * 教科別（bySubject・全体表示用）と単元別（単元選択のマスター度用）の
+ * 両方を localStorage に積む。どちらも端末ローカル（ログイン時はサーバーが正）。
  * @param subject 教科キー（"math" など）。未知の string も許容。
- * @param unitId 単元 ID（将来の粒度拡張用。現状は集計に含めない）。
+ * @param unitId 単元 ID。
  * @param correct 正解なら true。
  */
 export function recordAttempt(
@@ -88,7 +97,7 @@ export function recordAttempt(
   unitId: string,
   correct: boolean,
 ): void {
-  void unitId; // 予約: 将来 unit 単位の集計に使う
+  // 教科別集計
   const data = readRaw();
   const cur = data[subject] ?? { attempts: 0, correct: 0 };
   data[subject] = {
@@ -96,6 +105,22 @@ export function recordAttempt(
     correct: cur.correct + (correct ? 1 : 0),
   };
   writeRaw(data);
+
+  // 単元別集計（unitId があるときだけ。ランダムのダミー等は除く）
+  if (unitId && unitId !== "__random__") {
+    const units = readRaw(UNIT_PROGRESS_KEY);
+    const u = units[unitId] ?? { attempts: 0, correct: 0 };
+    units[unitId] = {
+      attempts: u.attempts + 1,
+      correct: u.correct + (correct ? 1 : 0),
+    };
+    writeRaw(units, UNIT_PROGRESS_KEY);
+  }
+}
+
+/** 単元別の集計（この端末）。単元選択画面のマスター度表示に使う。 */
+export function getUnitProgress(): Record<string, SubjectProgress> {
+  return readRaw(UNIT_PROGRESS_KEY);
 }
 
 /** 進捗の全体像を返す（教科別＋合計）。SSR では空の集計を返す。 */
