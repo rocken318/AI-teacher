@@ -49,6 +49,14 @@ import { HISTORY_H1_3 } from "./history_h1_3";
 import { HISTORY_H1_4 } from "./history_h1_4";
 import { HISTORY_H1_5 } from "./history_h1_5";
 import { HISTORY_H1_6 } from "./history_h1_6";
+import { SCIENCE_H1_CHEM1 } from "./science_h1_chem1";
+import { SCIENCE_H1_CHEM2 } from "./science_h1_chem2";
+import { SCIENCE_H1_BIO1 } from "./science_h1_bio1";
+import { SCIENCE_H1_BIO2 } from "./science_h1_bio2";
+import { SCIENCE_H1_PHYS1 } from "./science_h1_phys1";
+import { SCIENCE_H1_PHYS2 } from "./science_h1_phys2";
+import { SCIENCE_H1_EARTH1 } from "./science_h1_earth1";
+import { SCIENCE_H1_EARTH2 } from "./science_h1_earth2";
 
 export type {
   Subject,
@@ -124,6 +132,14 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...HISTORY_H1_4,
   ...HISTORY_H1_5,
   ...HISTORY_H1_6,
+  ...SCIENCE_H1_CHEM1,
+  ...SCIENCE_H1_CHEM2,
+  ...SCIENCE_H1_BIO1,
+  ...SCIENCE_H1_BIO2,
+  ...SCIENCE_H1_PHYS1,
+  ...SCIENCE_H1_PHYS2,
+  ...SCIENCE_H1_EARTH1,
+  ...SCIENCE_H1_EARTH2,
 ]);
 
 /** 学年の並び順（小→高）。UIのタブ順やソートに使う。 */
