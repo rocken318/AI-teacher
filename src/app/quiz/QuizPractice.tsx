@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Subject, QuizGrade, QuizUnit } from "@/lib/quiz";
-import { recordAttempt, getChildId } from "@/lib/progress";
+import {
+  recordAttempt,
+  getChildId,
+  getActiveChild,
+  getUnitProgress,
+} from "@/lib/progress";
+import { pickUnitStat, bumpUnit, type UnitStat } from "@/lib/unit-mastery";
+import { UnitMastery } from "@/components/UnitMastery";
 
 /** question API のレスポンス（answerIndex は含まない）。 */
 type QuestionDTO = {
@@ -60,6 +67,45 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState<string>("");
+
+  // 単元別マスター度（端末ローカル＋ログイン時はサーバーで上書き）。
+  const [mounted, setMounted] = useState(false);
+  const [localUnits, setLocalUnits] = useState<Record<string, UnitStat>>({});
+  const [serverUnits, setServerUnits] = useState<Record<string, UnitStat> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let alive = true;
+    setMounted(true);
+    setLocalUnits(getUnitProgress());
+    // ログイン中（アクティブ子あり）はサーバーの単元別集計で上書き＝端末間で正確。
+    const active = getActiveChild();
+    if (active) {
+      fetch(
+        `/api/progress/subject?childId=${encodeURIComponent(active)}&subject=${encodeURIComponent(subject)}`,
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .then(
+          (
+            d: { units?: { unitId: string; attempts: number; correct: number }[] } | null,
+          ) => {
+            if (!alive || !d?.units) return;
+            const m: Record<string, UnitStat> = {};
+            for (const u of d.units) {
+              m[u.unitId] = { attempts: u.attempts, correct: u.correct };
+            }
+            setServerUnits(m);
+          },
+        )
+        .catch(() => {
+          /* 未ログイン・非テスト教科などは静かにローカルのみ。 */
+        });
+    }
+    return () => {
+      alive = false;
+    };
+  }, [subject]);
 
   const activeUnits = useMemo(
     () => units.filter((u) => u.grade === activeGrade),
@@ -163,10 +209,17 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
 
         // 進捗記録（別チームの localStorage 実装／未実装でも落ちないように）。
         // 実際に出た単元id で記録する（ランダムモードでも診断が正しく効く）。
+        const uid = currentUnitId || selectedUnit.id;
         try {
-          recordAttempt(subject, currentUnitId || selectedUnit.id, data.correct);
+          recordAttempt(subject, uid, data.correct);
         } catch {
           // 進捗記録の失敗はサイレントに（採点は成立している）。
+        }
+        // 単元選択に戻ったときの表示を最新化（楽観更新）。
+        // ログイン中は表示がサーバー優先なので、両方を更新する。
+        if (uid && uid !== "__random__") {
+          setLocalUnits((prev) => bumpUnit(prev, uid, data.correct));
+          setServerUnits((prev) => (prev ? bumpUnit(prev, uid, data.correct) : prev));
         }
       } catch {
         setError("さいてんに しっぱいしました。もういちど ためしてね。");
@@ -201,10 +254,15 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
       setPhase("graded");
       setAttemptCount((n) => n + 1);
       // わからない = 不正解扱い（正解数には加算しない）。
+      const uid = currentUnitId || selectedUnit.id;
       try {
-        recordAttempt(subject, currentUnitId || selectedUnit.id, false);
+        recordAttempt(subject, uid, false);
       } catch {
         /* noop */
+      }
+      if (uid && uid !== "__random__") {
+        setLocalUnits((prev) => bumpUnit(prev, uid, false));
+        setServerUnits((prev) => (prev ? bumpUnit(prev, uid, false) : prev));
       }
     } catch {
       setError("さいてんに しっぱいしました。もういちど ためしてね。");
@@ -311,6 +369,9 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
                   <span className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-ink-soft">
                     {u.lesson}
                   </span>
+                  <UnitMastery
+                    stat={mounted ? pickUnitStat(u.id, localUnits, serverUnits) : null}
+                  />
                   <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-terra">
                     はじめる →
                   </span>
