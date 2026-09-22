@@ -558,8 +558,14 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
                     onClick={next}
                     className="rounded-full bg-terra px-5 py-2 text-sm font-bold text-white shadow-soft transition hover:opacity-90"
                   >
-                    {randomMode ? "べつの単元で もう一問 →" : "同じジャンルで もう一問 →"}
+                    次の問題 →
                   </button>
+                  <a
+                    href="/"
+                    className="rounded-full border border-line bg-paper px-5 py-2 text-sm font-bold text-ink-soft shadow-soft transition hover:text-ink"
+                  >
+                    学習を止める
+                  </a>
                 </div>
               </div>
             )}
