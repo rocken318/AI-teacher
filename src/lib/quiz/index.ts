@@ -59,6 +59,7 @@ import { SCIENCE_H1_EARTH1 } from "./science_h1_earth1";
 import { SCIENCE_H1_EARTH2 } from "./science_h1_earth2";
 import { EIKAIWA_UNITS } from "./eikaiwa";
 import { ENGLISH_VOCAB_UNITS } from "./english_vocab";
+import { ENGLISH_UNITS_H1 } from "./english_h1";
 
 export type {
   Subject,
@@ -146,6 +147,8 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...EIKAIWA_UNITS,
   // 学校英語の学年別「英単語」単元（中2・高1）。
   ...ENGLISH_VOCAB_UNITS,
+  // 高1英語の文法問題（現在完了・受動態・不定詞・関係詞・仮定法 等）。
+  ...ENGLISH_UNITS_H1,
 ]);
 
 /**
