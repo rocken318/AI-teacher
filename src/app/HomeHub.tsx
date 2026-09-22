@@ -524,6 +524,13 @@ const COPY: Record<Stage, Copy> = {
   },
 };
 
+/** 実用英語（TOEIC）のバンド一覧。パック追加に合わせて増やす。 */
+const EIKAIWA_BANDS: { grade: string; desc: string }[] = [
+  { grade: "TOEIC500", desc: "基礎〜頻出語。まずはここから" },
+  { grade: "TOEIC600", desc: "中級100語で得点アップ" },
+  { grade: "TOEIC730", desc: "上級100語でさらに上へ" },
+];
+
 /** 実用英語モードのホーム（TOEICバンド導線＋専用進捗）。5教科カードは出さない。 */
 function EikaiwaHome({
   progress,
@@ -593,38 +600,41 @@ function EikaiwaHome({
         )}
       </section>
 
-      {/* TOEICバンド導線 */}
+      {/* TOEICバンド導線（500→600→730 の順に段階化） */}
       <section>
         <h2 className="mb-3 font-serif text-lg font-extrabold text-ink">
           コースを選ぶ
         </h2>
-        <a
-          href="/learn/eikaiwa?grade=TOEIC500"
-          className="group flex items-center gap-3 rounded-2xl border border-line bg-white/70 p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-sky/50 hover:shadow-card"
-          style={{ borderTopColor: accentColor("cyan"), borderTopWidth: 3 }}
-        >
-          <span
-            aria-hidden="true"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
-            style={{ background: `${accentColor("cyan")}22` }}
-          >
-            🗣️
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-serif text-lg font-extrabold text-ink group-hover:text-sky">
-              TOEIC500 の語彙を練習する
-            </p>
-            <p className="truncate text-[12px] text-ink-soft">
-              4択クイズで TOEIC500 レベルの英単語を習得
-            </p>
-          </div>
-          <span
-            className="shrink-0 text-[12px] font-bold text-terra"
-            aria-hidden="true"
-          >
-            始める →
-          </span>
-        </a>
+        <div className="grid gap-3">
+          {EIKAIWA_BANDS.map((b) => (
+            <a
+              key={b.grade}
+              href={`/learn/eikaiwa?grade=${b.grade}`}
+              className="group flex items-center gap-3 rounded-2xl border border-line bg-white/70 p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-sky/50 hover:shadow-card"
+              style={{ borderTopColor: accentColor("cyan"), borderTopWidth: 3 }}
+            >
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
+                style={{ background: `${accentColor("cyan")}22` }}
+              >
+                🗣️
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-serif text-lg font-extrabold text-ink group-hover:text-sky">
+                  {b.grade} の語彙を練習する
+                </p>
+                <p className="truncate text-[12px] text-ink-soft">{b.desc}</p>
+              </div>
+              <span
+                className="shrink-0 text-[12px] font-bold text-terra"
+                aria-hidden="true"
+              >
+                始める →
+              </span>
+            </a>
+          ))}
+        </div>
       </section>
     </div>
   );
@@ -768,8 +778,6 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
 
   // 算数の進捗（別枠カード）
   const math = bySubject["math"] ?? { attempts: 0, correct: 0 };
-  // 英会話（英単語）の進捗。学齢に依存しない独立トラック。
-  const eikaiwa = bySubject["eikaiwa"] ?? { attempts: 0, correct: 0 };
 
   const startEdit = () => {
     setDraft(parentMsg);
@@ -825,7 +833,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
             onChange={pickGrade}
             chooseLabel="学年："
           />
-          {/* 実用英語モードへの入口（再訪ユーザーは学齢ピッカーを通らないため常設）。 */}
+          {/* 別トラックの入口（学年に依存しない）。実用英語＝専用モード、探究＝/explore。 */}
           <button
             type="button"
             onClick={pickTrack}
@@ -833,6 +841,12 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
           >
             🗣️ 実用英語へ
           </button>
+          <a
+            href="/explore"
+            className="rounded-full border border-line bg-white/60 px-3 py-1 text-[12px] font-bold text-ink-soft transition hover:-translate-y-0.5 hover:border-terra hover:text-terra"
+          >
+            🔭 探究へ
+          </a>
         </div>
       </div>
 
@@ -923,17 +937,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
             );
           })}
 
-          {/* 英会話（英単語）: 学齢に依存しない独立トラック（TOEICバンドで段階化） */}
-          <CourseCard
-            href="/learn/eikaiwa"
-            emoji="🗣️"
-            label={c.eikaiwaLabel}
-            accent={accentColor("cyan")}
-            attempts={eikaiwa.attempts}
-            correct={eikaiwa.correct}
-            tagline={c.taglineEikaiwa}
-            copy={c}
-          />
+          {/* 実用英語（英会話）は5教科と別トラック。学齢トグル横の「実用英語へ」から。 */}
 
           {/* まちがいノート: 全学齢共通・独立トラック */}
           {mistakeCount !== null && (
@@ -975,17 +979,7 @@ export default function HomeHub({ subjects, mathGrades = [] }: Props) {
             </a>
           )}
 
-          {/* 探究（豆知識）: 全学齢で使える（学年は対話内でえらべる） */}
-          <CourseCard
-            href="/explore"
-            emoji="🔭"
-            label={c.exploreLabel}
-            accent="#c9622f"
-            attempts={0}
-            correct={0}
-            tagline={c.taglineExplore}
-            copy={c}
-          />
+          {/* 探究は学年を対話内で選ぶ別トラック。学齢トグル横の「探究へ」から。 */}
         </div>
       </section>
 
