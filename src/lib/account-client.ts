@@ -1,6 +1,6 @@
 "use client";
 import type {
-  OverallResponse, TodayResponse, SubjectResponse, Child,
+  OverallResponse, TodayResponse, SubjectResponse, DailyResponse, Child,
 } from "@/lib/progress-client-types";
 import { setActiveChild } from "@/lib/progress";
 import { setStage, isStage } from "@/lib/stage";
@@ -80,6 +80,12 @@ export function fetchOverall(childId: string): Promise<OverallResponse | "unauth
 export function fetchSubject(childId: string, subject: string): Promise<SubjectResponse | "unauth" | "forbidden"> {
   return getProgress<SubjectResponse>(
     `/api/progress/subject?childId=${encodeURIComponent(childId)}&subject=${encodeURIComponent(subject)}`,
+  );
+}
+/** 直近N日の日別学習量＋連続日数。401→"unauth"、403→"forbidden"。 */
+export function fetchDaily(childId: string, days = 30): Promise<DailyResponse | "unauth" | "forbidden"> {
+  return getProgress<DailyResponse>(
+    `/api/progress/daily?childId=${encodeURIComponent(childId)}&days=${days}`,
   );
 }
 /** ホーム用の教科別集計（サーバー）。401/403 は sentinel。 */

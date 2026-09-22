@@ -6,3 +6,4 @@ export * from "./targets";
 export * from "./overall";
 export * from "./subject";
 export * from "./today";
+export * from "./daily";

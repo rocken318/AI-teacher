@@ -36,6 +36,12 @@ export interface SubjectResponse {
   percent: number;
   units: UnitProgressResponse[];
 }
+export interface DailyResponse {
+  days: { date: string; count: number }[];
+  activeDays: number;
+  maxCount: number;
+  streak: { current: number; thisMonth: number };
+}
 export interface Child {
   id: string;
   accountId: string;
