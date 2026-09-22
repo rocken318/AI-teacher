@@ -349,8 +349,8 @@ export function Chat({
           <input
             className={
               isLowerGrade
-                ? "flex-1 rounded-full border border-sky-200 px-4 py-2 text-lg outline-none focus:border-sky-400"
-                : "flex-1 rounded-full border border-sky-200 px-4 py-2 text-[15px] outline-none focus:border-sky-400"
+                ? "min-w-0 flex-1 rounded-full border border-sky-200 px-4 py-2 text-lg outline-none focus:border-sky-400"
+                : "min-w-0 flex-1 rounded-full border border-sky-200 px-4 py-2 text-[15px] outline-none focus:border-sky-400"
             }
             placeholder={
               apiKeyConfigured ? "おもったことを かいてね" : "（練習モード）かいてみてね"
@@ -363,7 +363,7 @@ export function Chat({
             disabled={loading}
           />
           <button
-            className="rounded-full bg-sky-500 px-5 py-2 font-semibold text-white transition hover:bg-sky-600 disabled:opacity-50"
+            className="shrink-0 whitespace-nowrap rounded-full bg-sky-500 px-5 py-2 font-semibold text-white transition hover:bg-sky-600 disabled:opacity-50"
             onClick={send}
             disabled={loading || !input.trim()}
           >
