@@ -2,17 +2,19 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchOverall } from "@/lib/account-client";
-import type { OverallResponse } from "@/lib/progress-client-types";
+import { fetchOverall, fetchDaily } from "@/lib/account-client";
+import type { OverallResponse, DailyResponse } from "@/lib/progress-client-types";
 import { getChildId } from "@/lib/progress";
 import { groupSubjects } from "@/lib/progress-view";
 import { Donut } from "@/components/charts/Donut";
 import { StatTile } from "@/components/charts/StatTile";
+import { DailyBars } from "@/components/charts/DailyBars";
 
 export default function ProgressPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<OverallResponse | null | "loading">("loading");
+  const [daily, setDaily] = useState<DailyResponse | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -24,6 +26,11 @@ export default function ProgressPage() {
       if (d === "unauth") { router.replace("/login"); return; }
       if (d === "forbidden") { router.replace("/family"); return; }
       setData(d);
+    });
+    // 日々のがんばり（直近30日）。best-effort（失敗時は非表示）。
+    fetchDaily(id, 30).then((d) => {
+      if (!alive || d === "unauth" || d === "forbidden") return;
+      setDaily(d);
     });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,6 +53,35 @@ export default function ProgressPage() {
       </header>
       <div className="mx-auto max-w-lg px-4 py-8">
         <h1 className="font-serif text-2xl text-ink">全体の進捗</h1>
+
+        {/* 日々のがんばり（直近30日）＝毎日の努力の軌跡 */}
+        {daily && (
+          <section className="mt-6 rounded-2xl border border-line bg-white/70 p-4 shadow-card">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-serif text-lg text-ink">日々のがんばり</h2>
+              <span className="text-xs text-faint">直近30日</span>
+            </div>
+            <div className="mt-3">
+              <DailyBars days={daily.days} maxCount={daily.maxCount} />
+              <div className="mt-1 flex justify-between text-[11px] text-faint">
+                <span>30日前</span>
+                <span>今日</span>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-sm">
+              <span className="rounded-full bg-terra/10 px-3 py-1 font-bold text-terra">
+                連続 {daily.streak.current}日{daily.streak.current > 0 ? "✨" : ""}
+              </span>
+              <span className="rounded-full bg-paper2 px-3 py-1 text-ink-soft">
+                今月 {daily.streak.thisMonth}日 学習
+              </span>
+              <span className="rounded-full bg-paper2 px-3 py-1 text-ink-soft">
+                30日で {daily.activeDays}日
+              </span>
+            </div>
+          </section>
+        )}
+
         <div className="mt-6 flex justify-center">
           <Donut percent={data.overall.percent} size={180} stroke={20}
             sublabel={overallSublabel} />

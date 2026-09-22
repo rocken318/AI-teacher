@@ -2,16 +2,19 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchChildren, createChild, claim, logout } from "@/lib/account-client";
-import type { Child } from "@/lib/progress-client-types";
+import { fetchChildren, createChild, claim, logout, fetchDaily } from "@/lib/account-client";
+import type { Child, DailyResponse } from "@/lib/progress-client-types";
 import { setActiveChild, clearActiveChild, getActiveChild } from "@/lib/progress";
 import { setStage } from "@/lib/stage";
 import { STAGES } from "@/lib/stage";
+import { DailyBars } from "@/components/charts/DailyBars";
 
 export default function FamilyPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [children, setChildren] = useState<Child[]>([]);
+  // 各子の日々のがんばり（直近30日）。子ごと best-effort で取得。
+  const [dailyByChild, setDailyByChild] = useState<Record<string, DailyResponse>>({});
   const [name, setName] = useState("");
   const [stage, setStageSel] = useState("elementary");
   const [inherit, setInherit] = useState(false);
@@ -21,6 +24,16 @@ export default function FamilyPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const active = mounted ? getActiveChild() : "";
 
+  /** 子ごとに日々のがんばりを取得（best-effort・1件失敗が他を壊さない）。 */
+  function loadDaily(list: Child[]) {
+    list.forEach((c) => {
+      fetchDaily(c.id, 30).then((d) => {
+        if (d === "unauth" || d === "forbidden") return;
+        setDailyByChild((prev) => ({ ...prev, [c.id]: d }));
+      });
+    });
+  }
+
   async function load() {
     const list = await fetchChildren();
     if (list === null) {
@@ -28,6 +41,7 @@ export default function FamilyPage() {
       return;
     }
     setChildren(list);
+    loadDaily(list);
   }
 
   // Fix 6: guard mount load against unmount
@@ -41,6 +55,7 @@ export default function FamilyPage() {
         return;
       }
       setChildren(list);
+      loadDaily(list);
     });
     return () => {
       cancelled = true;
@@ -128,22 +143,37 @@ export default function FamilyPage() {
 
         <section className="mt-6 space-y-3">
           {children.length === 0 && <p className="text-sm text-faint">まだプロフィールがありません。下から追加してください。</p>}
-          {children.map((c) => (
-            <div key={c.id} className={`flex items-center justify-between rounded-2xl border p-4 shadow-card ${active === c.id ? "border-sky bg-white" : "border-line bg-white/70"}`}>
-              <div>
-                <div className="font-serif text-lg text-ink">{c.name}</div>
-                <div className="text-xs text-faint">{stageLabel(c.stage)}</div>
+          {children.map((c) => {
+            const d = dailyByChild[c.id];
+            return (
+            <div key={c.id} className={`rounded-2xl border p-4 shadow-card ${active === c.id ? "border-sky bg-white" : "border-line bg-white/70"}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-serif text-lg text-ink">{c.name}</div>
+                  <div className="text-xs text-faint">{stageLabel(c.stage)}</div>
+                </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {/* Fix 1: explicit type="button" */}
+                  <button type="button" onClick={() => choose(c)} className="rounded-lg bg-sky px-3 py-1.5 text-sm text-white">この子で学習</button>
+                  {/* Fix 2: replace Link+onClick with button that sets-then-navigates */}
+                  <button type="button" onClick={() => { setActiveChild(c.id); router.push("/today"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">今日</button>
+                  <button type="button" onClick={() => { setActiveChild(c.id); router.push("/progress"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">全体</button>
+                  <button type="button" onClick={() => inheritTo(c)} disabled={busy} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft disabled:opacity-60">記録を引き継ぐ</button>
+                </div>
               </div>
-              <div className="flex flex-wrap justify-end gap-2">
-                {/* Fix 1: explicit type="button" */}
-                <button type="button" onClick={() => choose(c)} className="rounded-lg bg-sky px-3 py-1.5 text-sm text-white">この子で学習</button>
-                {/* Fix 2: replace Link+onClick with button that sets-then-navigates */}
-                <button type="button" onClick={() => { setActiveChild(c.id); router.push("/today"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">今日</button>
-                <button type="button" onClick={() => { setActiveChild(c.id); router.push("/progress"); }} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink">全体</button>
-                <button type="button" onClick={() => inheritTo(c)} disabled={busy} className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft disabled:opacity-60">記録を引き継ぐ</button>
-              </div>
+              {/* 日々のがんばり（直近30日）＝毎日続けているかがひと目で分かる */}
+              {d && (
+                <div className="mt-3">
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-faint">
+                    <span>日々のがんばり（直近30日）</span>
+                    <span className="font-bold text-terra">連続 {d.streak.current}日{d.streak.current > 0 ? "✨" : ""}</span>
+                  </div>
+                  <DailyBars days={d.days} maxCount={d.maxCount} compact />
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
           {children.length > 0 && (
             <p className="text-xs text-faint">「記録を引き継ぐ」＝この端末で（子を選ばずに）学習した記録を、その子のアカウント進捗へ移します。以後は「この子で学習」を選んでおくと、どの端末でも進捗が同期します。</p>
           )}
