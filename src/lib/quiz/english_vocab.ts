@@ -4,9 +4,9 @@
 // 学年別「英単語」ドリル（英語→日本語の4択）を生成する。生成AIは使わない。
 //
 // 学年対応（正直な注記）: 無料データに「中2で習う/高1で習う」の厳密な学年区分は
-// 無いため、レベルで対応させている。
-//   - 中2「英単語」= 頻度2000語ベースの基礎英単語（＝中学で出会う基礎語）。
-//   - 高1「英単語」= 中級〜上級（TOEIC600/730相当）。
+// 無いため、頻度リストの階層（ejdict freq/850=最基礎）でレベル対応させている。
+//   - 中2「英単語」= 基礎語（頻度2000語のうち freq/850 に入る最基礎 ≈529語）。
+//   - 高1「英単語」= それ以外のやや難しい語（freq/850外 ≈868語）＋中〜上級(TOEIC600/730 200語)。
 // 語(word)・意味(ja)はバンク側で一意に調整済みなので、各単元内で選択肢は重複しない。
 
 import type { QuizUnit } from "./types";
@@ -23,6 +23,7 @@ import { TOEIC500_G_VOCAB } from "./vocab/pack_toeic500_g";
 import { TOEIC500_H_VOCAB } from "./vocab/pack_toeic500_h";
 import { TOEIC600_VOCAB } from "./vocab/pack_toeic600";
 import { TOEIC730_VOCAB } from "./vocab/pack_toeic730";
+import { CORE_JUNIOR_WORDS } from "./english_core_words";
 
 /** 語彙配列を1単元（英→日）として生成する。全語を同一単元にまとめる。 */
 function oneVocabUnit(
@@ -43,8 +44,8 @@ function oneVocabUnit(
   });
 }
 
-// 中2「英単語」: 中学で出会う基礎英単語（頻度2000語ベース）。
-const JUNIOR2_VOCAB: VocabEntry[] = [
+// 頻度2000語ベースの基礎バンク全体。
+const BASIC_BANK: VocabEntry[] = [
   ...TOEIC500_VOCAB,
   ...TOEIC500_B_VOCAB,
   ...TOEIC500_C_VOCAB,
@@ -55,8 +56,19 @@ const JUNIOR2_VOCAB: VocabEntry[] = [
   ...TOEIC500_H_VOCAB,
 ];
 
-// 高1「英単語」: 中級〜上級（TOEIC600/730相当）。
-const HIGH1_VOCAB: VocabEntry[] = [...TOEIC600_VOCAB, ...TOEIC730_VOCAB];
+const CORE_SET = new Set(CORE_JUNIOR_WORDS);
+
+// 中2「英単語」: 最基礎語（freq/850 に入る語）。
+const JUNIOR2_VOCAB: VocabEntry[] = BASIC_BANK.filter((e) =>
+  CORE_SET.has(e.word),
+);
+
+// 高1「英単語」: 基礎の外側のやや難しい語＋中〜上級（TOEIC600/730）。
+const HIGH1_VOCAB: VocabEntry[] = [
+  ...BASIC_BANK.filter((e) => !CORE_SET.has(e.word)),
+  ...TOEIC600_VOCAB,
+  ...TOEIC730_VOCAB,
+];
 
 export const ENGLISH_VOCAB_UNITS: QuizUnit[] = [
   ...oneVocabUnit(
@@ -73,6 +85,6 @@ export const ENGLISH_VOCAB_UNITS: QuizUnit[] = [
     "高1",
     "h1e-vocab",
     "英単語",
-    "高1レベルの中級〜上級英単語。英語を見て意味を4択でおぼえよう。",
+    "高1レベルの英単語（やや難しい語〜中上級）。英語を見て意味を4択でおぼえよう。",
   ),
 ];
