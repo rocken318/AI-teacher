@@ -27,6 +27,21 @@ test("todayStats は JST 今日の attempts のみ集計（教科別内訳つき
   expect(r.rate).toBeCloseTo(2 / 3);
 });
 
+test("todayStats は今日の単元別内訳を多い順で返す（前日は除外）", () => {
+  const recs: AttemptRecord[] = [
+    { subject: "math", unitId: "div", correct: true, createdAtMs: inToday },
+    { subject: "math", unitId: "div", correct: false, createdAtMs: inToday },
+    { subject: "math", unitId: "div", correct: true, createdAtMs: inToday },
+    { subject: "science", unitId: "plant", correct: true, createdAtMs: inToday },
+    { subject: "math", unitId: "mul", correct: true, createdAtMs: yesterday },
+  ];
+  const r = todayStats(recs, [], TODAY);
+  expect(r.byUnit).toEqual([
+    { subject: "math", unitId: "div", attempts: 3, correct: 2 },
+    { subject: "science", unitId: "plant", attempts: 1, correct: 1 },
+  ]);
+});
+
 test("todayStats は今日のテスト回数を数える", () => {
   const tests: TestRecord[] = [
     { subject: "math", testKey: "k", total: 5, score: 4, takenAtMs: inToday },

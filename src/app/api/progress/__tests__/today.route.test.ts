@@ -64,3 +64,33 @@ test("自分の子は 200・今日解いた分が total に入る", async () => 
   expect(body.correct).toBe(1);
   expect(body.bySubject.math).toEqual({ attempts: 2, correct: 1 });
 });
+
+test("自分の子は 単元別内訳＋今日のまちがい（問題文つき・答え非露出）を返す", async () => {
+  const { getStore } = await import("@/lib/db");
+  const s = getStore();
+  await s.createAccount("acc-me", "me@example.com", "h");
+  await s.createChild("kid", "acc-me", "こ", "elementary");
+  await s.recordAttempt("x0", "kid", "math", "div-basic", true, "practice");
+  await s.recordAttempt("x1", "kid", "math", "div-basic", false, "practice");
+  // 今日のまちがい（math）。problem に答えを含むが、レスポンスには出さない。
+  await s.addMistake({
+    id: "m1", childId: "kid", subject: "math", unitId: "div-basic", kind: "math",
+    itemId: null, problem: JSON.stringify({ prompt: "12 ÷ 3 =", answer: "4", answerType: "integer", meta: {} }),
+  });
+  const { signSession, SESSION_TTL_MS } = await import("@/lib/auth/session");
+  const token = signSession("acc-me", SESSION_TTL_MS);
+
+  const { GET } = await import("../today/route");
+  const res = await GET(await reqFor("kid", token));
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  // 単元別内訳
+  expect(body.byUnit).toHaveLength(1);
+  expect(body.byUnit[0]).toMatchObject({ subject: "math", unitId: "div-basic", attempts: 2, correct: 1 });
+  expect(typeof body.byUnit[0].title).toBe("string");
+  // 今日のまちがい：問題文（prompt）は出る／答えは出ない
+  expect(body.todayMistakes).toHaveLength(1);
+  expect(body.todayMistakes[0].preview).toBe("12 ÷ 3 =");
+  expect(JSON.stringify(body)).not.toContain('"answer"');
+  expect(JSON.stringify(body.todayMistakes)).not.toContain("4");
+});

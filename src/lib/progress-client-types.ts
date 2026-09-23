@@ -18,6 +18,8 @@ export interface TodayResponse {
   correct: number;
   rate: number;
   bySubject: Record<string, { attempts: number; correct: number }>;
+  byUnit: { subject: string; unitId: string; title: string; attempts: number; correct: number }[];
+  todayMistakes: { id: string; subject: string; unitId: string; kind: "quiz" | "math"; preview: string }[];
   testCount: number;
   tests: { subject: string; total: number; score: number }[];
 }

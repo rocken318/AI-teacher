@@ -25,6 +25,19 @@ test("addMistake は追加し、重複は入れない（quiz=item, math=problem�
   expect(list.map((m) => m.unitId).sort()).toEqual(["div-basic", "u1"]);
 });
 
+test("listMistakes は createdAtMs（epoch ms）を返す＝今日抽出に使える", async () => {
+  const { getStore } = await import("@/lib/db");
+  const s = getStore();
+  const before = Date.now();
+  await s.addMistake({ id: "m1", childId: "c1", subject: "science", unitId: "u1", kind: "quiz", itemId: "i1", problem: null });
+  const after = Date.now();
+  const [m] = await s.listMistakes("c1", 50);
+  expect(typeof m.createdAtMs).toBe("number");
+  // 追加直後なので、記録時刻は before..after の付近（秒丸めぶんの余裕を持たせる）。
+  expect(m.createdAtMs).toBeGreaterThanOrEqual(before - 1000);
+  expect(m.createdAtMs).toBeLessThanOrEqual(after + 1000);
+});
+
 test("removeMistake は自分の分だけ消す", async () => {
   const { getStore } = await import("@/lib/db");
   const s = getStore();
