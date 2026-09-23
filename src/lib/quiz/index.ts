@@ -60,6 +60,8 @@ import { SCIENCE_H1_EARTH2 } from "./science_h1_earth2";
 import { EIKAIWA_UNITS } from "./eikaiwa";
 import { ENGLISH_VOCAB_UNITS } from "./english_vocab";
 import { ENGLISH_UNITS_H1 } from "./english_h1";
+import { ENGLISH_UNITS_J1 } from "./english_j1";
+import { ENGLISH_UNITS_J2F } from "./english_j2f";
 
 export type {
   Subject,
@@ -149,6 +151,10 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...ENGLISH_VOCAB_UNITS,
   // 高1英語の文法問題（現在完了・受動態・不定詞・関係詞・仮定法 等）。
   ...ENGLISH_UNITS_H1,
+  // 中1英語の文法問題（be動詞・一般動詞・複数形・代名詞・疑問詞 等）。
+  ...ENGLISH_UNITS_J1,
+  // 中2英語の追加単元（未来形・不定詞の基本・比較・SVOO・接続詞）。
+  ...ENGLISH_UNITS_J2F,
 ]);
 
 /**
