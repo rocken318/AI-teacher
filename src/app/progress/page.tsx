@@ -62,11 +62,16 @@ export default function ProgressPage() {
               <span className="text-xs text-faint">直近30日</span>
             </div>
             <div className="mt-3">
-              <DailyBars days={daily.days} maxCount={daily.maxCount} />
+              <DailyBars
+                days={daily.days}
+                maxCount={daily.maxCount}
+                onSelectDate={(d) => router.push(`/progress/day/${d}`)}
+              />
               <div className="mt-1 flex justify-between text-[11px] text-faint">
                 <span>30日前</span>
                 <span>今日</span>
               </div>
+              <p className="mt-1 text-center text-[11px] text-faint">日をタップすると、その日の内訳が見られます</p>
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               <span className="rounded-full bg-terra/10 px-3 py-1 font-bold text-terra">

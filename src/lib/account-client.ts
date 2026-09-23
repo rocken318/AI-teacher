@@ -74,6 +74,12 @@ async function getProgress<T>(url: string): Promise<T | "unauth" | "forbidden"> 
 export function fetchToday(childId: string): Promise<TodayResponse | "unauth" | "forbidden"> {
   return getProgress<TodayResponse>(`/api/progress/today?childId=${encodeURIComponent(childId)}`);
 }
+/** 指定日(YYYY-MM-DD)の内訳。形は today と同じ。未来/不正はサーバー側で今日にフォールバック。 */
+export function fetchDay(childId: string, date: string): Promise<TodayResponse | "unauth" | "forbidden"> {
+  return getProgress<TodayResponse>(
+    `/api/progress/today?childId=${encodeURIComponent(childId)}&date=${encodeURIComponent(date)}`,
+  );
+}
 export function fetchOverall(childId: string): Promise<OverallResponse | "unauth" | "forbidden"> {
   return getProgress<OverallResponse>(`/api/progress/overall?childId=${encodeURIComponent(childId)}`);
 }

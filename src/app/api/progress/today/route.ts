@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentAccountId, ownsChild } from "@/lib/auth/accounts";
 import { listAttempts, listTestResults, listMistakes } from "@/lib/db/read";
-import { todayStats, toJstDateKey } from "@/lib/progress-stats";
+import { todayStats, toJstDateKey, isValidPastDateKey } from "@/lib/progress-stats";
 import { getQuizUnit } from "@/lib/quiz";
 import { getUnit as getMathUnit } from "@/lib/math";
 
@@ -32,7 +32,10 @@ export async function GET(req: NextRequest) {
     listMistakes(childId, 1000),
   ]);
   const todayKey = toJstDateKey(Date.now());
-  const stats = todayStats(attempts, tests, todayKey);
+  // ?date=YYYY-MM-DD（妥当な過去日）ならその日、無ければ/不正/未来は今日。
+  const dateParam = req.nextUrl.searchParams.get("date");
+  const dayKey = dateParam && isValidPastDateKey(dateParam, todayKey) ? dateParam : todayKey;
+  const stats = todayStats(attempts, tests, dayKey);
 
   // 単元別内訳にタイトルを付与。
   const byUnit = stats.byUnit.map((u) => ({
@@ -40,9 +43,9 @@ export async function GET(req: NextRequest) {
     title: unitTitle(u.subject, u.unitId),
   }));
 
-  // 今日(JST)のまちがいを問題文プレビューつきで（答え・answerIndex は出さない）。
+  // その日(JST)のまちがいを問題文プレビューつきで（答え・answerIndex は出さない）。
   const todayMistakes = mistakes
-    .filter((m) => toJstDateKey(m.createdAtMs) === todayKey)
+    .filter((m) => toJstDateKey(m.createdAtMs) === dayKey)
     .map((m) => {
       let preview = "";
       if (m.kind === "quiz") {
