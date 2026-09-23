@@ -11,8 +11,11 @@ import {
 } from "./units";
 import { UNIT_DEFS_B } from "./units_b";
 import { UNIT_DEFS_C } from "./units_c";
+import { UNIT_DEFS_J1 } from "./units_j1";
+import { UNIT_DEFS_J1D } from "./units_j1d";
 import { UNIT_DEFS_J2 } from "./units_j2";
 import { UNIT_DEFS_J2D } from "./units_j2d";
+import { UNIT_DEFS_J2E } from "./units_j2e";
 import { UNIT_DEFS_H1 } from "./units_h1";
 
 export type { Grade, AnswerType, Problem, Unit, GradeResult } from "./types";
@@ -26,8 +29,11 @@ const ALL_DEFS: UnitDef[] = [
   ...UNIT_DEFS,
   ...UNIT_DEFS_B,
   ...UNIT_DEFS_C,
+  ...UNIT_DEFS_J1,
+  ...UNIT_DEFS_J1D,
   ...UNIT_DEFS_J2,
   ...UNIT_DEFS_J2D,
+  ...UNIT_DEFS_J2E,
   ...UNIT_DEFS_H1,
 ];
 
