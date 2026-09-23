@@ -68,6 +68,9 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState<string>("");
 
+  // 「怪しい」= 正解でもまちがいノートに入れて復習に回す（問題ごとに1回）。
+  const [flagged, setFlagged] = useState(false);
+
   // 単元別マスター度（端末ローカル＋ログイン時はサーバーで上書き）。
   const [mounted, setMounted] = useState(false);
   const [localUnits, setLocalUnits] = useState<Record<string, UnitStat>>({});
@@ -123,6 +126,7 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     setPhase("answering");
     setResult(null);
     setChosen(null);
+    setFlagged(false);
     setCurrentUnitId(unitId);
     try {
       const res = await fetch("/api/quiz/question", {
@@ -296,6 +300,26 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
     setPhase("answering");
     setError("");
   }, [question]);
+
+  /**
+   * 「怪しい」= 正解でも自信がないとき、この問題をまちがいノートに入れて復習に回す。
+   * token をサーバーに送り、サーバーが item を特定してノートに追加（答えは触らない）。
+   * 楽観的に flagged 表示にし、失敗したら戻す。重複はサーバー側で防ぐ。
+   */
+  const flagSuspicious = useCallback(async () => {
+    if (!question || flagged) return;
+    setFlagged(true);
+    try {
+      const res = await fetch("/api/review/flag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: question.token, childId: getChildId() }),
+      });
+      if (!res.ok) throw new Error(`flag ${res.status}`);
+    } catch {
+      setFlagged(false);
+    }
+  }, [question, flagged]);
 
   const backToUnits = useCallback(() => {
     setRandomMode(false);
@@ -560,6 +584,22 @@ export function QuizPractice({ subject, units, grades, lockedGrade }: Props) {
                   >
                     次の問題 →
                   </button>
+                  {/* 怪しい: 正解でも自信がないときは復習に回す（正解時のみ表示）。 */}
+                  {result.correct && (
+                    <button
+                      type="button"
+                      onClick={flagSuspicious}
+                      disabled={flagged}
+                      title="正解したけど自信がないとき。まちがいノートに入れて あとで やり直せます。"
+                      className={
+                        flagged
+                          ? "rounded-full border border-line bg-paper px-5 py-2 text-sm font-bold text-faint"
+                          : "rounded-full border border-terra/50 bg-white px-5 py-2 text-sm font-bold text-terra shadow-soft transition hover:bg-terra/5"
+                      }
+                    >
+                      {flagged ? "✓ 怪しいに入れた" : "怪しい"}
+                    </button>
+                  )}
                   <a
                     href="/"
                     className="rounded-full border border-line bg-paper px-5 py-2 text-sm font-bold text-ink-soft shadow-soft transition hover:text-ink"
