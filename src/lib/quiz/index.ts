@@ -62,6 +62,9 @@ import { ENGLISH_VOCAB_UNITS } from "./english_vocab";
 import { ENGLISH_UNITS_H1 } from "./english_h1";
 import { ENGLISH_UNITS_J1 } from "./english_j1";
 import { SCIENCE_UNITS_J1 } from "./science_j1";
+import { HISTORY_UNITS_J1 } from "./history_j1";
+import { JAPANESE_UNITS_J1 } from "./japanese_j1";
+import { GEOGRAPHY_UNITS_J1 } from "./geography_j1";
 import { ENGLISH_UNITS_J2F } from "./english_j2f";
 
 export type {
@@ -156,6 +159,12 @@ export const QUIZ_UNITS: QuizUnit[] = mergeUnitsById([
   ...ENGLISH_UNITS_J1,
   // 中1理科（物質・気体・水溶液・光音・力・植物動物・火山地震・地層 等）。
   ...SCIENCE_UNITS_J1,
+  // 中1歴史（古代文明・日本のあけぼの〜室町・戦国）。
+  ...HISTORY_UNITS_J1,
+  // 中1国語（漢字・語彙・文法・読解・古文入門・詩歌）。
+  ...JAPANESE_UNITS_J1,
+  // 中1地理（世界の姿・気候・各州・地形図・資源・日本の位置と自然災害）。
+  ...GEOGRAPHY_UNITS_J1,
   // 中2英語の追加単元（未来形・不定詞の基本・比較・SVOO・接続詞）。
   ...ENGLISH_UNITS_J2F,
 ]);
