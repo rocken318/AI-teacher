@@ -23,6 +23,25 @@ export function addDaysKey(key: string, delta: number): string {
   return keyFromUtcMs(Date.UTC(y, m - 1, d) + delta * 86_400_000);
 }
 
+/**
+ * 日付キーが「妥当な過去日（today 以前）」かを判定する。
+ * - 形式 "YYYY-MM-DD"、実在日（2月30日等は不可）、かつ todayKey 以前（未来は不可）。
+ * - 文字列比較で日付順が保てる形式なので `key <= todayKey` で未来判定できる。
+ */
+export function isValidPastDateKey(key: string, todayKey: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (
+    dt.getUTCFullYear() !== y ||
+    dt.getUTCMonth() !== m - 1 ||
+    dt.getUTCDate() !== d
+  ) {
+    return false;
+  }
+  return key <= todayKey;
+}
+
 /** UTC の暦日で "YYYY-MM-DD" を作る（JST シフトはしない内部関数）。 */
 function keyFromUtcMs(ms: number): string {
   const dt = new Date(ms);

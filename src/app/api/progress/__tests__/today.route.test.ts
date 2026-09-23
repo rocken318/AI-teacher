@@ -15,13 +15,14 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-async function reqFor(childId: string, token: string | null) {
+async function reqFor(childId: string, token: string | null, date?: string) {
   const { NextRequest } = await import("next/server");
   const { SESSION_COOKIE } = await import("@/lib/auth/session");
   const headers: Record<string, string> = {};
   if (token) headers.cookie = `${SESSION_COOKIE}=${token}`;
+  const q = date ? `&date=${date}` : "";
   return new NextRequest(
-    `http://localhost/api/progress/today?childId=${childId}`,
+    `http://localhost/api/progress/today?childId=${childId}${q}`,
     { headers },
   );
 }
@@ -93,4 +94,38 @@ test("自分の子は 単元別内訳＋今日のまちがい（問題文つき�
   expect(body.todayMistakes[0].preview).toBe("12 ÷ 3 =");
   expect(JSON.stringify(body)).not.toContain('"answer"');
   expect(JSON.stringify(body.todayMistakes)).not.toContain("4");
+});
+
+test("?date= 過去日はその日を集計（記録なしは0）／未来日・不正は今日にフォールバック", async () => {
+  const { getStore } = await import("@/lib/db");
+  const s = getStore();
+  await s.createAccount("acc-me", "me@example.com", "h");
+  await s.createChild("kid", "acc-me", "こ", "elementary");
+  await s.recordAttempt("x0", "kid", "math", "div-basic", true, "practice");
+  await s.recordAttempt("x1", "kid", "science", "u1", false, "practice");
+  const { signSession, SESSION_TTL_MS } = await import("@/lib/auth/session");
+  const token = signSession("acc-me", SESSION_TTL_MS);
+  const { toJstDateKey, addDaysKey } = await import("@/lib/progress-stats");
+  const todayKey = toJstDateKey(Date.now());
+  const pastKey = addDaysKey(todayKey, -5);
+  const futureKey = addDaysKey(todayKey, 5);
+
+  const { GET } = await import("../today/route");
+
+  // 過去日（記録なし）→ total 0
+  const past = await (await GET(await reqFor("kid", token, pastKey))).json();
+  expect(past.total).toBe(0);
+  expect(past.byUnit).toEqual([]);
+
+  // 今日の日付を明示 → 今日の2件
+  const today = await (await GET(await reqFor("kid", token, todayKey))).json();
+  expect(today.total).toBe(2);
+
+  // 未来日 → 今日にフォールバック（2件）
+  const future = await (await GET(await reqFor("kid", token, futureKey))).json();
+  expect(future.total).toBe(2);
+
+  // 不正な日付 → 今日にフォールバック（2件）
+  const bad = await (await GET(await reqFor("kid", token, "2026-13-40"))).json();
+  expect(bad.total).toBe(2);
 });
