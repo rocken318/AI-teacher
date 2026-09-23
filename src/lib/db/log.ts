@@ -82,6 +82,10 @@ export function logMistake(input: Omit<MistakeInput, "id">): void {
 export async function removeMistakeNow(childId: string, mistakeId: string): Promise<void> {
   await getStore().removeMistake(childId, mistakeId);
 }
+/** まちがいを保存する（即 await 用・ユーザー操作「怪しい」で確実に入れたいとき）。 */
+export async function addMistakeNow(input: Omit<MistakeInput, "id">): Promise<void> {
+  await getStore().addMistake({ id: randomUUID(), ...input });
+}
 
 /** テスト結果（1回分）を保存する。 */
 export function logTestResult(input: {
