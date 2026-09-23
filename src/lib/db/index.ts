@@ -130,6 +130,8 @@ export interface MistakeRow {
   itemId: string | null;
   problem: string | null;
   createdAt: string;
+  /** created_at を UTC エポックms に正規化（今日抽出用・バックエンド差を吸収）。 */
+  createdAtMs: number;
 }
 
 export interface Store {
@@ -570,7 +572,8 @@ class PostgresStore implements Store {
   async listMistakes(childId: string, limit: number): Promise<MistakeRow[]> {
     await this.ready;
     const rows = await this.sql`
-      SELECT id, subject, unit_id, kind, item_id, problem, created_at
+      SELECT id, subject, unit_id, kind, item_id, problem, created_at,
+             (EXTRACT(EPOCH FROM created_at) * 1000)::bigint AS created_ms
       FROM mistakes WHERE child_id = ${childId}
       ORDER BY created_at DESC, id DESC LIMIT ${limit}
     `;
@@ -582,6 +585,7 @@ class PostgresStore implements Store {
       itemId: r.item_id == null ? null : String(r.item_id),
       problem: r.problem == null ? null : String(r.problem),
       createdAt: r.created_at == null ? "" : String(r.created_at),
+      createdAtMs: Number(r.created_ms ?? 0),
     }));
   }
 
@@ -1139,7 +1143,9 @@ class SqliteStore implements Store {
   async listMistakes(childId: string, limit: number): Promise<MistakeRow[]> {
     await this.ready;
     const rows = this.withDb((db) =>
-      db.prepare(`SELECT id, subject, unit_id, kind, item_id, problem, created_at FROM mistakes WHERE child_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?`).all(childId, limit) as any[],
+      db.prepare(`SELECT id, subject, unit_id, kind, item_id, problem, created_at,
+                    CAST(strftime('%s', created_at) AS INTEGER) * 1000 AS created_ms
+                  FROM mistakes WHERE child_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?`).all(childId, limit) as any[],
     );
     return rows.map((r) => ({
       id: String(r.id),
@@ -1149,6 +1155,7 @@ class SqliteStore implements Store {
       itemId: r.item_id == null ? null : String(r.item_id),
       problem: r.problem == null ? null : String(r.problem),
       createdAt: r.created_at == null ? "" : String(r.created_at),
+      createdAtMs: Number(r.created_ms ?? 0),
     }));
   }
 

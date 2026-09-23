@@ -18,6 +18,9 @@ interface TodayCopy {
   accuracy: string;
   testPrefix: string;
   parentLink: string;
+  unitsTitle: string;
+  mistakesTitle: string;
+  noMistakes: string;
 }
 const TODAY_COPY: Record<Stage, TodayCopy> = {
   elementary: {
@@ -28,6 +31,9 @@ const TODAY_COPY: Record<Stage, TodayCopy> = {
     accuracy: "せいかい率",
     testPrefix: "きょうは テストを",
     parentLink: "おうちの人のページ",
+    unitsTitle: "きょう やった たんげん",
+    mistakesTitle: "きょう まちがえた もんだい",
+    noMistakes: "きょうの まちがいは ないよ",
   },
   junior: {
     praiseZero: "今日はいつでもどうぞ",
@@ -37,6 +43,9 @@ const TODAY_COPY: Record<Stage, TodayCopy> = {
     accuracy: "正答率",
     testPrefix: "今日はテストを",
     parentLink: "保護者ページ",
+    unitsTitle: "今日やった単元",
+    mistakesTitle: "今日まちがえた問題",
+    noMistakes: "今日のまちがいはありません",
   },
   senior: {
     praiseZero: "今日の学習を始めましょう",
@@ -46,6 +55,9 @@ const TODAY_COPY: Record<Stage, TodayCopy> = {
     accuracy: "正答率",
     testPrefix: "今日のテスト",
     parentLink: "保護者ページ",
+    unitsTitle: "今日取り組んだ単元",
+    mistakesTitle: "今日まちがえた問題",
+    noMistakes: "今日のまちがいはありません",
   },
 };
 
@@ -118,6 +130,50 @@ export default function TodayPage() {
           <p className="mt-6 text-sm text-ink-soft">{copy.testPrefix} {data.testCount}回。
             {data.tests.map((t, i) => <span key={`${t.subject}-${i}`} className="ml-2 text-terra">{t.score}/{t.total}</span>)}
           </p>
+        )}
+
+        {/* 今日やった単元（単元別の内訳） */}
+        {data.byUnit.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-2 font-serif text-lg text-ink">{copy.unitsTitle}</h2>
+            <ul className="space-y-2">
+              {data.byUnit.map((u) => (
+                <li
+                  key={`${u.subject}-${u.unitId}`}
+                  className="flex items-center justify-between rounded-xl border border-line bg-white/60 px-3 py-2 text-sm"
+                >
+                  <span className="text-ink">{u.title}</span>
+                  <span className="text-ink-soft">{u.correct}/{u.attempts}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* 今日まちがえた問題（問題文つき・答えは出さない） */}
+        {data.total > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-2 font-serif text-lg text-ink">{copy.mistakesTitle}</h2>
+            {data.todayMistakes.length === 0 ? (
+              <p className="text-sm text-faint">{copy.noMistakes}</p>
+            ) : (
+              <>
+                <ul className="space-y-2">
+                  {data.todayMistakes.map((m) => (
+                    <li
+                      key={m.id}
+                      className="rounded-xl border border-terra/30 bg-terra/5 px-3 py-2 text-sm text-ink"
+                    >
+                      {m.preview || "（問題を表示できません）"}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/review" className="mt-3 inline-block text-sm text-terra underline">
+                  まちがいノートで やり直す →
+                </Link>
+              </>
+            )}
+          </section>
         )}
       </div>
     </main>
